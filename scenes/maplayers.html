@@ -326,23 +326,22 @@
             <div class="weather-popup-body">
               <div class="popup-accordion-list" data-accordion-mode="exclusive">
 
-                <!-- 1 · VISIBILITY ============================================ -->
+                <!-- 1 · BASE LAYER (radio) — open by default ================== -->
                 <section class="popup-section popup-accordion-item is-open">
                   <button class="popup-section-title-row popup-accordion-trigger" type="button" aria-expanded="true">
-                    <span class="popup-section-title">Visibility</span>
+                    <span class="popup-section-title">Base Layer</span>
                     <span class="popup-section-trailing">
-                      <span class="popup-section-meta" data-meta-for="visibility">2 of 6</span>
+                      <span class="popup-section-meta" data-meta-for="base">VECTOR</span>
                       <span class="popup-accordion-icon" aria-hidden="true"></span>
                     </span>
                   </button>
                   <div class="popup-section-body popup-accordion-body">
-                    <ul class="layer-toggle-list" data-group="visibility">
-                      <li><label class="layer-toggle"><span class="layer-toggle-label">Ownship</span><input type="checkbox" checked><span class="layer-toggle-check"></span></label></li>
-                      <li><label class="layer-toggle"><span class="layer-toggle-label">Distance Rings</span><input type="checkbox" checked><span class="layer-toggle-check"></span></label></li>
-                      <li><label class="layer-toggle"><span class="layer-toggle-label">Track Vectors</span><input type="checkbox"><span class="layer-toggle-check"></span></label></li>
-                      <li><label class="layer-toggle"><span class="layer-toggle-label">Path Indicator</span><input type="checkbox"><span class="layer-toggle-check"></span></label></li>
-                      <li><label class="layer-toggle"><span class="layer-toggle-label">SVS View Cone</span><input type="checkbox"><span class="layer-toggle-check"></span></label></li>
-                      <li><label class="layer-toggle"><span class="layer-toggle-label">Course Line</span><input type="checkbox"><span class="layer-toggle-check"></span></label></li>
+                    <ul class="layer-toggle-list" data-group="base">
+                      <li><label class="layer-toggle"><span class="layer-toggle-label">Vector</span><input type="radio" name="base" value="Vector" checked><span class="layer-toggle-radio"></span></label></li>
+                      <li><label class="layer-toggle"><span class="layer-toggle-label">Terrain</span><input type="radio" name="base" value="Terrain"><span class="layer-toggle-radio"></span></label></li>
+                      <li><label class="layer-toggle"><span class="layer-toggle-label">VFR Sectional</span><input type="radio" name="base" value="VFR"><span class="layer-toggle-radio"></span></label></li>
+                      <li><label class="layer-toggle"><span class="layer-toggle-label">IFR Low</span><input type="radio" name="base" value="IFRLow"><span class="layer-toggle-radio"></span></label></li>
+                      <li><label class="layer-toggle"><span class="layer-toggle-label">Satellite</span><input type="radio" name="base" value="Satellite"><span class="layer-toggle-radio"></span></label></li>
                     </ul>
                   </div>
                 </section>
@@ -356,7 +355,7 @@
                       <span class="popup-accordion-icon" aria-hidden="true"></span>
                     </span>
                   </button>
-                  <div class="popup-section-body popup-accordion-body">
+                  <div class="popup-section-body popup-accordion-body" hidden>
                     <ul class="layer-toggle-list" data-group="trafwx">
                       <li><label class="layer-toggle"><span class="layer-toggle-label">Traffic</span><input type="checkbox" checked><span class="layer-toggle-check"></span></label></li>
                       <li><label class="layer-toggle"><span class="layer-toggle-label">METARs</span><input type="checkbox" checked><span class="layer-toggle-check"></span></label></li>
@@ -368,7 +367,7 @@
                   </div>
                 </section>
 
-                <!-- 3 · GRAPHICAL WEATHER (radio, depends on master toggle) ==== -->
+                <!-- 3 · GRAPHICAL WX MODE (radio, depends on master toggle) === -->
                 <section class="popup-section popup-accordion-item">
                   <button class="popup-section-title-row popup-accordion-trigger" type="button" aria-expanded="false">
                     <span class="popup-section-title">Graphical Wx Mode</span>
@@ -389,7 +388,30 @@
                   </div>
                 </section>
 
-                <!-- 4 · AIRPORTS ============================================== -->
+                <!-- 4 · AIRSPACE & CHARTS ===================================== -->
+                <section class="popup-section popup-accordion-item">
+                  <button class="popup-section-title-row popup-accordion-trigger" type="button" aria-expanded="false">
+                    <span class="popup-section-title">Airspace &amp; Charts</span>
+                    <span class="popup-section-trailing">
+                      <span class="popup-section-meta" data-meta-for="airspace">3 of 7</span>
+                      <span class="popup-accordion-icon" aria-hidden="true"></span>
+                    </span>
+                  </button>
+                  <div class="popup-section-body popup-accordion-body" hidden>
+                    <ul class="layer-toggle-list" data-group="airspace">
+                      <li><label class="layer-toggle"><span class="layer-toggle-label">Airspace Outline</span><input type="checkbox" checked><span class="layer-toggle-check"></span></label></li>
+                      <li><label class="layer-toggle"><span class="layer-toggle-label">Special Use Airspace</span><input type="checkbox" checked><span class="layer-toggle-check"></span></label></li>
+                      <li><label class="layer-toggle"><span class="layer-toggle-label">Terrain Proximity</span><input type="checkbox" checked><span class="layer-toggle-check"></span></label></li>
+                      <li><label class="layer-toggle"><span class="layer-toggle-label">Airways (Low)</span><input type="checkbox"><span class="layer-toggle-check"></span></label></li>
+                      <li><label class="layer-toggle"><span class="layer-toggle-label">Airways (High)</span><input type="checkbox"><span class="layer-toggle-check"></span></label></li>
+                      <li><label class="layer-toggle"><span class="layer-toggle-label">Fixes</span><input type="checkbox"><span class="layer-toggle-check"></span></label></li>
+                      <li><label class="layer-toggle"><span class="layer-toggle-label">Navaids</span><input type="checkbox"><span class="layer-toggle-check"></span></label></li>
+                      <li><label class="layer-toggle"><span class="layer-toggle-label">Obstacles</span><input type="checkbox"><span class="layer-toggle-check"></span></label></li>
+                    </ul>
+                  </div>
+                </section>
+
+                <!-- 5 · AIRPORTS ============================================== -->
                 <section class="popup-section popup-accordion-item">
                   <button class="popup-section-title-row popup-accordion-trigger" type="button" aria-expanded="false">
                     <span class="popup-section-title">Airports</span>
@@ -419,45 +441,23 @@
                   </div>
                 </section>
 
-                <!-- 5 · AIRSPACE & CHARTS ===================================== -->
+                <!-- 6 · OWNSHIP (was "Visibility") ============================ -->
                 <section class="popup-section popup-accordion-item">
                   <button class="popup-section-title-row popup-accordion-trigger" type="button" aria-expanded="false">
-                    <span class="popup-section-title">Airspace &amp; Charts</span>
+                    <span class="popup-section-title">Ownship</span>
                     <span class="popup-section-trailing">
-                      <span class="popup-section-meta" data-meta-for="airspace">3 of 7</span>
+                      <span class="popup-section-meta" data-meta-for="ownship">2 of 6</span>
                       <span class="popup-accordion-icon" aria-hidden="true"></span>
                     </span>
                   </button>
                   <div class="popup-section-body popup-accordion-body" hidden>
-                    <ul class="layer-toggle-list" data-group="airspace">
-                      <li><label class="layer-toggle"><span class="layer-toggle-label">Airspace Outline</span><input type="checkbox" checked><span class="layer-toggle-check"></span></label></li>
-                      <li><label class="layer-toggle"><span class="layer-toggle-label">Special Use Airspace</span><input type="checkbox" checked><span class="layer-toggle-check"></span></label></li>
-                      <li><label class="layer-toggle"><span class="layer-toggle-label">Terrain Proximity</span><input type="checkbox" checked><span class="layer-toggle-check"></span></label></li>
-                      <li><label class="layer-toggle"><span class="layer-toggle-label">Airways (Low)</span><input type="checkbox"><span class="layer-toggle-check"></span></label></li>
-                      <li><label class="layer-toggle"><span class="layer-toggle-label">Airways (High)</span><input type="checkbox"><span class="layer-toggle-check"></span></label></li>
-                      <li><label class="layer-toggle"><span class="layer-toggle-label">Fixes</span><input type="checkbox"><span class="layer-toggle-check"></span></label></li>
-                      <li><label class="layer-toggle"><span class="layer-toggle-label">Navaids</span><input type="checkbox"><span class="layer-toggle-check"></span></label></li>
-                      <li><label class="layer-toggle"><span class="layer-toggle-label">Obstacles</span><input type="checkbox"><span class="layer-toggle-check"></span></label></li>
-                    </ul>
-                  </div>
-                </section>
-
-                <!-- 6 · BASE LAYER (radio) =================================== -->
-                <section class="popup-section popup-accordion-item">
-                  <button class="popup-section-title-row popup-accordion-trigger" type="button" aria-expanded="false">
-                    <span class="popup-section-title">Base Layer</span>
-                    <span class="popup-section-trailing">
-                      <span class="popup-section-meta" data-meta-for="base">VECTOR</span>
-                      <span class="popup-accordion-icon" aria-hidden="true"></span>
-                    </span>
-                  </button>
-                  <div class="popup-section-body popup-accordion-body" hidden>
-                    <ul class="layer-toggle-list" data-group="base">
-                      <li><label class="layer-toggle"><span class="layer-toggle-label">Vector</span><input type="radio" name="base" value="Vector" checked><span class="layer-toggle-radio"></span></label></li>
-                      <li><label class="layer-toggle"><span class="layer-toggle-label">Terrain</span><input type="radio" name="base" value="Terrain"><span class="layer-toggle-radio"></span></label></li>
-                      <li><label class="layer-toggle"><span class="layer-toggle-label">VFR Sectional</span><input type="radio" name="base" value="VFR"><span class="layer-toggle-radio"></span></label></li>
-                      <li><label class="layer-toggle"><span class="layer-toggle-label">IFR Low</span><input type="radio" name="base" value="IFRLow"><span class="layer-toggle-radio"></span></label></li>
-                      <li><label class="layer-toggle"><span class="layer-toggle-label">Satellite</span><input type="radio" name="base" value="Satellite"><span class="layer-toggle-radio"></span></label></li>
+                    <ul class="layer-toggle-list" data-group="ownship">
+                      <li><label class="layer-toggle"><span class="layer-toggle-label">Ownship</span><input type="checkbox" checked><span class="layer-toggle-check"></span></label></li>
+                      <li><label class="layer-toggle"><span class="layer-toggle-label">Distance Rings</span><input type="checkbox" checked><span class="layer-toggle-check"></span></label></li>
+                      <li><label class="layer-toggle"><span class="layer-toggle-label">Track Vectors</span><input type="checkbox"><span class="layer-toggle-check"></span></label></li>
+                      <li><label class="layer-toggle"><span class="layer-toggle-label">Path Indicator</span><input type="checkbox"><span class="layer-toggle-check"></span></label></li>
+                      <li><label class="layer-toggle"><span class="layer-toggle-label">SVS View Cone</span><input type="checkbox"><span class="layer-toggle-check"></span></label></li>
+                      <li><label class="layer-toggle"><span class="layer-toggle-label">Course Line</span><input type="checkbox"><span class="layer-toggle-check"></span></label></li>
                     </ul>
                   </div>
                 </section>
@@ -536,7 +536,7 @@
       }
 
       // Initial paint.
-      ['visibility','trafwx','gwx-mode','airports','airspace','base'].forEach(updateMeta);
+      ['base','trafwx','gwx-mode','airspace','airports','ownship'].forEach(updateMeta);
       syncMasters();
 
       // React to changes.
@@ -569,9 +569,9 @@
   </script>
 
   <!-- OPEN QUESTIONS for Steve:
-       1. Section order. I went frequency-of-use: Visibility → Traffic & Wx → Wx Mode →
-          Airports → Airspace → Base Layer. Base Layer at the bottom because changing
-          base map is rare in flight. Object?
+       1. Section order (Steve r2): reorganized to Base Layer → Traffic & Wx → Wx Mode →
+          Airspace & Charts → Airports → Ownship. Base Layer is now the open-by-default
+          section. "Visibility" renamed to "Ownship" (every item in it is ownship-relative).
        2. The "Graphical Weather" master is a row in Traffic & Weather, but the MODE
           (NEXRAD/Turbulence/etc.) is a separate accordion section so it can collapse
           independently. Alternative: nest the mode picker as sub-rows under the master.
