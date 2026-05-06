@@ -20,7 +20,7 @@
     2. Traffic & Weather — Traffic, METARs, PIREPs, TFR, Lightning, Graphical Weather toggle
     3. Graphical Weather — radio: NEXRAD / Advisories / Turbulence / Cloud Tops / IR / Icing
     4. Airports          — Airports toggle, Diagrams, filters (uncontrolled/soft/private/seaplane/heli), Runway-min slider
-    5. Airspace & Charts — Airspace Outline, SUA, Terrain, Airways Lo/Hi, Fixes, Navaids, Obstacles
+    5. Aeronautical Data — Controlled Airspace, SUA, Terrain Proximity, Airways Lo/Hi, Fixes, Navaids, Obstacles
     6. Base Layer        — radio: Vector / Terrain / VFR Sectional / IFR Low / Satellite
 
   The original flat 23-checkbox dump split into semantic groups so a pilot can find what
@@ -499,7 +499,7 @@
                 <!-- 4 · AIRSPACE & CHARTS ===================================== -->
                 <section class="popup-section popup-accordion-item">
                   <button class="popup-section-title-row popup-accordion-trigger" type="button" aria-expanded="false">
-                    <span class="popup-section-title">Airspace &amp; Charts</span>
+                    <span class="popup-section-title">Aeronautical Data</span>
                     <span class="popup-section-trailing">
                       <span class="popup-section-meta" data-meta-for="airspace">3 of 7</span>
                       <span class="popup-accordion-icon" aria-hidden="true"></span>
@@ -723,7 +723,7 @@
 
   <!-- OPEN QUESTIONS for Steve:
        1. Section order (Steve r2): reorganized to Base Layer → Traffic & Wx → Wx Mode →
-          Airspace & Charts → Airports → Ownship. Base Layer is now the open-by-default
+          Aeronautical Data → Airports → Ownship. Base Layer is now the open-by-default
           section. "Visibility" renamed to "Ownship" (every item in it is ownship-relative).
        2. The "Graphical Weather" master is a row in Traffic & Weather, but the MODE
           (NEXRAD/Turbulence/etc.) is a separate accordion section so it can collapse
