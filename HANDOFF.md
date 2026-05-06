@@ -4,8 +4,30 @@
 
 **Status as of this handoff:**
 - ✅ `scenes/airport.html` — fully refreshed
-- ✅ `scenes/maplayers.html` — fully refreshed (full-height left rail, exclusive accordion)
+- ✅ `scenes/maplayers.html` — fully refreshed (full-height left rail, exclusive accordion) **+ Steve follow-ups; see §0**
 - ⏳ Remaining scenes still on v1 visuals (see "Next session" below)
+
+---
+
+## 0. Steve follow-ups since first handoff (2026-05-06)
+
+Bookkeeping for the next Design pass — these landed via direct commits to `main` after the original PR merged. Anything that contradicts the body of this doc; this section wins.
+
+**Map Layers — content + structure:**
+- Section order is now **Base Layer → Traffic & Weather → Graphical Wx Mode → Aeronautical Data → Airports → Ownship**. Base Layer is the default-open section (was "Visibility").
+- **"Visibility" renamed to "Ownship"** — every item in it (Ownship glyph, Distance Rings, Track Vectors, Path Indicator, SVS View Cone, Course Line) is ownship-relative; that's the avionics-correct group label.
+- **"Airspace Outline" renamed to "Controlled Airspace"** — parallels "Special Use Airspace" right below it.
+- **"Airspace & Charts" section renamed to "Aeronautical Data"** — the section contains airspace + terrain + airways + waypoint features; "charts" has a specific meaning to pilots (sectionals, IFR enroute) and none of those qualify.
+- **Airports sub-toggle reorder:** Uncontrolled → Private Use → Soft Surface (Private Use moved up; it groups with the access-class items, Soft Surface is the surface attribute that comes after).
+- **Graphical Wx Mode now has conditional pickers** — Icing mode reveals an Icing Field picker (Severity / Probability / SLD) and an Icing Alt picker (2k–24k ft, FIS-B aligned). Turbulence reveals a Turb Alt picker. Other modes hide all three. Driven by `data-show-when` on each `.picker-row` plus a `syncPickerVisibility()` function in the inline script. The collapsed-section meta also enriches: e.g. `ICING · SEVERITY · 12K`, `TURB · 16K`.
+- **Dropped the `Reset to Defaults` / `Done` footer.** Reset isn't called for in flight (every toggle is one tap to revert), Done is redundant with the X. The accordion takes back that vertical space. **Don't put it back.**
+
+**Map Layers — Runway Minimum slider:**
+- Now ft-based: `min=0 max=6000 step=500` (was `0–5` with 1k steps; 500-ft snap detents are finer-grained).
+- **Two visible ticks + two labels only** — `Any` at the left endpoint, `6k+` at the right. The middle labels (2k/3k/4k/5k) and middle tick marks were removed because the native range thumb's center can't reach the actual slider edges (it travels `sliderWidth - thumbWidth`); any middle mark positioned at a percentage of the full slider width disagrees with where the thumb lands at the corresponding ft value. Bookend marks are positioned at half-thumb in from each slider edge (`var(--rmin-edge)`) so they sit exactly under the thumb at min/max. The live `≥ X,XXX ft` value display covers everything in between.
+
+**Sandbox shell (not Design's concern, but FYI):**
+- iframe wrap is now iPad Pro 12.9" landscape (`max-width: 1366px; aspect-ratio: 1366/1024`). Scales down proportionally on narrower stages.
 
 ---
 
@@ -96,8 +118,9 @@ The accordion JS lives inline in each scene (we did not extract to a shared modu
 ### `scenes/maplayers.html`
 - Full-height left rail — flush to top/left/bottom, no border-radius, no shadow, hairline right edge instead of all-around card border
 - Mode B accordion (exclusive) — one section open, fills remaining height
-- Initial state: only **Visibility** open
+- Initial state: only **Base Layer** open *(updated; see §0)*
 - Anchor rule: **all disclosures anchor top-left** (matches airport's `.content-panel--left`). Future scenes must follow.
+- *See §0 for full current section list, renames, conditional pickers, slider state, and footer removal.*
 
 ---
 
@@ -138,3 +161,5 @@ index.html                    (sidebar entries for airport / airport_original / 
 ```
 
 No changes to `styles/index-dialogs.css` yet — see Tech Debt #1.
+
+Subsequent direct-commit follow-ups touched `scenes/maplayers.html` and `sandbox.css` only. See §0 above for the change list, or `git log main` for individual commits.
