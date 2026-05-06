@@ -272,7 +272,14 @@
       padding:10px 10px;
       border-bottom:1px solid var(--popup-rule-color);
     }
+    /* `display:flex` above is more specific than the UA `[hidden]{display:none}`,
+       so we have to restore it explicitly. */
+    .picker-row[hidden]{display:none}
     .picker-row:last-child{border-bottom:0}
+    /* When the visible last picker isn't the markup-last sibling, the rule
+       above doesn't fire — handle the "no border on the last *visible* row"
+       case via :has() so the group looks tidy regardless of which mode is on. */
+    .picker-row:not([hidden]):has(~ .picker-row[hidden]:last-child){border-bottom:0}
     .picker-row-label{
       flex:0 0 88px;
       font:600 13px/1.15 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
