@@ -1,1 +1,194 @@
-:root{--bg: #0c1a24;--panel: #102737;--panel-2: #173247;--text: #e8f2f8;--muted: #9bb8c8;--accent: #2f9ee5;--danger: #ff6b6b;--ok: #2ecc71;--border: #2a4a5f;--health-bar-height: 28px;--soft-button-bar-height: 43px;--map-nav-mode-size: 60px;--map-nav-sim-scale: 1.25;--map-nav-sim-width: calc(42px * var(--map-nav-sim-scale));--map-nav-sim-height: calc(36px * var(--map-nav-sim-scale));--nav-dest-strip-height: 88px;--safe-area-bottom: env(safe-area-inset-bottom, 0px);--button-bar-height: calc(var(--soft-button-bar-height) + var(--safe-area-bottom));--nav-dest-bottom-offset: 0px;--replay-overlay-offset: 10px;--replay-nav-clearance: var(--nav-dest-strip-height);--soft-button-background: rgba(38, 46, 69, .85);--soft-button-color: #ffffff;--popup-shell-width: min(334px, 100%);--popup-shell-bg: rgba(0, 0, 0, .92);--popup-shell-border: 1px solid rgba(210, 220, 228, .16);--popup-shell-shadow: 0 18px 36px rgba(0, 0, 0, .48);--popup-title-size: 24px;--popup-data-size: 15.75px;--popup-subtitle-size: 13.5px;--popup-tab-size: 14.75px;--popup-tab-height: 48px;--popup-section-size: 15.75px;--popup-section-header-height: 40px;--popup-title-color: #ccd2d8;--popup-subtitle-color: #8eb7d2;--popup-close-bg: rgba(255, 255, 255, .04);--popup-close-bg-hover: rgba(255, 255, 255, .14);--popup-close-border: rgba(221, 231, 239, .8);--popup-tab-active-bg: rgba(0, 0, 0, .92);--popup-tab-active-color: #f5f8fa;--popup-tab-idle-bg: rgba(222, 222, 222, .98);--popup-tab-idle-color: #1a1a1a;--popup-tab-divider: rgba(8, 8, 8, .45);--popup-panel-bg: rgba(52, 55, 59, .97);--popup-section-header-bg: rgba(135, 135, 135, .97);--popup-section-header-color: #f0f3f6;--popup-section-body-bg: rgba(64, 67, 72, .97);--popup-rule-color: rgba(226, 234, 240, .28);--popup-label-color: #6db6ff;--popup-value-color: #edf3f8;--popup-empty-color: #c7d2dc;--popup-action-bg: rgba(222, 227, 232, .99);--popup-action-color: #1f252c;--popup-action-divider: rgba(9, 9, 9, .38)}html:not(.is-ios){--soft-button-bar-height: 56px}
+/*
+ * FlightBoxV3 — design tokens
+ *
+ * REFRESH (Airport disclosure v2):
+ *   - Chrome typography moved off Menlo onto SF/system, Menlo retained for tabular data.
+ *   - Popup palette retuned: neutral panels (cooler, less greenish), 10px radius,
+ *     hairline rules at 30% alpha (was 28% solid).
+ *   - Day mode forked properly: high-contrast warm-white background, deeper text,
+ *     no thin hairlines (≥1.5px equivalents via box-shadow).
+ *   - New severity token family (--sev-*) — generalizes to NOTAMs, SIGMETs, CWAs.
+ *   - Weather category tokens (--wx-vfr/mvfr/ifr/lifr-*) — higher chip contrast
+ *     than canvas tile fills, tunable independently.
+ *   - ICAO badge tokens. Tab-bar tokens. Action-button tokens.
+ *
+ * Naming rule: edit values in place; only add new tokens for genuinely new
+ * design vocabulary (severity, wx categories, badges).
+ */
+
+:root{
+  /* ------- Frame (unchanged geometry) ------- */
+  --bg: #0c1a24;
+  --panel: #102737;
+  --panel-2: #173247;
+  --text: #e8f2f8;
+  --muted: #9bb8c8;
+  --accent: #2f9ee5;
+  --danger: #ff6b6b;
+  --ok: #2ecc71;
+  --border: #2a4a5f;
+
+  --health-bar-height: 28px;
+  --soft-button-bar-height: 43px;
+  --map-nav-mode-size: 60px;
+  --map-nav-sim-scale: 1.25;
+  --map-nav-sim-width: calc(42px * var(--map-nav-sim-scale));
+  --map-nav-sim-height: calc(36px * var(--map-nav-sim-scale));
+  --nav-dest-strip-height: 88px;
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --button-bar-height: calc(var(--soft-button-bar-height) + var(--safe-area-bottom));
+  --nav-dest-bottom-offset: 0px;
+  --replay-overlay-offset: 10px;
+  --replay-nav-clearance: var(--nav-dest-strip-height);
+
+  --soft-button-background: rgba(38, 46, 69, .85);
+  --soft-button-color: #ffffff;
+
+  /* ------- Popup shell ------- */
+  --popup-shell-width: min(380px, 100%);                 /* was 334px — small bump for v2 density. */
+  --popup-shell-radius: 10px;                            /* was 0 — sheet, not wallpaper. */
+  --popup-shell-bg: rgba(10, 22, 32, 0.94);              /* cooler, less greenish than rgba(0,0,0,.92) */
+  --popup-shell-border: 1px solid rgba(180, 205, 222, 0.14);
+  --popup-shell-shadow: 0 22px 44px rgba(0, 0, 0, 0.55), 0 2px 6px rgba(0,0,0,0.35);
+  --popup-edge-highlight: rgba(220, 235, 248, 0.22);     /* hairline along top edge */
+
+  /* Type sizes — kept stable so JS that reads them doesn't drift */
+  --popup-title-size: 17px;
+  --popup-data-size: 14px;
+  --popup-subtitle-size: 12px;
+  --popup-tab-size: 13px;
+  --popup-tab-height: 46px;
+  --popup-section-size: 13px;
+  --popup-section-header-height: 46px;
+
+  /* Header */
+  --popup-title-color: #f4f9fc;
+  --popup-subtitle-color: #94b3c8;
+
+  /* ICAO badge (new) */
+  --icao-badge-bg: rgba(255, 255, 255, 0.06);
+  --icao-badge-fg: #d6e7f3;
+  --icao-badge-border: rgba(180, 205, 222, 0.32);
+
+  /* Close button */
+  --popup-close-bg: rgba(255, 255, 255, 0.04);
+  --popup-close-bg-hover: rgba(255, 255, 255, 0.12);
+  --popup-close-border: rgba(180, 205, 222, 0.28);
+  --popup-close-fg: #d8e6f0;
+
+  /* Tabs — flat, system-typed */
+  --popup-tabbar-bg: rgba(8, 18, 26, 0.92);
+  --popup-tab-active-bg: rgba(15, 30, 42, 0.96);
+  --popup-tab-active-color: #f4f9fc;
+  --popup-tab-active-rule: var(--accent);
+  --popup-tab-idle-bg: transparent;
+  --popup-tab-idle-color: #93b0c4;
+  --popup-tab-divider: rgba(180, 205, 222, 0.10);
+
+  /* Body / panels */
+  --popup-panel-bg: rgba(13, 26, 36, 0.97);
+
+  /* Section headers — was a bright gray slab; now a quiet rule + dim header */
+  --popup-section-header-bg: rgba(20, 38, 52, 0.85);
+  --popup-section-header-bg-hover: rgba(28, 50, 68, 0.92);
+  --popup-section-header-color: #c0d6e5;
+  --popup-section-body-bg: transparent;
+  --popup-section-meta-color: #8aa9bf;
+
+  --popup-rule-color: rgba(180, 205, 222, 0.10);
+
+  /* KV grid */
+  --popup-label-color: #7fa6c0;          /* was #6db6ff — quieter, less neon */
+  --popup-value-color: #f0f6fa;
+  --popup-empty-color: #adc1d0;
+  --popup-raw-color: #c8dceb;
+
+  /* Action row */
+  --popup-action-bg: rgba(18, 34, 48, 0.96);
+  --popup-action-bg-hover: rgba(28, 50, 68, 0.96);
+  --popup-action-bg-press: rgba(38, 64, 84, 0.96);
+  --popup-action-color: #d8eaf5;
+  --popup-action-divider: rgba(180, 205, 222, 0.14);
+
+  /* ===== Severity (new) — generalizes to NOTAM, SIGMET, CWA ===== */
+  --sev-critical: #ff5757;
+  --sev-critical-bg: rgba(255, 87, 87, 0.16);
+  --sev-critical-glow: rgba(255, 87, 87, 0.45);
+  --sev-significant: #f5a623;
+  --sev-significant-bg: rgba(245, 166, 35, 0.16);
+  --sev-advisory: #4aa8e8;
+  --sev-advisory-bg: rgba(74, 168, 232, 0.14);
+  --sev-info: #7a8ea0;
+  --sev-info-bg: rgba(122, 142, 160, 0.14);
+
+  /* ===== Weather category (new) — chips, tuned for chip contrast at 22px. ===== */
+  --wx-vfr-bg: #2c8a4a;          --wx-vfr-fg: #f0fff5;   --wx-vfr-border: #3ea864;
+  --wx-mvfr-bg: #2867b5;         --wx-mvfr-fg: #eef6ff;  --wx-mvfr-border: #3a82d2;
+  --wx-ifr-bg: #c8362f;          --wx-ifr-fg: #fff2f1;   --wx-ifr-border: #e04a43;
+  --wx-lifr-bg: #8b3aa8;         --wx-lifr-fg: #fbeefb;  --wx-lifr-border: #a94fc8;
+}
+
+html:not(.is-ios){--soft-button-bar-height: 56px}
+
+/* ============================================================
+ * DAY MODE — sun-legible. Forked properly per CONSTRAINTS.md ask.
+ * Strategy: warm near-white panels, deep slate text, NO thin hairlines
+ * (use opaque 1px-shadow instead). Glows allowed (sun washes them).
+ * ============================================================ */
+html[data-appearance="day"]{
+  --bg: #e8eef2;
+  --panel: #ffffff;
+  --panel-2: #f3f6f9;
+  --text: #0e1a23;
+  --muted: #4a5e6e;
+  --border: #c4cfd8;
+
+  --popup-shell-bg: rgba(255, 255, 255, 0.98);
+  --popup-shell-border: 1px solid rgba(60, 84, 102, 0.32);
+  --popup-shell-shadow: 0 18px 40px rgba(8, 22, 34, 0.22), 0 2px 4px rgba(8,22,34,0.10);
+  --popup-edge-highlight: rgba(255, 255, 255, 0.70);
+
+  --popup-title-color: #0a141c;
+  --popup-subtitle-color: #4d6478;
+
+  --icao-badge-bg: rgba(20, 40, 56, 0.06);
+  --icao-badge-fg: #142838;
+  --icao-badge-border: rgba(20, 40, 56, 0.28);
+
+  --popup-close-bg: rgba(20, 40, 56, 0.04);
+  --popup-close-bg-hover: rgba(20, 40, 56, 0.10);
+  --popup-close-border: rgba(20, 40, 56, 0.30);
+  --popup-close-fg: #18283a;
+
+  --popup-tabbar-bg: #f0f4f7;
+  --popup-tab-active-bg: #ffffff;
+  --popup-tab-active-color: #0a141c;
+  --popup-tab-idle-color: #4d6478;
+  --popup-tab-divider: rgba(20, 40, 56, 0.12);
+
+  --popup-panel-bg: #ffffff;
+  --popup-section-header-bg: #f0f4f7;
+  --popup-section-header-bg-hover: #e6ecf1;
+  --popup-section-header-color: #1c2e3e;
+  --popup-section-body-bg: transparent;
+  --popup-section-meta-color: #56708a;
+
+  --popup-rule-color: rgba(20, 40, 56, 0.14);
+
+  --popup-label-color: #506b80;
+  --popup-value-color: #0a141c;
+  --popup-empty-color: #56708a;
+  --popup-raw-color: #1a2c3a;
+
+  --popup-action-bg: #ffffff;
+  --popup-action-bg-hover: #eef3f7;
+  --popup-action-bg-press: #dfe7ed;
+  --popup-action-color: #0a141c;
+  --popup-action-divider: rgba(20, 40, 56, 0.18);
+
+  /* Day chips: more saturation, white fg — survives sun on iPad */
+  --wx-vfr-bg: #1f7a3f;          --wx-vfr-fg: #ffffff;   --wx-vfr-border: #1f7a3f;
+  --wx-mvfr-bg: #1f5aa8;         --wx-mvfr-fg: #ffffff;  --wx-mvfr-border: #1f5aa8;
+  --wx-ifr-bg: #b62a25;          --wx-ifr-fg: #ffffff;   --wx-ifr-border: #b62a25;
+  --wx-lifr-bg: #762e96;         --wx-lifr-fg: #ffffff;  --wx-lifr-border: #762e96;
+}

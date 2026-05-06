@@ -84,22 +84,73 @@
     });
   });
 
-  // Accordion triggers — toggle aria-expanded + the .is-open class on the
-  // section, plus show/hide the .popup-accordion-body sibling.
+  // Accordion triggers — INTELLIGENT MODE (per Steve r1):
+  //   - Multi-open allowed when the open sections fit without scrolling.
+  //   - If opening a new section would force the list to scroll, auto-collapse
+  //     the OLDEST open section so the freshly tapped one is fully visible.
+  //   - Tap the currently-open header to collapse normally.
+  // The order in which sections were opened is tracked in dataset.openOrder on
+  // the section, monotonically incremented.
+  let __openCounter = 0;
+  // Seed openOrder on sections that start open in markup so the LRU auto-collapse
+  // treats them as oldest. Without this, .is-open-from-HTML sections never appear
+  // in the "others to collapse" list and overflow can persist.
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.popup-accordion-item.is-open').forEach((s) => {
+      if (!s.dataset.openOrder) s.dataset.openOrder = String(++__openCounter);
+    });
+  });
+  function setSectionOpen(section, open) {
+    const trigger = section.querySelector('.popup-accordion-trigger');
+    const body = section.querySelector('.popup-accordion-body');
+    section.classList.toggle('is-open', open);
+    if (trigger) trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
+    if (body) { if (open) body.removeAttribute('hidden'); else body.setAttribute('hidden', ''); }
+    if (open) section.dataset.openOrder = String(++__openCounter);
+    else delete section.dataset.openOrder;
+  }
+  function listOverflows(list) {
+    // Mid-layout sentinel only: if the parent hasn't allotted any height yet,
+    // skip the probe (we'll re-probe on the next click). At any real height —
+    // sandbox iframe (~22px) or iPad (~600px) — the spec is the same: if
+    // opening this section would force a scroll, the oldest open collapses.
+    // That naturally produces multi-open-when-it-fits / mutually-exclusive-
+    // when-it-doesn't, which is the brief.
+    if (list.clientHeight === 0) return false;
+    return list.scrollHeight - list.clientHeight > 1;
+  }
   document.addEventListener('click', (ev) => {
     const trigger = ev.target.closest('.popup-accordion-trigger');
     if (!trigger) return;
     const section = trigger.closest('.popup-accordion-item');
     if (!section) return;
-    const expanded = trigger.getAttribute('aria-expanded') === 'true';
-    trigger.setAttribute('aria-expanded', expanded ? 'false' : 'true');
-    section.classList.toggle('is-open', !expanded);
-    const body = section.querySelector('.popup-accordion-body');
-    if (body) {
-      if (expanded) {
-        body.setAttribute('hidden', '');
-      } else {
-        body.removeAttribute('hidden');
+    const list = section.closest('.popup-accordion-list') || section.parentElement;
+    const wasOpen = trigger.getAttribute('aria-expanded') === 'true';
+    if (wasOpen) { setSectionOpen(section, false); return; }
+
+    // MODE-A vs MODE-B (Steve r3): on full-height-rail disclosures (data-accordion-mode="exclusive"
+    // on the list), be strictly mutually-exclusive — close every other open section before opening
+    // this one. The inner list scrolls if the chosen section overflows. On free-floating popups
+    // (default), keep the intelligent multi-open + LRU-on-overflow behavior.
+    const mode = list && list.dataset.accordionMode;
+    if (mode === 'exclusive') {
+      Array.from(list.querySelectorAll('.popup-accordion-item.is-open'))
+        .filter((s) => s !== section)
+        .forEach((s) => setSectionOpen(s, false));
+      setSectionOpen(section, true);
+      return;
+    }
+
+    // Open the tapped section first, then LRU-collapse if it now overflows.
+    setSectionOpen(section, true);
+    if (list) {
+      let guard = 0;
+      while (listOverflows(list) && guard++ < 8) {
+        const others = Array.from(list.querySelectorAll('.popup-accordion-item.is-open'))
+          .filter((s) => s !== section && s.dataset.openOrder)
+          .sort((a, b) => Number(a.dataset.openOrder) - Number(b.dataset.openOrder));
+        if (!others.length) break;
+        setSectionOpen(others[0], false);
       }
     }
   });

@@ -1,32 +1,17 @@
 <!DOCTYPE html>
-<!--
-  FlightBoxV3 EFB — Design Sandbox (iframe shell)
-
-  Each scene lives in its own self-contained file under scenes/. They are
-  real webfs bodies (real #app-frame, real CSS, real markup), so any diff
-  Design produces against the scene file ports straight back into webfs.
-
-  This shell renders a sidebar nav + an iframe that loads the selected
-  scene. Theme + base-layer toggles propagate via query params.
-
-  Read CONSTRAINTS.md before changing anything load-bearing.
--->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FlightBoxV3 — Design Sandbox</title>
-  <link rel="icon" href="assets/favicon.ico">
   <link rel="stylesheet" href="sandbox.css">
 </head>
 <body class="sandbox">
-
   <aside class="sb-sidebar">
     <div class="sb-brand">
-      <div class="sb-brand-title">FlightBoxV3 Design Sandbox</div>
-      <div class="sb-brand-sub">Each scene = a real webfs body in an iframe. Read CONSTRAINTS.md.</div>
+      <div class="sb-brand-title">FlightBoxV3 Sandbox</div>
+      <div class="sb-brand-sub">Visual refresh — Airport disclosure first</div>
     </div>
-
     <div class="sb-controls">
       <div class="sb-control-row">
         <label>Theme</label>
@@ -35,160 +20,71 @@
           <button data-value="day">Day</button>
         </div>
       </div>
-      <div class="sb-control-row">
-        <label>Base</label>
-        <div class="sb-toggle" data-toggle="base">
-          <button data-value="vector" class="is-active">Vector</button>
-          <button data-value="sectional">Sect</button>
-          <button data-value="ifr_low">IFR-L</button>
-          <button data-value="terrain">Terr</button>
-          <button data-value="satellite">Sat</button>
-        </div>
-      </div>
     </div>
-
-    <div class="sb-nav-section">App Frame</div>
-    <ul class="sb-nav">
-      <li class="sb-nav-item"><a class="sb-nav-link is-active" data-scene="frame">Frame Overview</a></li>
-      <li class="sb-nav-item"><a class="sb-nav-link" data-scene="splash">Splash / Bootcheck</a></li>
-      <li class="sb-nav-item"><a class="sb-nav-link" data-scene="buttonbar">Button Bar (HARD)<span class="sb-nav-tag is-warn">6-btn</span></a></li>
-    </ul>
-
     <div class="sb-nav-section">Existing Disclosures</div>
     <ul class="sb-nav">
-      <li class="sb-nav-item"><a class="sb-nav-link" data-scene="airport">Airport Disclosure</a></li>
-      <li class="sb-nav-item"><a class="sb-nav-link" data-scene="weather">Weather Tabs</a></li>
-      <li class="sb-nav-item"><a class="sb-nav-link" data-scene="mappoint">Map-Point Popup</a></li>
-      <li class="sb-nav-item"><a class="sb-nav-link" data-scene="navaid">Navaid Popup</a></li>
-      <li class="sb-nav-item"><a class="sb-nav-link" data-scene="advisory">Advisory / TFR</a></li>
+      <li><a class="sb-nav-link is-active" data-scene="airport">Airport Disclosure (v2)</a></li>
+      <li><a class="sb-nav-link" data-scene="airport_original">Airport — Original</a></li>
+      <li><a class="sb-nav-link" data-scene="maplayers">Map Layers (v2)</a></li>
     </ul>
-
-    <div class="sb-nav-section">Existing Modals</div>
-    <ul class="sb-nav">
-      <li class="sb-nav-item"><a class="sb-nav-link" data-scene="maplayers">Map Layers Dialog<span class="sb-nav-tag is-warn">convert</span></a></li>
-      <li class="sb-nav-item"><a class="sb-nav-link" data-scene="settings">Settings</a></li>
-      <li class="sb-nav-item"><a class="sb-nav-link" data-scene="aircraft">Aircraft Profile</a></li>
-      <li class="sb-nav-item"><a class="sb-nav-link" data-scene="aircraft-templates">… Template picker</a></li>
-      <li class="sb-nav-item"><a class="sb-nav-link" data-scene="downloads">Downloads / Region<span class="sb-nav-tag">PNG</span></a></li>
-      <li class="sb-nav-item"><a class="sb-nav-link" data-scene="flightbox">FlightBox (Status)</a></li>
-      <li class="sb-nav-item"><a class="sb-nav-link" data-scene="flightplan">Flight Plan</a></li>
-      <li class="sb-nav-item"><a class="sb-nav-link" data-scene="procedures">Procedures</a></li>
-    </ul>
-
-    <div class="sb-nav-section">Proposed New</div>
-    <ul class="sb-nav">
-      <li class="sb-nav-item"><a class="sb-nav-link" data-scene="notam">NOTAM Tab<span class="sb-nav-tag is-new">new</span></a></li>
-      <li class="sb-nav-item"><a class="sb-nav-link" data-scene="briefing">Briefing Screen<span class="sb-nav-tag is-new">new</span></a></li>
-    </ul>
-
     <div class="sb-footer">
-      <div>v0.2 · 2026-05-06</div>
-      <div style="margin-top:4px">
-        <a href="CONSTRAINTS.md" target="_blank">CONSTRAINTS.md</a> ·
-        <a href="README.md" target="_blank">README</a>
-      </div>
+      <div>v0.3 · airport refresh</div>
       <div style="margin-top:6px"><a id="open-standalone" href="#" target="_blank">Open scene standalone ↗</a></div>
     </div>
   </aside>
-
   <main class="sb-stage">
     <div class="sb-stage-header">
-      <div class="sb-stage-title" id="stage-title">Frame Overview</div>
-      <div class="sb-stage-sub" id="stage-sub">The full webfs frame with no overlays — the floor every disclosure sits on.</div>
+      <div class="sb-stage-title" id="stage-title">Airport Disclosure (v2)</div>
+      <div class="sb-stage-sub" id="stage-sub">KGTU. Token edits in <code>styles/index-tokens.css</code> + <code>&lt;style&gt;</code> block at top of <code>scenes/airport.html</code>.</div>
     </div>
     <div class="sb-stage-body">
       <div class="sb-iframe-wrap">
-        <iframe id="scene-frame"
-                title="Sandbox scene"
-                src="scenes/frame.html"
-                allow="fullscreen"></iframe>
+        <iframe id="scene-frame" title="Sandbox scene" src="scenes/airport.html"></iframe>
       </div>
       <div class="sb-note">
-        <strong>Editing:</strong> open <code>scenes/&lt;name&gt;.html</code> directly to iterate.
-        Each scene is a stand-alone webfs body — diffs against the scene file port back into webfs unchanged.
-        Sandbox-only chrome lives in <code>scenes/scene.css</code> (background, watermark) and <code>scenes/scene.js</code> (close-button + tab interactivity).
+        <strong>How to read this:</strong> compare against "Airport — Original" in the sidebar. The diff
+        is (a) edits to <code>styles/index-tokens.css</code> (color + size token values), and (b) a new
+        <code>&lt;style&gt;</code> block in <code>scenes/airport.html</code>. New severity classes are prefixed
+        <code>.sev-*</code>. New popup vocabulary uses <code>-v2</code> suffix on classes only where the diff
+        would be ambiguous otherwise.
       </div>
     </div>
   </main>
-
   <script>
     (function () {
-      const sceneFrame = document.getElementById('scene-frame');
-      const stageTitle = document.getElementById('stage-title');
-      const stageSub = document.getElementById('stage-sub');
-      const standaloneLink = document.getElementById('open-standalone');
-      const navLinks = Array.from(document.querySelectorAll('.sb-nav-link'));
-
+      const frame = document.getElementById('scene-frame');
+      const title = document.getElementById('stage-title');
+      const sub = document.getElementById('stage-sub');
+      const standalone = document.getElementById('open-standalone');
+      const links = [...document.querySelectorAll('.sb-nav-link')];
       const scenes = {
-        frame: { title: 'Frame Overview', sub: 'The full webfs frame with no overlays — the floor every disclosure sits on.' },
-        splash: { title: 'Splash / Bootcheck', sub: '6-row boot system check; dismiss is timer-driven (3s cap).' },
-        buttonbar: { title: 'Button Bar (HARD CONSTRAINT)', sub: '6 buttons mapped 1:1 to physical FlightBar hardware. Cannot add/remove/reorder.' },
-        airport: { title: 'Airport Disclosure', sub: 'Tabbed left-side panel; verbatim webfs DOM at KGTU. Real .popup-kv-grid pattern at 380px wide.' },
-        weather: { title: 'Weather Disclosure', sub: 'Same shell as Airport, Weather tab active. METAR / TAF / Winds Aloft accordion.' },
-        mappoint: { title: 'Map-Point Popup', sub: 'Long-press popup. Airspace + nearby airports/navaids/fixes accordions.' },
-        navaid: { title: 'Navaid Popup', sub: 'Standalone navaid detail. VOR/NDB/DME/Fix.' },
-        advisory: { title: 'Advisory / TFR Popup', sub: 'SIGMET / G-AIRMET / CWA / TFR. Severity drives header tint.' },
-        maplayers: { title: 'Map Layers Dialog (convert)', sub: 'Currently a top-right dialog with 23 layer toggles + base + appearance + graphical wx + airport options. Steve wants this converted to a left-side disclosure.' },
-        settings: { title: 'Settings Modal', sub: 'Full-page overlay. FlightBar pairing + Alerts (categories + suppressions).' },
-        aircraft: { title: 'Aircraft Profile', sub: 'Saved aircraft profiles. 5 tabs (last 2 disabled until P6).' },
-        'aircraft-templates': { title: 'Aircraft Profile · Template Picker', sub: 'Sub-modal that appears on first run / new profile. Cessna 152/172, Piper PA-28, Van\'s RV series.' },
-        downloads: { title: 'Downloads / Region Picker', sub: 'Captured as a PNG screenshot — the live dialog has too much iOS-side signaling to recreate cleanly.' },
-        flightbox: { title: 'FlightBox Diagnostics', sub: '3 tabs: Status / Settings / Diagnostics. Power-user surface — dense by design.' },
-        flightplan: { title: 'Flight Plan Editor', sub: 'Centered modal with chip-based waypoint editor + leg view. Future: Direct-To, file flight plan.' },
-        procedures: { title: 'Procedures', sub: 'Approach / SID / STAR plate viewer. Split layout (list left, plate right).' },
-        notam: { title: 'NOTAM Tab — proposed new (Phase D)', sub: '3rd tab in airport disclosure; severity-tinted rows from Wally\'s API.' },
-        briefing: { title: 'Briefing Screen — proposed new', sub: 'Pre-flight half-page briefing across the route: NOTAMs + TFRs + per-airport METAR/TAF (v1).' },
+        airport: { title: 'Airport Disclosure (v2)', sub: 'KGTU. Token edits + new <style> block. New: severity tokens, sun-legible day mode, Apple-system chrome, Menlo only on tabular data.' },
+        airport_original: { title: 'Airport — Original', sub: 'Pre-refresh state. Same DOM, original tokens.' },
+        maplayers: { title: 'Map Layers (v2)', sub: 'Six-section accordion; always-visible headers; multi-open with intelligent LRU collapse. Same canon as airport.' },
       };
-
       function paramsFor() {
         const p = new URLSearchParams();
-        const theme = document.documentElement.dataset.appTheme || 'night';
-        const base = document.documentElement.dataset.appBase || 'vector';
-        p.set('theme', theme);
-        p.set('base', base);
+        p.set('theme', document.documentElement.dataset.appTheme || 'night');
         return p.toString();
       }
-
       function navigate(name) {
-        const meta = scenes[name];
-        if (!meta) return;
-        stageTitle.textContent = meta.title;
-        stageSub.textContent = meta.sub;
-        navLinks.forEach((el) => el.classList.toggle('is-active', el.dataset.scene === name));
+        const meta = scenes[name]; if (!meta) return;
+        title.textContent = meta.title; sub.textContent = meta.sub;
+        links.forEach(el => el.classList.toggle('is-active', el.dataset.scene === name));
         const url = `scenes/${name}.html?${paramsFor()}`;
-        sceneFrame.src = url;
-        standaloneLink.href = url;
-        if (window.location.hash !== '#' + name) {
-          history.replaceState(null, '', '#' + name);
-        }
+        frame.src = url; standalone.href = url;
+        if (location.hash !== '#' + name) history.replaceState(null, '', '#' + name);
       }
-
-      navLinks.forEach((el) => {
-        el.addEventListener('click', (ev) => {
-          ev.preventDefault();
-          navigate(el.dataset.scene);
-        });
-      });
-
-      // Initial navigation from hash
-      const initial = (window.location.hash || '#frame').replace('#', '');
-      if (scenes[initial]) {
-        navigate(initial);
-      } else {
-        navigate('frame');
-      }
-
-      // Theme / base toggles
-      document.querySelectorAll('.sb-toggle').forEach((tg) => {
-        const which = tg.dataset.toggle; // 'theme' or 'base'
-        tg.addEventListener('click', (ev) => {
-          const btn = ev.target.closest('button');
-          if (!btn) return;
-          tg.querySelectorAll('button').forEach((b) => b.classList.toggle('is-active', b === btn));
+      links.forEach(el => el.addEventListener('click', e => { e.preventDefault(); navigate(el.dataset.scene); }));
+      const initial = (location.hash || '#airport').replace('#', '');
+      navigate(scenes[initial] ? initial : 'airport');
+      document.querySelectorAll('.sb-toggle').forEach(tg => {
+        const which = tg.dataset.toggle;
+        tg.addEventListener('click', e => {
+          const btn = e.target.closest('button'); if (!btn) return;
+          tg.querySelectorAll('button').forEach(b => b.classList.toggle('is-active', b === btn));
           if (which === 'theme') document.documentElement.dataset.appTheme = btn.dataset.value;
-          else document.documentElement.dataset.appBase = btn.dataset.value;
-          // Re-navigate to push the new params into the iframe
-          const active = navLinks.find((el) => el.classList.contains('is-active'));
+          const active = links.find(el => el.classList.contains('is-active'));
           if (active) navigate(active.dataset.scene);
         });
       });
