@@ -251,10 +251,18 @@
       box-shadow:0 1px 3px rgba(0,0,0,.45),inset 0 0 0 4px var(--accent);
     }
     .runway-min-row-ticks{
-      display:flex;justify-content:space-between;
+      position:relative;height:12px;
       font:500 10px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
-      color:var(--popup-label-color);letter-spacing:.04em;padding:0 2px;
+      color:var(--popup-label-color);letter-spacing:.04em;
     }
+    .runway-min-row-ticks span{
+      position:absolute;top:0;
+      transform:translateX(-50%);
+      white-space:nowrap;
+    }
+    /* Edge labels anchor to the slider edges, not centered on them. */
+    .runway-min-row-ticks span:first-child{transform:none}
+    .runway-min-row-ticks span:last-child{transform:translateX(-100%)}
     /* Detent tick marks under the slider — 13 spans at 500-ft increments,
        no labels (labels live in .runway-min-row-ticks at the major points). */
     .runway-min-row-detents{
@@ -543,14 +551,18 @@
                         <span class="runway-min-row-title">Runway Minimum</span>
                         <span class="runway-min-row-value" id="rmin-value">Any</span>
                       </div>
-                      <input type="range" min="0" max="6000" step="500" value="0" id="rmin-input" list="rmin-detents">
-                      <datalist id="rmin-detents">
-                        <option value="0"></option><option value="500"></option><option value="1000"></option><option value="1500"></option><option value="2000"></option><option value="2500"></option><option value="3000"></option><option value="3500"></option><option value="4000"></option><option value="4500"></option><option value="5000"></option><option value="5500"></option><option value="6000"></option>
-                      </datalist>
+                      <input type="range" min="0" max="6000" step="500" value="0" id="rmin-input">
                       <div class="runway-min-row-detents" aria-hidden="true">
                         <span style="left:0%"></span><span style="left:8.333%"></span><span style="left:16.667%"></span><span style="left:25%"></span><span style="left:33.333%"></span><span style="left:41.667%"></span><span style="left:50%"></span><span style="left:58.333%"></span><span style="left:66.667%"></span><span style="left:75%"></span><span style="left:83.333%"></span><span style="left:91.667%"></span><span style="left:100%"></span>
                       </div>
-                      <div class="runway-min-row-ticks"><span>Any</span><span>2k</span><span>3k</span><span>4k</span><span>5k</span><span>6k+</span></div>
+                      <div class="runway-min-row-ticks">
+                        <span style="left:0%">Any</span>
+                        <span style="left:33.333%">2k</span>
+                        <span style="left:50%">3k</span>
+                        <span style="left:66.667%">4k</span>
+                        <span style="left:83.333%">5k</span>
+                        <span style="left:100%">6k+</span>
+                      </div>
                     </div>
                   </div>
                 </section>
