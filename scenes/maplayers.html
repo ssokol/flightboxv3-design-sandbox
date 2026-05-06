@@ -430,9 +430,10 @@
                       <li><label class="layer-toggle"><span class="layer-toggle-label">IR Clouds</span><input type="radio" name="gwx-mode" value="IR Clouds"><span class="layer-toggle-radio"></span></label></li>
                       <li><label class="layer-toggle"><span class="layer-toggle-label">Icing</span><input type="radio" name="gwx-mode" value="Icing"><span class="layer-toggle-radio"></span></label></li>
                     </ul>
-                    <!-- Conditional pickers (always visible; tied to Icing / Turbulence modes) -->
+                    <!-- Conditional pickers — only visible when the associated mode is the active radio.
+                         data-show-when picks them up via syncPickerVisibility() in the inline script. -->
                     <div class="picker-row-group" data-group="gwx-fields">
-                      <div class="picker-row">
+                      <div class="picker-row" data-show-when="Icing" hidden>
                         <div class="picker-row-label">Icing Field</div>
                         <select class="picker-row-select" id="picker-icing-field" data-meta-key="icingField">
                           <option selected>Severity</option>
@@ -440,7 +441,7 @@
                           <option>SLD</option>
                         </select>
                       </div>
-                      <div class="picker-row">
+                      <div class="picker-row" data-show-when="Icing" hidden>
                         <div class="picker-row-label">Icing Alt</div>
                         <select class="picker-row-select" id="picker-icing-alt" data-meta-key="icingAlt">
                           <option>2,000 ft</option>
@@ -457,7 +458,7 @@
                           <option>24,000 ft</option>
                         </select>
                       </div>
-                      <div class="picker-row">
+                      <div class="picker-row" data-show-when="Turbulence" hidden>
                         <div class="picker-row-label">Turb Alt</div>
                         <select class="picker-row-select" id="picker-turb-alt" data-meta-key="turbAlt">
                           <option>2,000 ft</option>
@@ -627,6 +628,16 @@
         meta.textContent = `${on} of ${checks.length}`;
       }
 
+      // Show only the picker rows whose data-show-when matches the active gwx-mode.
+      function syncPickerVisibility() {
+        const modeInput = document.querySelector('input[name="gwx-mode"]:checked');
+        const mode = modeInput ? modeInput.value : '';
+        document.querySelectorAll('[data-show-when]').forEach((el) => {
+          if (el.dataset.showWhen === mode) el.removeAttribute('hidden');
+          else el.setAttribute('hidden', '');
+        });
+      }
+
       // Sub-toggle dim/disable when master is off.
       function syncMasters() {
         document.querySelectorAll('.layer-toggle[data-master]').forEach(master => {
@@ -641,6 +652,7 @@
       // Initial paint.
       ['base','trafwx','gwx-mode','airspace','airports','ownship'].forEach(updateMeta);
       syncMasters();
+      syncPickerVisibility();
 
       // React to changes.
       document.addEventListener('change', (e) => {
@@ -651,6 +663,8 @@
           // Cross-group: GWX master in "trafwx" gates the gwx-mode section visually.
           if (group === 'trafwx') syncMasters();
           if (group === 'airports') syncMasters();
+          // Mode change → show/hide the conditional pickers.
+          if (group === 'gwx-mode') syncPickerVisibility();
           return;
         }
         // Picker selects: refresh the gwx-mode meta so collapsed-section header
