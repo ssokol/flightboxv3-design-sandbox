@@ -220,6 +220,12 @@
       padding:14px 10px 6px;
       border-top:1px solid var(--popup-rule-color);
       margin-top:6px;
+      /* Native range thumb center travels from (sliderLeft + thumb/2) to
+         (sliderRight - thumb/2), never to the actual edges. The detents and
+         labels are inset by half-thumb on each side so they align with the
+         thumb's travel range, not the full slider width. */
+      --rmin-thumb: 24px;
+      --rmin-edge: 12px; /* half of --rmin-thumb */
     }
     .runway-min-row-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
     .runway-min-row-title{
@@ -260,18 +266,17 @@
       transform:translateX(-50%);
       white-space:nowrap;
     }
-    /* Edge labels anchor to the slider edges, not centered on them. */
-    .runway-min-row-ticks span:first-child{transform:none}
-    .runway-min-row-ticks span:last-child{transform:translateX(-100%)}
-    /* Detent tick marks under the slider — 13 spans at 500-ft increments,
-       no labels (labels live in .runway-min-row-ticks at the major points). */
+    /* Two visible tick marks bookending the thumb-travel range. The slider
+       still snaps every 500 ft (step=500), but only the range endpoints get
+       a visual mark and a label — the live "≥ X,XXX ft" value display tells
+       the pilot the precise current setting. */
     .runway-min-row-detents{
       position:relative;height:6px;margin:-2px 0 4px;pointer-events:none;
     }
     .runway-min-row-detents span{
       position:absolute;top:0;width:1px;height:6px;
       background:var(--popup-label-color);opacity:.45;
-      transform:translateX(-0.5px);
+      transform:translateX(-50%);
     }
 
     /* =========================================================
@@ -552,16 +557,15 @@
                         <span class="runway-min-row-value" id="rmin-value">Any</span>
                       </div>
                       <input type="range" min="0" max="6000" step="500" value="0" id="rmin-input">
+                      <!-- Two ticks + two labels at the thumb-travel endpoints (half-thumb in
+                           from each slider edge). Step=500 on the input still snaps every 500 ft. -->
                       <div class="runway-min-row-detents" aria-hidden="true">
-                        <span style="left:0%"></span><span style="left:8.333%"></span><span style="left:16.667%"></span><span style="left:25%"></span><span style="left:33.333%"></span><span style="left:41.667%"></span><span style="left:50%"></span><span style="left:58.333%"></span><span style="left:66.667%"></span><span style="left:75%"></span><span style="left:83.333%"></span><span style="left:91.667%"></span><span style="left:100%"></span>
+                        <span style="left:var(--rmin-edge)"></span>
+                        <span style="left:calc(100% - var(--rmin-edge))"></span>
                       </div>
                       <div class="runway-min-row-ticks">
-                        <span style="left:0%">Any</span>
-                        <span style="left:33.333%">2k</span>
-                        <span style="left:50%">3k</span>
-                        <span style="left:66.667%">4k</span>
-                        <span style="left:83.333%">5k</span>
-                        <span style="left:100%">6k+</span>
+                        <span style="left:var(--rmin-edge)">Any</span>
+                        <span style="left:calc(100% - var(--rmin-edge))">6k+</span>
                       </div>
                     </div>
                   </div>
