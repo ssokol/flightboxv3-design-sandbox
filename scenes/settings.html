@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<!-- Scene: Settings Modal (full-page overlay; verbatim webfs DOM) -->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Settings · Sandbox</title>
+  <link rel="stylesheet" href="../styles/index-tokens.css">
+  <link rel="stylesheet" href="../styles/index-base.css">
+  <link rel="stylesheet" href="../styles/index-layout.css">
+  <link rel="stylesheet" href="../styles/index-map.css">
+  <link rel="stylesheet" href="../styles/index-navigation.css">
+  <link rel="stylesheet" href="../styles/index-flightbox.css">
+  <link rel="stylesheet" href="../styles/index-overlays.css">
+  <link rel="stylesheet" href="../styles/index-dialogs.css">
+  <link rel="stylesheet" href="../styles/index-aircraft-profile.css">
+  <link rel="stylesheet" href="../styles/index-responsive.css">
+  <link rel="stylesheet" href="scene.css">
+</head>
+<body>
+  <div id="app-frame">
+    <div id="content-area">
+      <div id="map-surface" class="map-surface">
+        <div class="scene-map-bg"></div>
+        <img class="scene-map-bg-image" src="../assets/map-placeholder.png" alt="" data-loaded="false">
+
+        <div id="app-settings-overlay" class="app-settings-overlay">
+          <div class="app-settings-dialog" role="dialog" aria-modal="true" aria-labelledby="app-settings-title">
+            <div class="app-settings-head">
+              <div id="app-settings-title" class="app-settings-title">Settings</div>
+              <button id="app-settings-close" class="mini-btn" type="button">Close</button>
+            </div>
+            <div class="app-settings-body">
+              <div id="flightbar-settings" class="flightbar-settings">
+                <div class="flightbar-settings-title">FlightBar</div>
+                <div class="flightbar-settings-row"><span class="flightbar-status">Disconnected</span> <button class="mini-btn" type="button">Scan</button></div>
+              </div>
+              <div id="alerts-settings" class="alerts-settings">
+                <div class="alerts-settings-title">Alerts</div>
+                <label class="alerts-settings-row"><input type="checkbox" checked> <span>Enable alerts</span></label>
+                <label class="alerts-settings-row"><input type="checkbox" checked> <span>Enable aural alerts</span></label>
+                <div class="alerts-settings-subtitle">Categories</div>
+                <div class="alerts-settings-categories">
+                  <label class="alerts-settings-row"><input type="checkbox" checked> <span>Terrain</span></label>
+                  <label class="alerts-settings-row"><input type="checkbox" checked> <span>Obstacles</span></label>
+                  <label class="alerts-settings-row"><input type="checkbox" checked> <span>Traffic Threats</span></label>
+                  <label class="alerts-settings-row"><input type="checkbox" checked> <span>Airspace</span></label>
+                  <label class="alerts-settings-row"><input type="checkbox" checked> <span>Stall</span></label>
+                  <label class="alerts-settings-row"><input type="checkbox" checked> <span>CO Sensor</span></label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="scene-watermark">SANDBOX · settings</div>
+  <script src="scene.js"></script>
+</body>
+</html>

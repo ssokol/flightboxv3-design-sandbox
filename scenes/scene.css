@@ -1,0 +1,72 @@
+/*
+ * Scene-only helpers. Each scene HTML is a real webfs body (with #app-frame
+ * etc.) so the verbatim webfs CSS does almost everything. This file adds:
+ *   - The map-area background placeholder (until real screenshots arrive)
+ *   - The "scene is the only thing on the page" sizing helpers for full-page
+ *     modal scenes
+ *   - Interactivity affordances for the demo (cursor, focus styles)
+ *
+ * NOTHING in this file should be needed by the production webfs. Anything
+ * applied to webfs classes is sandbox-only chrome. When Design ports work
+ * back, ignore this file.
+ */
+
+/* The map placeholder fills #map-surface with a tinted procedural pattern
+ * until Steve drops real screenshots into ../assets/map-placeholder.png. */
+#map-surface .scene-map-bg {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 22% 28%, rgba(47, 158, 229, 0.14), transparent 38%),
+    radial-gradient(circle at 78% 65%, rgba(46, 204, 113, 0.10), transparent 32%),
+    radial-gradient(circle at 50% 80%, rgba(255, 107, 107, 0.08), transparent 30%),
+    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.025) 0 1px, transparent 1px 24px),
+    repeating-linear-gradient(-45deg, rgba(255, 255, 255, 0.025) 0 1px, transparent 1px 24px);
+  background-color: #102132;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* If a real placeholder image lands at ../assets/map-placeholder.png the
+ * <img> overlay below covers the procedural pattern. */
+#map-surface .scene-map-bg-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 1;
+  pointer-events: none;
+}
+
+#map-surface .scene-map-bg-image[data-loaded="false"] { display: none; }
+
+/* Cursor on disclosure tabs and accordion triggers — webfs sets pointer
+ * via JS; in the static sandbox we want them to *look* clickable too. */
+.weather-popup-tab,
+.popup-accordion-trigger,
+.popup-action-btn,
+.weather-popup-close,
+.mini-btn {
+  cursor: pointer;
+}
+
+/* Make the body uniformly dark — webfs sometimes leaves a bare-body gradient
+ * in place that briefly flashes before the canvas paints. */
+html, body {
+  background: #08131b;
+}
+
+/* Banner that announces "this is a sandbox scene, not the live app" */
+.scene-watermark {
+  position: fixed;
+  bottom: 6px;
+  right: 8px;
+  z-index: 9999;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.32);
+  pointer-events: none;
+  user-select: none;
+}

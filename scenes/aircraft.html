@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<!-- Scene: Aircraft Profile (no template picker; empty state) -->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Aircraft · Sandbox</title>
+  <link rel="stylesheet" href="../styles/index-tokens.css">
+  <link rel="stylesheet" href="../styles/index-base.css">
+  <link rel="stylesheet" href="../styles/index-layout.css">
+  <link rel="stylesheet" href="../styles/index-map.css">
+  <link rel="stylesheet" href="../styles/index-navigation.css">
+  <link rel="stylesheet" href="../styles/index-flightbox.css">
+  <link rel="stylesheet" href="../styles/index-overlays.css">
+  <link rel="stylesheet" href="../styles/index-dialogs.css">
+  <link rel="stylesheet" href="../styles/index-aircraft-profile.css">
+  <link rel="stylesheet" href="../styles/index-responsive.css">
+  <link rel="stylesheet" href="scene.css">
+</head>
+<body>
+  <div id="app-frame">
+    <div id="content-area">
+      <div id="map-surface" class="map-surface">
+        <div class="scene-map-bg"></div>
+        <img class="scene-map-bg-image" src="../assets/map-placeholder.png" alt="" data-loaded="false">
+
+        <div id="aircraft-profile-overlay" class="aircraft-profile-overlay" style="display:block;">
+          <div class="ap-dialog" role="dialog" aria-modal="true" aria-labelledby="ap-title">
+            <div class="ap-head">
+              <div id="ap-title" class="ap-title">Aircraft Profile</div>
+              <button id="ap-close" class="mini-btn" type="button">Close</button>
+            </div>
+            <div class="ap-toolbar">
+              <select id="ap-picker" class="ap-picker" disabled><option value="">— no profiles —</option></select>
+              <button id="ap-new" class="mini-btn" type="button">New</button>
+              <button id="ap-delete" class="mini-btn ap-delete-btn" type="button" disabled>Delete</button>
+            </div>
+            <div class="ap-tabs" role="tablist">
+              <button class="ap-tab" data-tab="identity" role="tab" aria-selected="true">Identity</button>
+              <button class="ap-tab" data-tab="vspeeds" role="tab">V-Speeds</button>
+              <button class="ap-tab" data-tab="fuel" role="tab">Fuel</button>
+              <button class="ap-tab ap-tab-disabled" data-tab="trimflaps" role="tab" disabled aria-disabled="true" title="Available when a Falken EMS or FlightView data feed is connected">Trim &amp; Flaps</button>
+              <button class="ap-tab ap-tab-disabled" data-tab="ems" role="tab" disabled aria-disabled="true" title="Configure in EMS Settings (coming in P6)">EMS</button>
+            </div>
+            <div id="ap-body" class="ap-body" role="tabpanel" hidden></div>
+            <div id="ap-empty" class="ap-empty">
+              <p>No aircraft profiles yet.</p>
+              <button id="ap-create-first" class="mini-btn" type="button">New Profile</button>
+            </div>
+            <div id="ap-status" class="ap-status" aria-live="polite"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="scene-watermark">SANDBOX · aircraft (empty state)</div>
+  <script src="scene.js"></script>
+</body>
+</html>

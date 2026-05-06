@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<!--
+  Scene: NOTAM Tab — PROPOSED NEW (Phase D / 2026-05-06)
+
+  Lives as a 3rd tab in the airport disclosure shell. List rows have:
+  severity-tinted left border, FAA keyword chip, time window, summary,
+  and a manual-override star ('*') when applicable. Sort: critical →
+  significant → advisory → info; within tier, effective_start DESC.
+
+  Real Wally NOTAM API shape:
+    {fns_id, version, faa_keyword, summary, detail, base_severity,
+     time_summary, manual_override, pushable, affected:{runway?:'13C/31C'}}
+
+  This is the only scene where the markup is NOT yet in webfs — Design's
+  task here is to land the visual treatment so we can wire it in.
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>NOTAM · Sandbox</title>
+  <link rel="stylesheet" href="../styles/index-tokens.css">
+  <link rel="stylesheet" href="../styles/index-base.css">
+  <link rel="stylesheet" href="../styles/index-layout.css">
+  <link rel="stylesheet" href="../styles/index-map.css">
+  <link rel="stylesheet" href="../styles/index-navigation.css">
+  <link rel="stylesheet" href="../styles/index-flightbox.css">
+  <link rel="stylesheet" href="../styles/index-overlays.css">
+  <link rel="stylesheet" href="../styles/index-dialogs.css">
+  <link rel="stylesheet" href="../styles/index-aircraft-profile.css">
+  <link rel="stylesheet" href="../styles/index-responsive.css">
+  <link rel="stylesheet" href="scene.css">
+  <style>
+    /* Sandbox-only strawman styles for the NOTAM list. Design decides what
+       these become; they're here so the scene reads. */
+    .notam-list { display:flex; flex-direction:column; gap:1px; background:rgba(0,0,0,0.4); }
+    .notam-row { padding:10px 12px; background:var(--popup-section-body-bg); border-left:3px solid var(--popup-rule-color); }
+    .notam-row.is-critical { border-left-color: var(--danger); }
+    .notam-row.is-significant { border-left-color: #f1cc7c; }
+    .notam-row.is-advisory { border-left-color: var(--accent); }
+    .notam-row-meta { display:flex; gap:8px; align-items:baseline; font-family: var(--falken-mono, Menlo, Consolas, monospace); }
+    .notam-row-sev { font-size:10px; font-weight:700; letter-spacing:0.06em; }
+    .notam-row.is-critical .notam-row-sev { color: var(--danger); }
+    .notam-row.is-significant .notam-row-sev { color: #f1cc7c; }
+    .notam-row.is-advisory .notam-row-sev { color: var(--accent); }
+    .notam-row-time { color: var(--popup-empty-color); font-size: 10px; }
+    .notam-row-override { color: var(--popup-empty-color); font-size: 10px; }
+    .notam-row-summary { margin-top: 4px; color: var(--popup-value-color); font-size: 14px; line-height: 1.35; }
+  </style>
+</head>
+<body>
+  <div id="app-frame">
+    <div id="health-status-bar" class="health-status-bar">
+      <div class="health-status-cell is-green">FlightBox</div><div class="health-status-cell is-green">ADS-B</div><div class="health-status-cell is-green">GPS</div><div class="health-status-cell is-green">AHRS</div><div class="health-status-cell is-green">ALT</div><div class="health-status-cell is-green">CO</div>
+    </div>
+    <div id="content-area">
+      <div id="map-surface" class="map-surface">
+        <div class="scene-map-bg"></div>
+        <img class="scene-map-bg-image" src="../assets/map-placeholder.png" alt="" data-loaded="false">
+
+        <div id="weather-popup" class="content-panel content-panel--left">
+          <div class="weather-popup-shell" role="dialog">
+            <div class="weather-popup-head">
+              <div class="weather-popup-ident-row">
+                <span class="weather-flight-dot" aria-hidden="true" style="background-color:#ff6b6b;"></span>
+                <div class="weather-popup-title">KMDW</div>
+              </div>
+              <button class="weather-popup-close" type="button" aria-label="Close">X</button>
+            </div>
+            <div class="weather-popup-subtitle">12 NOTAMs · 2 critical · 4 significant</div>
+            <div class="weather-popup-tabs" role="tablist">
+              <button class="weather-popup-tab" data-popup-tab="airport" role="tab" aria-selected="false">Info</button>
+              <button class="weather-popup-tab" data-popup-tab="weather" role="tab" aria-selected="false">Weather</button>
+              <button class="weather-popup-tab is-active" data-popup-tab="notams" role="tab" aria-selected="true">NOTAMs</button>
+            </div>
+            <div class="weather-popup-body">
+              <section class="weather-popup-panel" data-popup-panel="notams">
+                <div class="notam-list">
+                  <div class="notam-row is-critical"><div class="notam-row-meta"><span class="notam-row-sev">CRITICAL · RWY</span><span class="notam-row-time">May 7 · 12-14Z</span></div><div class="notam-row-summary">Runway 13C/31C closed.</div></div>
+                  <div class="notam-row is-critical"><div class="notam-row-meta"><span class="notam-row-sev">CRITICAL · TWY</span><span class="notam-row-time">Apr 30 - May 14</span></div><div class="notam-row-summary">Taxiway A closed between K and Y.</div></div>
+                  <div class="notam-row is-significant"><div class="notam-row-meta"><span class="notam-row-sev">SIG · OBST</span><span class="notam-row-time">May 6 - May 15</span><span class="notam-row-override" title="Manual override">*</span></div><div class="notam-row-summary">Crane 200' AGL 0.4 NM E of ORD (lighted).</div></div>
+                  <div class="notam-row is-significant"><div class="notam-row-meta"><span class="notam-row-sev">SIG · NAV</span><span class="notam-row-time">Continuous</span></div><div class="notam-row-summary">PMM VOR/DME UNUSABLE BEYOND 25NM BELOW 5000FT MSL.</div></div>
+                  <div class="notam-row is-advisory"><div class="notam-row-meta"><span class="notam-row-sev">ADV · COM</span><span class="notam-row-time">May 7 · 09-15Z</span></div><div class="notam-row-summary">Tower frequency 118.7 may experience intermittent outages during scheduled maintenance.</div></div>
+                  <div class="notam-row is-advisory"><div class="notam-row-meta"><span class="notam-row-sev">ADV · LIGHT</span><span class="notam-row-time">Continuous</span></div><div class="notam-row-summary">PAPI runway 22L out of service.</div></div>
+                </div>
+              </section>
+            </div>
+            <div class="popup-action-row">
+              <button class="popup-action-btn" type="button">Direct To</button>
+              <button class="popup-action-btn" type="button">Add To Plan</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="map-nav-controls">
+          <button class="map-nav-btn map-nav-btn-mode" type="button"><img src="../assets/track-up.png" alt=""></button>
+          <button class="map-nav-btn map-nav-btn-mode" type="button"><img src="../assets/center-on.png" alt=""></button>
+          <button class="map-nav-btn map-nav-btn-mode" type="button"><img src="../assets/layers.png" alt=""></button>
+          <button class="map-nav-btn map-nav-btn-mode" type="button"><img src="../assets/synvis.png" alt=""></button>
+          <button class="map-nav-btn map-nav-btn-mode" type="button"><img src="../assets/procs.png" alt=""></button>
+        </div>
+      </div>
+    </div>
+    <div id="soft-button-bar" class="soft-button-bar" role="toolbar">
+      <button type="button" class="soft-button soft-button--hybrid" style="--soft-button-icon-height:24px;"><span class="soft-button-inner"><img class="soft-button-icon" alt="" src="../assets/direct-to.png"><span class="soft-button-label">Direct-To</span></span></button>
+      <button type="button" class="soft-button soft-button--hybrid" style="--soft-button-icon-height:24px;"><span class="soft-button-inner"><img class="soft-button-icon" alt="" src="../assets/flight-plan.png"><span class="soft-button-label">Flight Plan</span></span></button>
+      <button type="button" class="soft-button soft-button--hybrid" style="--soft-button-icon-height:24px;"><span class="soft-button-inner"><img class="soft-button-icon" alt="" src="../assets/nearest-apt.png"><span class="soft-button-label">Nearest</span></span></button>
+      <button type="button" class="soft-button soft-button--hybrid" style="--soft-button-icon-height:24px;"><span class="soft-button-inner"><img class="soft-button-icon" alt="" src="../assets/pfd-icon.png"><span class="soft-button-label">PFD</span></span></button>
+      <button type="button" class="soft-button soft-button--hybrid" style="--soft-button-icon-height:24px;"><span class="soft-button-inner"><img class="soft-button-icon" alt="" src="../assets/airplane.png"><span class="soft-button-label">Aircraft</span></span></button>
+      <button type="button" class="soft-button soft-button--hybrid" style="--soft-button-icon-height:24px;"><span class="soft-button-inner"><img class="soft-button-icon" alt="" src="../assets/more_icon.png"><span class="soft-button-label">More</span></span></button>
+    </div>
+  </div>
+  <div class="scene-watermark">SANDBOX · notam (proposed new)</div>
+  <script src="scene.js"></script>
+</body>
+</html>

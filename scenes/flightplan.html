@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<!--
+  Scene: Flight Plan Editor (verbatim webfs DOM, captured live).
+  Steve's note (2026-05-06): we'll likely add flight-plan filing items
+  later — could become a tabbed/accordion view that merges with Procedures.
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Flight Plan · Sandbox</title>
+  <link rel="stylesheet" href="../styles/index-tokens.css">
+  <link rel="stylesheet" href="../styles/index-base.css">
+  <link rel="stylesheet" href="../styles/index-layout.css">
+  <link rel="stylesheet" href="../styles/index-map.css">
+  <link rel="stylesheet" href="../styles/index-navigation.css">
+  <link rel="stylesheet" href="../styles/index-flightbox.css">
+  <link rel="stylesheet" href="../styles/index-overlays.css">
+  <link rel="stylesheet" href="../styles/index-dialogs.css">
+  <link rel="stylesheet" href="../styles/index-aircraft-profile.css">
+  <link rel="stylesheet" href="../styles/index-responsive.css">
+  <link rel="stylesheet" href="scene.css">
+</head>
+<body>
+  <div id="app-frame">
+    <div id="content-area">
+      <div id="map-surface" class="map-surface">
+        <div class="scene-map-bg"></div>
+        <img class="scene-map-bg-image" src="../assets/map-placeholder.png" alt="" data-loaded="false">
+
+        <div id="nav-flightplan-overlay" class="nav-flightplan-overlay">
+          <div class="nav-flightplan-modal" role="dialog" aria-modal="true" aria-labelledby="nav-flightplan-title">
+            <div class="nav-flightplan-head">
+              <div class="nav-flightplan-title" id="nav-flightplan-title">Flight Plan</div>
+              <button id="nav-flightplan-close" class="nav-flightplan-close" type="button" aria-label="Close flight plan">X</button>
+            </div>
+            <div class="nav-flightplan-meta">
+              <span id="nav-flightplan-count">3/64</span>
+              <div id="nav-flightplan-status" class="nav-flightplan-status"></div>
+            </div>
+            <div class="nav-flightplan-body">
+              <div id="nav-flightplan-edit-view" class="nav-flightplan-edit-view">
+                <div id="nav-flightplan-token-surface" class="nav-flightplan-token-surface" tabindex="0">
+                  <div id="nav-flightplan-chip-list" class="nav-flightplan-chip-list">
+                    <button class="nav-flightplan-chip" type="button">40XS</button>
+                    <button class="nav-flightplan-chip readonly" type="button">U01</button>
+                    <button class="nav-flightplan-chip readonly procedure" type="button">KLXT RNAV (GPS) RWY 36</button>
+                  </div>
+                  <input id="nav-flightplan-token-input" class="nav-flightplan-token-input" inputmode="text" autocomplete="off" autocapitalize="characters" maxlength="5" placeholder="Enter waypoint">
+                </div>
+                <div id="nav-flightplan-invalid-hint" class="nav-flightplan-invalid-hint"></div>
+              </div>
+            </div>
+            <div class="nav-flightplan-actions">
+              <button class="secondary" type="button">Leg View</button>
+              <button class="secondary" type="button">Reverse</button>
+              <button class="secondary" type="button">Clear</button>
+              <button class="secondary" type="button">Proc</button>
+              <button class="secondary" type="button">Close</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="soft-button-bar" class="soft-button-bar" role="toolbar">
+      <button type="button" class="soft-button soft-button--hybrid" style="--soft-button-icon-height:24px;"><span class="soft-button-inner"><img class="soft-button-icon" alt="" src="../assets/direct-to.png"><span class="soft-button-label">Direct-To</span></span></button>
+      <button type="button" class="soft-button soft-button--hybrid" style="--soft-button-icon-height:24px;"><span class="soft-button-inner"><img class="soft-button-icon" alt="" src="../assets/flight-plan.png"><span class="soft-button-label">Flight Plan</span></span></button>
+      <button type="button" class="soft-button soft-button--hybrid" style="--soft-button-icon-height:24px;"><span class="soft-button-inner"><img class="soft-button-icon" alt="" src="../assets/nearest-apt.png"><span class="soft-button-label">Nearest</span></span></button>
+      <button type="button" class="soft-button soft-button--hybrid" style="--soft-button-icon-height:24px;"><span class="soft-button-inner"><img class="soft-button-icon" alt="" src="../assets/pfd-icon.png"><span class="soft-button-label">PFD</span></span></button>
+      <button type="button" class="soft-button soft-button--hybrid" style="--soft-button-icon-height:24px;"><span class="soft-button-inner"><img class="soft-button-icon" alt="" src="../assets/airplane.png"><span class="soft-button-label">Aircraft</span></span></button>
+      <button type="button" class="soft-button soft-button--hybrid" style="--soft-button-icon-height:24px;"><span class="soft-button-inner"><img class="soft-button-icon" alt="" src="../assets/more_icon.png"><span class="soft-button-label">More</span></span></button>
+    </div>
+  </div>
+  <div class="scene-watermark">SANDBOX · flightplan</div>
+  <script src="scene.js"></script>
+</body>
+</html>

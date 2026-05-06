@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<!-- Scene: Map-Point Disclosure (long-press popup; same shell, no tabs, sections accordion) -->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Map-Point · Sandbox</title>
+  <link rel="stylesheet" href="../styles/index-tokens.css">
+  <link rel="stylesheet" href="../styles/index-base.css">
+  <link rel="stylesheet" href="../styles/index-layout.css">
+  <link rel="stylesheet" href="../styles/index-map.css">
+  <link rel="stylesheet" href="../styles/index-navigation.css">
+  <link rel="stylesheet" href="../styles/index-flightbox.css">
+  <link rel="stylesheet" href="../styles/index-overlays.css">
+  <link rel="stylesheet" href="../styles/index-dialogs.css">
+  <link rel="stylesheet" href="../styles/index-aircraft-profile.css">
+  <link rel="stylesheet" href="../styles/index-responsive.css">
+  <link rel="stylesheet" href="scene.css">
+</head>
+<body>
+  <div id="app-frame">
+    <div id="health-status-bar" class="health-status-bar">
+      <div class="health-status-cell is-green">FlightBox</div>
+      <div class="health-status-cell is-green">ADS-B</div>
+      <div class="health-status-cell is-green">GPS</div>
+      <div class="health-status-cell is-green">AHRS</div>
+      <div class="health-status-cell is-green">ALT</div>
+      <div class="health-status-cell is-green">CO</div>
+    </div>
+    <div id="content-area">
+      <div id="map-surface" class="map-surface">
+        <div class="scene-map-bg"></div>
+        <img class="scene-map-bg-image" src="../assets/map-placeholder.png" alt="" data-loaded="false">
+
+        <div id="weather-popup" class="content-panel content-panel--left">
+          <div class="weather-popup-shell" role="dialog">
+            <div class="weather-popup-head">
+              <div class="weather-popup-ident-row">
+                <span class="weather-flight-dot" aria-hidden="true" style="background-color:#888;"></span>
+                <div class="weather-popup-title">Map Point</div>
+              </div>
+              <button class="weather-popup-close" type="button" aria-label="Close">X</button>
+            </div>
+            <div class="weather-popup-subtitle">N 41° 58.4' · W 87° 45.6'</div>
+            <div class="weather-popup-body">
+              <div class="popup-accordion-list">
+                <section class="popup-section popup-accordion-item is-open">
+                  <button class="popup-section-title-row popup-accordion-trigger" type="button" aria-expanded="true">
+                    <span class="popup-section-title">Airspace</span>
+                    <span class="popup-section-trailing">
+                      <span class="popup-accordion-icon" aria-hidden="true"></span>
+                    </span>
+                  </button>
+                  <div class="popup-section-body popup-accordion-body">
+                    <div class="popup-kv-grid">
+                      <div class="popup-kv-label">Class B</div><div class="popup-kv-value">ORD · SFC – 10,000</div>
+                      <div class="popup-kv-label">Class D</div><div class="popup-kv-value">PWK · SFC – 3,500</div>
+                    </div>
+                  </div>
+                </section>
+                <section class="popup-section popup-accordion-item is-open">
+                  <button class="popup-section-title-row popup-accordion-trigger" type="button" aria-expanded="true">
+                    <span class="popup-section-title">Nearby Airports</span>
+                    <span class="popup-section-trailing">
+                      <span class="popup-accordion-icon" aria-hidden="true"></span>
+                    </span>
+                  </button>
+                  <div class="popup-section-body popup-accordion-body">
+                    <div class="popup-kv-grid">
+                      <div class="popup-kv-label">KMDW</div><div class="popup-kv-value">Chicago Midway · 4.6 SE</div>
+                      <div class="popup-kv-label">KORD</div><div class="popup-kv-value">Chicago O'Hare · 11.8 NW</div>
+                      <div class="popup-kv-label">KPWK</div><div class="popup-kv-value">Chicago Exec · 12.5 N</div>
+                    </div>
+                  </div>
+                </section>
+                <section class="popup-section popup-accordion-item is-open">
+                  <button class="popup-section-title-row popup-accordion-trigger" type="button" aria-expanded="true">
+                    <span class="popup-section-title">Nearby Navaids / Fixes</span>
+                    <span class="popup-section-trailing">
+                      <span class="popup-accordion-icon" aria-hidden="true"></span>
+                    </span>
+                  </button>
+                  <div class="popup-section-body popup-accordion-body">
+                    <div class="popup-kv-grid">
+                      <div class="popup-kv-label">PMM</div><div class="popup-kv-value">Pullman VOR · 6.3 NM</div>
+                      <div class="popup-kv-label">PLANO</div><div class="popup-kv-value">Fix · 9.1 NM</div>
+                    </div>
+                  </div>
+                </section>
+              </div>
+            </div>
+            <div class="popup-action-row">
+              <button class="popup-action-btn" type="button">Direct To</button>
+              <button class="popup-action-btn" type="button">Add To Plan</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="map-nav-controls">
+          <button class="map-nav-btn map-nav-btn-mode" type="button"><img src="../assets/track-up.png" alt=""></button>
+          <button class="map-nav-btn map-nav-btn-mode" type="button"><img src="../assets/center-on.png" alt=""></button>
+          <button class="map-nav-btn map-nav-btn-mode" type="button"><img src="../assets/layers.png" alt=""></button>
+          <button class="map-nav-btn map-nav-btn-mode" type="button"><img src="../assets/synvis.png" alt=""></button>
+          <button class="map-nav-btn map-nav-btn-mode" type="button"><img src="../assets/procs.png" alt=""></button>
+        </div>
+      </div>
+    </div>
+    <div id="soft-button-bar" class="soft-button-bar" role="toolbar">
+      <button type="button" class="soft-button soft-button--hybrid" style="--soft-button-icon-height:24px;"><span class="soft-button-inner"><img class="soft-button-icon" alt="" src="../assets/direct-to.png"><span class="soft-button-label">Direct-To</span></span></button>
+      <button type="button" class="soft-button soft-button--hybrid" style="--soft-button-icon-height:24px;"><span class="soft-button-inner"><img class="soft-button-icon" alt="" src="../assets/flight-plan.png"><span class="soft-button-label">Flight Plan</span></span></button>
+      <button type="button" class="soft-button soft-button--hybrid" style="--soft-button-icon-height:24px;"><span class="soft-button-inner"><img class="soft-button-icon" alt="" src="../assets/nearest-apt.png"><span class="soft-button-label">Nearest</span></span></button>
+      <button type="button" class="soft-button soft-button--hybrid" style="--soft-button-icon-height:24px;"><span class="soft-button-inner"><img class="soft-button-icon" alt="" src="../assets/pfd-icon.png"><span class="soft-button-label">PFD</span></span></button>
+      <button type="button" class="soft-button soft-button--hybrid" style="--soft-button-icon-height:24px;"><span class="soft-button-inner"><img class="soft-button-icon" alt="" src="../assets/airplane.png"><span class="soft-button-label">Aircraft</span></span></button>
+      <button type="button" class="soft-button soft-button--hybrid" style="--soft-button-icon-height:24px;"><span class="soft-button-inner"><img class="soft-button-icon" alt="" src="../assets/more_icon.png"><span class="soft-button-label">More</span></span></button>
+    </div>
+  </div>
+  <div class="scene-watermark">SANDBOX · mappoint</div>
+  <script src="scene.js"></script>
+</body>
+</html>

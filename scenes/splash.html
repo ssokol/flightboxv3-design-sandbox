@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<!-- Scene: Splash / Bootcheck (verbatim webfs splash markup; #app-frame hidden behind) -->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Splash · Sandbox</title>
+  <link rel="stylesheet" href="../styles/index-tokens.css">
+  <link rel="stylesheet" href="../styles/index-base.css">
+  <link rel="stylesheet" href="../styles/index-layout.css">
+  <link rel="stylesheet" href="../styles/index-map.css">
+  <link rel="stylesheet" href="../styles/index-navigation.css">
+  <link rel="stylesheet" href="../styles/index-flightbox.css">
+  <link rel="stylesheet" href="../styles/index-overlays.css">
+  <link rel="stylesheet" href="../styles/index-dialogs.css">
+  <link rel="stylesheet" href="../styles/index-aircraft-profile.css">
+  <link rel="stylesheet" href="../styles/index-responsive.css">
+  <link rel="stylesheet" href="scene.css">
+</head>
+<body>
+  <div id="startup-splash" class="splash" role="status" aria-live="polite">
+    <svg class="splash-grid" aria-hidden="true">
+      <defs><pattern id="splash-grid-pat" width="32" height="32" patternUnits="userSpaceOnUse"><path d="M 32 0 L 0 0 0 32" fill="none" stroke="#F4F1EC" stroke-width="0.5"/></pattern></defs>
+      <rect width="100%" height="100%" fill="url(#splash-grid-pat)"/>
+    </svg>
+    <div class="splash-chrome splash-chrome-top">
+      <span class="splash-chrome-left">FALKEN AVIONICS</span>
+      <span class="splash-chrome-right">EFB v4.2.0 · BUILD 26.05.06</span>
+    </div>
+    <div class="splash-hero">
+      <div class="splash-mark">
+        <svg class="splash-reticle" viewBox="0 0 320 320" aria-hidden="true"><g class="splash-reticle-g"><circle cx="160" cy="160" r="155"/></g></svg>
+        <div class="splash-mark-inner">
+          <svg class="splash-falcon" viewBox="0 0 396 396" aria-hidden="true"><path class="splash-falcon-fill" d="M198,8.808 C302.488,8.808 387.192,93.512 387.192,198 C387.192,302.488 302.488,387.192 198,387.192 C93.512,387.192 8.808,302.488 8.808,198 C8.808,93.512 93.512,8.808 198,8.808 z M198.702,70.991 C128.566,70.991 71.706,128.126 71.706,198.605 C71.706,222.478 78.249,244.81 89.601,263.919 L122.402,224.292 L139.212,206.037 L146.562,212.881 L129.761,231.133 L87.882,271.997 L63.212,301.803 L94.396,271.37 C103.674,284.77 115.433,296.295 129.013,305.274 L169.774,256.028 L186.591,237.779 L193.941,244.618 L177.128,262.865 L131.823,307.081 C131.964,307.173 132.105,307.266 132.253,307.356 L110.579,333.534 L135.465,309.252 C154.09,320.026 175.672,326.221 198.704,326.221 C268.837,326.221 325.703,269.087 325.703,198.606 C325.703,167.896 314.9,139.724 296.913,117.703 L309.372,87.222 L302.085,92.79 L257.347,202.295 L229.393,181.422 L210.345,205.357 L213.569,169.251 L301.075,91.164 L197.913,157.028 L169.516,136.95 L276.525,97.798 C255.028,81.012 228.038,70.991 198.702,70.991 z"/></svg>
+        </div>
+      </div>
+      <div class="splash-stack">
+        <div class="splash-eyebrow">Falken Avionics</div>
+        <div class="splash-wordmark">Falken<span class="splash-wordmark-accent">EFB</span></div>
+        <div class="splash-checks">
+          <div class="splash-row" data-state="ok" data-lit="true"><div class="splash-dot"></div><div class="splash-label">GPS</div><div class="splash-value">12 sat / 0.8 m</div></div>
+          <div class="splash-row" data-state="ok" data-lit="true"><div class="splash-dot"></div><div class="splash-label">ADS-B IN</div><div class="splash-value">UAT 978</div></div>
+          <div class="splash-row" data-state="ok" data-lit="true"><div class="splash-dot"></div><div class="splash-label">AHRS</div><div class="splash-value">Aligned</div></div>
+          <div class="splash-row" data-state="ok" data-lit="true"><div class="splash-dot"></div><div class="splash-label">CHARTS</div><div class="splash-value">Cycle 26-05</div></div>
+          <div class="splash-row" data-state="check" data-lit="true"><div class="splash-dot"></div><div class="splash-label">WX</div><div class="splash-value">Connecting</div></div>
+          <div class="splash-row" data-state="ok" data-lit="false"><div class="splash-dot"></div><div class="splash-label">ROUTE</div><div class="splash-value">—</div></div>
+        </div>
+        <div class="splash-footer"><span class="splash-footer-dot"></span><span class="splash-footer-text">Live data warming up</span></div>
+      </div>
+    </div>
+    <div class="splash-tick splash-tick-tl" aria-hidden="true"></div>
+    <div class="splash-tick splash-tick-tr" aria-hidden="true"></div>
+    <div class="splash-tick splash-tick-bl" aria-hidden="true"></div>
+    <div class="splash-tick splash-tick-br" aria-hidden="true"></div>
+    <div class="splash-vignette" aria-hidden="true"></div>
+  </div>
+  <div id="app-frame" hidden>
+    <!-- The frame underneath is hidden during boot. Visible after splash dismisses. -->
+  </div>
+  <div class="scene-watermark">SANDBOX · splash</div>
+  <script src="scene.js"></script>
+</body>
+</html>

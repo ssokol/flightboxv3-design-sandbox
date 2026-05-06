@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<!--
+  Scene: Downloads / Region Picker — represented as a static screenshot
+  rather than reproduced markup. The live dialog has too much iOS-side
+  signaling (download progress, cycle-change banner state, storage
+  computation) to recreate cleanly without running webfs.
+
+  When Design wants to redesign this surface, point them at
+  webfs/src/pages/index.html (#downloads-overlay markup) and
+  webfs/src/styles/index-dialogs.css (.downloads-* rules).
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Downloads · Sandbox</title>
+  <style>
+    html, body { margin:0; padding:0; height:100%; background:#08131b; overflow:hidden;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif; color:#e8f2f8; }
+    .frame { width:100%; height:100%; display:flex; align-items:center; justify-content:center; }
+    .shot { max-width:100%; max-height:100%; object-fit:contain; box-shadow: 0 8px 24px rgba(0,0,0,0.6); }
+    .note {
+      position:absolute; top:10px; left:50%; transform:translateX(-50%);
+      max-width:560px; padding:8px 14px; background:rgba(8, 19, 27, 0.85);
+      border:1px solid rgba(241, 204, 124, 0.35);
+      color:#f1cc7c; font-size:12px; line-height:1.5; border-radius:4px;
+      text-align:center; pointer-events:none;
+    }
+    .watermark {
+      position:fixed; bottom:6px; right:8px; font-size:10px;
+      color:rgba(255,255,255,0.32); letter-spacing:0.06em;
+    }
+  </style>
+</head>
+<body>
+  <div class="note">Static screenshot from live webfs — too much iOS signaling to recreate. Edit <code style="font-size:11px">#downloads-overlay</code> in webfs to iterate. Full-context screenshot at <code style="font-size:11px">assets/downloads_dialog_full.jpeg</code>.</div>
+  <div class="frame">
+    <img class="shot" src="../assets/downloads_dialog_crop.jpeg" alt="Downloads / Region Picker (live webfs screenshot)">
+  </div>
+  <div class="watermark">SANDBOX · downloads</div>
+</body>
+</html>

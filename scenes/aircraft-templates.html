@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<!-- Scene: Aircraft Profile + Template Picker sub-modal layered on top -->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Aircraft Templates · Sandbox</title>
+  <link rel="stylesheet" href="../styles/index-tokens.css">
+  <link rel="stylesheet" href="../styles/index-base.css">
+  <link rel="stylesheet" href="../styles/index-layout.css">
+  <link rel="stylesheet" href="../styles/index-map.css">
+  <link rel="stylesheet" href="../styles/index-navigation.css">
+  <link rel="stylesheet" href="../styles/index-flightbox.css">
+  <link rel="stylesheet" href="../styles/index-overlays.css">
+  <link rel="stylesheet" href="../styles/index-dialogs.css">
+  <link rel="stylesheet" href="../styles/index-aircraft-profile.css">
+  <link rel="stylesheet" href="../styles/index-responsive.css">
+  <link rel="stylesheet" href="scene.css">
+</head>
+<body>
+  <div id="app-frame">
+    <div id="content-area">
+      <div id="map-surface" class="map-surface">
+        <div class="scene-map-bg"></div>
+        <img class="scene-map-bg-image" src="../assets/map-placeholder.png" alt="" data-loaded="false">
+
+        <div id="aircraft-profile-overlay" class="aircraft-profile-overlay" style="display:block;">
+          <div class="ap-dialog" role="dialog" aria-modal="true">
+            <div class="ap-head">
+              <div class="ap-title">Aircraft Profile</div>
+              <button class="mini-btn" type="button">Close</button>
+            </div>
+            <div class="ap-toolbar">
+              <select class="ap-picker" disabled><option>— no profiles —</option></select>
+              <button class="mini-btn" type="button">New</button>
+              <button class="mini-btn ap-delete-btn" type="button" disabled>Delete</button>
+            </div>
+            <div class="ap-tabs" role="tablist">
+              <button class="ap-tab" role="tab" aria-selected="true">Identity</button>
+              <button class="ap-tab" role="tab">V-Speeds</button>
+              <button class="ap-tab" role="tab">Fuel</button>
+              <button class="ap-tab ap-tab-disabled" role="tab" disabled>Trim &amp; Flaps</button>
+              <button class="ap-tab ap-tab-disabled" role="tab" disabled>EMS</button>
+            </div>
+            <div class="ap-empty">
+              <p>No aircraft profiles yet.</p>
+              <button class="mini-btn" type="button">New Profile</button>
+            </div>
+          </div>
+          <div id="ap-template-overlay" class="ap-template-overlay" style="display:flex;">
+            <div class="ap-template-dialog" role="dialog" aria-modal="true">
+              <div class="ap-template-head">
+                <div class="ap-template-title">Choose a template</div>
+                <button id="ap-template-cancel" class="mini-btn" type="button">Cancel</button>
+              </div>
+              <div id="ap-template-grid" class="ap-template-grid">
+                <button type="button" class="ap-template-card ap-template-blank"><div class="ap-template-name">Blank profile</div><div class="ap-template-sub">Start from scratch</div></button>
+                <button type="button" class="ap-template-card"><div class="ap-template-name">Cessna 152</div></button>
+                <button type="button" class="ap-template-card"><div class="ap-template-name">Cessna 172S</div></button>
+                <button type="button" class="ap-template-card"><div class="ap-template-name">Piper PA-28-161 Archer</div></button>
+                <button type="button" class="ap-template-card"><div class="ap-template-name">Van's RV-6</div></button>
+                <button type="button" class="ap-template-card"><div class="ap-template-name">Van's RV-7</div></button>
+                <button type="button" class="ap-template-card"><div class="ap-template-name">Van's RV-9</div></button>
+                <button type="button" class="ap-template-card"><div class="ap-template-name">Van's RV-10</div></button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="scene-watermark">SANDBOX · aircraft (template picker)</div>
+  <script src="scene.js"></script>
+</body>
+</html>

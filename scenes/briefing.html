@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<!--
+  Scene: Briefing Screen — PROPOSED NEW.
+
+  A "half-page" pre-flight briefing that walks the route. Pulls NOTAMs
+  (per-airport + corridor), TFRs, METARs/TAFs, winds aloft, eventually
+  icing/sigmets. Multi-phase: v1 ships NOTAMs + TFRs + per-airport METAR/TAF;
+  v2 adds enroute weather; v3 adds fuel/performance.
+
+  No webfs incumbent — this is a new surface for Design to land. The
+  strawman markup below uses webfs's tokens and font conventions but isn't
+  yet wired into the app.
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Briefing · Sandbox</title>
+  <link rel="stylesheet" href="../styles/index-tokens.css">
+  <link rel="stylesheet" href="../styles/index-base.css">
+  <link rel="stylesheet" href="../styles/index-layout.css">
+  <link rel="stylesheet" href="../styles/index-map.css">
+  <link rel="stylesheet" href="../styles/index-navigation.css">
+  <link rel="stylesheet" href="../styles/index-flightbox.css">
+  <link rel="stylesheet" href="../styles/index-overlays.css">
+  <link rel="stylesheet" href="../styles/index-dialogs.css">
+  <link rel="stylesheet" href="../styles/index-aircraft-profile.css">
+  <link rel="stylesheet" href="../styles/index-responsive.css">
+  <link rel="stylesheet" href="scene.css">
+  <style>
+    /* Strawman briefing styles. Design replaces these. */
+    .briefing-shell { font-family: -apple-system, sans-serif; padding: 18px; max-width: 740px; margin: 0 auto; color: var(--text); height:100%; overflow-y:auto; }
+    .briefing-head { display:flex; justify-content:space-between; align-items:baseline; border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 14px; }
+    .briefing-head-title { font-size: 18px; font-weight: 600; }
+    .briefing-head-meta { font-size: 11px; color: var(--muted); margin-top: 4px; }
+    .briefing-head-right { font-size: 11px; color: var(--muted); text-align: right; }
+    .briefing-section { margin-bottom: 14px; }
+    .briefing-section-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: #8eb7d2; margin-bottom: 6px; }
+    .briefing-row { font-size: 12px; line-height: 1.5; }
+    .briefing-callout { background: rgba(255,107,107,0.08); border-left: 3px solid var(--danger); padding: 8px 10px; font-size: 13px; }
+    .briefing-vfr { color: var(--ok); }
+    .briefing-mvfr { color: #f1cc7c; }
+    .briefing-link { color: var(--accent); cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div id="app-frame">
+    <div id="content-area">
+      <div id="map-surface" class="map-surface">
+        <div class="scene-map-bg"></div>
+        <img class="scene-map-bg-image" src="../assets/map-placeholder.png" alt="" data-loaded="false">
+
+        <!-- Briefing overlay covers the full content area. Treat as a full-page modal. -->
+        <div class="app-settings-overlay" style="display:block;">
+          <div class="app-settings-dialog" role="dialog" aria-modal="true">
+            <div class="app-settings-head">
+              <div class="app-settings-title">Briefing</div>
+              <button class="mini-btn" type="button">Close</button>
+            </div>
+            <div class="app-settings-body">
+              <div class="briefing-shell">
+                <div class="briefing-head">
+                  <div>
+                    <div class="briefing-head-title">KMDW → KSTL</div>
+                    <div class="briefing-head-meta">Filed 2026-05-06 · 412 NM · ETE 03:35 · Departure 14:30Z</div>
+                  </div>
+                  <div class="briefing-head-right">Fetched 18:42:08 Z<br>Source: wally + awc</div>
+                </div>
+
+                <div class="briefing-section">
+                  <div class="briefing-section-title">⚠ Critical along route</div>
+                  <div class="briefing-callout">RWY 13C/31C closed at KMDW · May 7 12-14Z (departure window)</div>
+                </div>
+
+                <div class="briefing-section">
+                  <div class="briefing-section-title">Departure · KMDW</div>
+                  <div class="briefing-row">METAR 18:51Z · <span class="briefing-vfr">VFR</span> · 280@12G18 · 10SM · SCT045 BKN120 · 14/06 · A2992<br>TAF FM1900 28015G22KT P6SM SCT040 BKN100<br><span class="briefing-mvfr">2 NOTAMs significant</span> · 4 advisory · <span class="briefing-link">expand</span></div>
+                </div>
+
+                <div class="briefing-section">
+                  <div class="briefing-section-title">Enroute · 412 NM corridor (20 NM either side)</div>
+                  <div class="briefing-row">31 NOTAMs · 0 TFRs intersecting filed track · <span class="briefing-mvfr">G-AIRMET TURB</span> 12,000-FL220 over IL/IN<br>Winds aloft 9k: 285°@28 (head 22 kt) · 12k: 290°@34</div>
+                </div>
+
+                <div class="briefing-section">
+                  <div class="briefing-section-title">Destination · KSTL</div>
+                  <div class="briefing-row">METAR 18:54Z · <span class="briefing-vfr">VFR</span> · 240@8 · 10SM · FEW055 · 17/04 · A2989<br>TAF FM1900 24010G15KT P6SM SCT050<br>0 critical · 1 significant · 7 advisory NOTAMs</div>
+                </div>
+
+                <div class="briefing-section">
+                  <div class="briefing-section-title">Alternate · KSPI</div>
+                  <div class="briefing-row">METAR 18:55Z · <span class="briefing-vfr">VFR</span> · 250@10 · 10SM · CLR · 16/03 · A2990<br>0 critical · 0 significant · 3 advisory NOTAMs</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="scene-watermark">SANDBOX · briefing (proposed new)</div>
+  <script src="scene.js"></script>
+</body>
+</html>

@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<!-- Scene: Airport Disclosure (verbatim DOM from live webfs at :8787, KGTU) -->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Airport · Sandbox</title>
+  <link rel="stylesheet" href="../styles/index-tokens.css">
+  <link rel="stylesheet" href="../styles/index-base.css">
+  <link rel="stylesheet" href="../styles/index-layout.css">
+  <link rel="stylesheet" href="../styles/index-map.css">
+  <link rel="stylesheet" href="../styles/index-navigation.css">
+  <link rel="stylesheet" href="../styles/index-flightbox.css">
+  <link rel="stylesheet" href="../styles/index-overlays.css">
+  <link rel="stylesheet" href="../styles/index-dialogs.css">
+  <link rel="stylesheet" href="../styles/index-aircraft-profile.css">
+  <link rel="stylesheet" href="../styles/index-responsive.css">
+  <link rel="stylesheet" href="scene.css">
+</head>
+<body>
+  <div id="app-frame">
+    <div id="health-status-bar" class="health-status-bar">
+      <div class="health-status-cell is-green">FlightBox</div>
+      <div class="health-status-cell is-green">ADS-B</div>
+      <div class="health-status-cell is-green">GPS</div>
+      <div class="health-status-cell is-green">AHRS</div>
+      <div class="health-status-cell is-green">ALT</div>
+      <div class="health-status-cell is-green">CO</div>
+    </div>
+    <div id="content-area">
+      <div id="map-surface" class="map-surface">
+        <div class="scene-map-bg"></div>
+        <img class="scene-map-bg-image" src="../assets/map-placeholder.png" alt="" data-loaded="false">
+
+        <!-- AIRPORT DISCLOSURE PANEL (verbatim webfs DOM, KGTU) -->
+        <div id="weather-popup" class="content-panel content-panel--left">
+          <div class="weather-popup-shell" role="dialog" aria-modal="false" aria-labelledby="weather-popup-title">
+            <div class="weather-popup-head">
+              <div class="weather-popup-ident-row">
+                <span class="weather-flight-dot" aria-hidden="true" style="background-color:#3498db;"></span>
+                <div class="weather-popup-title" id="weather-popup-title">KGTU</div>
+              </div>
+              <button class="weather-popup-close" type="button" data-popup-close aria-label="Dismiss airport dialog">X</button>
+            </div>
+            <div class="weather-popup-subtitle" title="GEORGETOWN EXEC">GEORGETOWN EXEC</div>
+            <div class="weather-popup-tabs" role="tablist" aria-label="Airport information tabs">
+              <button type="button" class="weather-popup-tab is-active" data-popup-tab="airport" role="tab" aria-selected="true">Info</button>
+              <button type="button" class="weather-popup-tab" data-popup-tab="weather" role="tab" aria-selected="false">Weather</button>
+            </div>
+            <div class="weather-popup-body">
+              <section class="weather-popup-panel weather-popup-panel-airport" data-popup-panel="airport">
+                <div class="popup-accordion-list popup-airport-accordion-list">
+                  <section class="popup-section popup-accordion-item is-open" data-weather-section="airport">
+                    <button class="popup-section-title-row popup-accordion-trigger" type="button" data-popup-accordion-tab="airport" data-popup-accordion-section="airport" aria-expanded="true">
+                      <span class="popup-section-title">Airport</span>
+                      <span class="popup-section-trailing">
+                        <span class="popup-accordion-icon" aria-hidden="true"></span>
+                      </span>
+                    </button>
+                    <div class="popup-section-body popup-accordion-body">
+                      <div class="popup-kv-grid">
+                        <div class="popup-kv-label">Distance</div><div class="popup-kv-value">10.8 nm</div>
+                        <div class="popup-kv-label">Location</div><div class="popup-kv-value">GEORGETOWN, TX</div>
+                        <div class="popup-kv-label">Elevation</div><div class="popup-kv-value">790'</div>
+                        <div class="popup-kv-label">Tower</div><div class="popup-kv-value">Yes</div>
+                        <div class="popup-kv-label">Private</div><div class="popup-kv-value">No</div>
+                        <div class="popup-kv-label">Rwy Length</div><div class="popup-kv-value">5,004 ft</div>
+                        <div class="popup-kv-label">Hard Surface</div><div class="popup-kv-value">Yes</div>
+                        <div class="popup-kv-label">Mag Var</div><div class="popup-kv-value">6° E</div>
+                      </div>
+                    </div>
+                  </section>
+                  <section class="popup-section popup-accordion-item" data-weather-section="frequencies">
+                    <button class="popup-section-title-row popup-accordion-trigger" type="button" data-popup-accordion-tab="airport" data-popup-accordion-section="frequencies" aria-expanded="false">
+                      <span class="popup-section-title">Frequencies</span>
+                      <span class="popup-section-trailing">
+                        <span class="popup-accordion-icon" aria-hidden="true"></span>
+                      </span>
+                    </button>
+                    <div class="popup-section-body popup-accordion-body" hidden>
+                      <div class="popup-kv-grid">
+                        <div class="popup-kv-label">ATIS / AWOS</div><div class="popup-kv-value">118.600</div>
+                        <div class="popup-kv-label">CTAF</div><div class="popup-kv-value">120.225</div>
+                        <div class="popup-kv-label">Unicom</div><div class="popup-kv-value">123.000</div>
+                        <div class="popup-kv-label">Tower</div><div class="popup-kv-value">120.225</div>
+                        <div class="popup-kv-label">Ground</div><div class="popup-kv-value">119.125</div>
+                      </div>
+                    </div>
+                  </section>
+                  <section class="popup-section popup-accordion-item" data-weather-section="runways">
+                    <button class="popup-section-title-row popup-accordion-trigger" type="button" data-popup-accordion-tab="airport" data-popup-accordion-section="runways" aria-expanded="false">
+                      <span class="popup-section-title">Runways</span>
+                      <span class="popup-section-trailing">
+                        <span class="popup-accordion-icon" aria-hidden="true"></span>
+                      </span>
+                    </button>
+                    <div class="popup-section-body popup-accordion-body" hidden>
+                      <div class="popup-runway-list">
+                        <section class="popup-runway-entry">
+                          <div class="popup-runway-title">Runway 11 / 29</div>
+                          <div class="popup-runway-summary">4,099' x 75' - Asphalt</div>
+                          <div class="popup-runway-end">Runway 11 - Left Traffic</div>
+                          <div class="popup-runway-end">Runway 29 - Right Traffic</div>
+                        </section>
+                        <section class="popup-runway-entry">
+                          <div class="popup-runway-title">Runway 18 / 36</div>
+                          <div class="popup-runway-summary">5,004' x 100' - Asphalt</div>
+                          <div class="popup-runway-end">Runway 18 - Left Traffic</div>
+                          <div class="popup-runway-end">Runway 36 - Right Traffic</div>
+                        </section>
+                      </div>
+                    </div>
+                  </section>
+                </div>
+              </section>
+              <section class="weather-popup-panel weather-popup-panel-weather" data-popup-panel="weather" hidden>
+                <div class="popup-accordion-list popup-weather-accordion-list">
+                  <section class="popup-section popup-accordion-item is-open" data-weather-section="metar">
+                    <button class="popup-section-title-row popup-accordion-trigger" type="button" data-popup-accordion-tab="weather" data-popup-accordion-section="metar" aria-expanded="true">
+                      <span class="popup-section-title">METAR</span>
+                      <span class="popup-section-trailing">
+                        <span class="popup-accordion-icon" aria-hidden="true"></span>
+                      </span>
+                    </button>
+                    <div class="popup-section-body popup-accordion-body">
+                      <div class="weather-kv-grid">
+                        <div class="weather-kv-label">Category</div><div class="weather-kv-value">MVFR</div>
+                        <div class="weather-kv-label">Age</div><div class="weather-kv-value">29 min</div>
+                        <div class="weather-kv-label">Wind</div><div class="weather-kv-value">350° at 9</div>
+                        <div class="weather-kv-label">Visibility</div><div class="weather-kv-value">10.0 SM</div>
+                        <div class="weather-kv-label">Ceiling</div><div class="weather-kv-value">2200 ft</div>
+                        <div class="weather-kv-label">Temp/Dew</div><div class="weather-kv-value">22.2 / 16.7 C</div>
+                        <div class="weather-kv-label">Altimeter</div><div class="weather-kv-value">29.91 inHg</div>
+                      </div>
+                      <div class="weather-popup-raw">SPECI KGTU 061806Z 35009KT 10SM OVC022 22/17 A2991 RMK AO2 T02220167</div>
+                    </div>
+                  </section>
+                  <section class="popup-section popup-accordion-item" data-weather-section="taf">
+                    <button class="popup-section-title-row popup-accordion-trigger" type="button" data-popup-accordion-tab="weather" data-popup-accordion-section="taf" aria-expanded="false">
+                      <span class="popup-section-title">TAF</span>
+                      <span class="popup-section-trailing">
+                        <span class="popup-section-status">Unavailable</span>
+                        <span class="popup-accordion-icon" aria-hidden="true"></span>
+                      </span>
+                    </button>
+                    <div class="popup-section-body popup-accordion-body" hidden><div class="taf-empty">TAF unavailable</div></div>
+                  </section>
+                  <section class="popup-section popup-accordion-item" data-weather-section="winds">
+                    <button class="popup-section-title-row popup-accordion-trigger" type="button" data-popup-accordion-tab="weather" data-popup-accordion-section="winds" aria-expanded="false">
+                      <span class="popup-section-title">Winds Aloft</span>
+                      <span class="popup-section-trailing">
+                        <span class="popup-accordion-icon" aria-hidden="true"></span>
+                      </span>
+                    </button>
+                    <div class="popup-section-body popup-accordion-body" hidden></div>
+                  </section>
+                </div>
+              </section>
+            </div>
+            <div class="popup-action-row">
+              <button class="popup-action-btn" type="button" data-popup-directto>Direct To</button>
+              <button class="popup-action-btn" type="button" data-popup-add-to-plan>Add To Plan</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Map nav controls remain on the right -->
+        <div class="map-nav-controls">
+          <button class="map-nav-btn map-nav-btn-mode" type="button"><img src="../assets/track-up.png" alt=""></button>
+          <button class="map-nav-btn map-nav-btn-mode" type="button"><img src="../assets/center-on.png" alt=""></button>
+          <button class="map-nav-btn map-nav-btn-mode" type="button"><img src="../assets/layers.png" alt=""></button>
+          <button class="map-nav-btn map-nav-btn-mode" type="button"><img src="../assets/synvis.png" alt=""></button>
+          <button class="map-nav-btn map-nav-btn-mode" type="button"><img src="../assets/procs.png" alt=""></button>
+        </div>
+      </div>
+    </div>
+    <div id="soft-button-bar" class="soft-button-bar" role="toolbar">
+      <button type="button" class="soft-button soft-button--hybrid" style="--soft-button-icon-height:24px;"><span class="soft-button-inner"><img class="soft-button-icon" alt="" src="../assets/direct-to.png"><span class="soft-button-label">Direct-To</span></span></button>
+      <button type="button" class="soft-button soft-button--hybrid" style="--soft-button-icon-height:24px;"><span class="soft-button-inner"><img class="soft-button-icon" alt="" src="../assets/flight-plan.png"><span class="soft-button-label">Flight Plan</span></span></button>
+      <button type="button" class="soft-button soft-button--hybrid" style="--soft-button-icon-height:24px;"><span class="soft-button-inner"><img class="soft-button-icon" alt="" src="../assets/nearest-apt.png"><span class="soft-button-label">Nearest</span></span></button>
+      <button type="button" class="soft-button soft-button--hybrid" style="--soft-button-icon-height:24px;"><span class="soft-button-inner"><img class="soft-button-icon" alt="" src="../assets/pfd-icon.png"><span class="soft-button-label">PFD</span></span></button>
+      <button type="button" class="soft-button soft-button--hybrid" style="--soft-button-icon-height:24px;"><span class="soft-button-inner"><img class="soft-button-icon" alt="" src="../assets/airplane.png"><span class="soft-button-label">Aircraft</span></span></button>
+      <button type="button" class="soft-button soft-button--hybrid" style="--soft-button-icon-height:24px;"><span class="soft-button-inner"><img class="soft-button-icon" alt="" src="../assets/more_icon.png"><span class="soft-button-label">More</span></span></button>
+    </div>
+  </div>
+  <div class="scene-watermark">SANDBOX · airport</div>
+  <script src="scene.js"></script>
+</body>
+</html>

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<!-- Scene: Map Layers Dialog (verbatim webfs DOM, top-right of map) -->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Map Layers · Sandbox</title>
+  <link rel="stylesheet" href="../styles/index-tokens.css">
+  <link rel="stylesheet" href="../styles/index-base.css">
+  <link rel="stylesheet" href="../styles/index-layout.css">
+  <link rel="stylesheet" href="../styles/index-map.css">
+  <link rel="stylesheet" href="../styles/index-navigation.css">
+  <link rel="stylesheet" href="../styles/index-flightbox.css">
+  <link rel="stylesheet" href="../styles/index-overlays.css">
+  <link rel="stylesheet" href="../styles/index-dialogs.css">
+  <link rel="stylesheet" href="../styles/index-aircraft-profile.css">
+  <link rel="stylesheet" href="../styles/index-responsive.css">
+  <link rel="stylesheet" href="scene.css">
+</head>
+<body>
+  <div id="app-frame">
+    <div id="health-status-bar" class="health-status-bar">
+      <div class="health-status-cell is-green">FlightBox</div><div class="health-status-cell is-green">ADS-B</div><div class="health-status-cell is-green">GPS</div><div class="health-status-cell is-green">AHRS</div><div class="health-status-cell is-green">ALT</div><div class="health-status-cell is-green">CO</div>
+    </div>
+    <div id="content-area">
+      <div id="map-surface" class="map-surface">
+        <div class="scene-map-bg"></div>
+        <img class="scene-map-bg-image" src="../assets/map-placeholder.png" alt="" data-loaded="false">
+
+        <div id="map-layers-dialog" class="map-layers-dialog" role="dialog" aria-modal="false" aria-label="Map layers">
+          <div class="map-layers-head"><div class="map-layers-title">Map Layers</div><button id="map-layers-dismiss" class="mini-btn" type="button">Dismiss</button></div>
+          <div class="map-layers-body">
+            <div class="layer-controls">
+              <label><input type="checkbox" checked> Ownship</label>
+              <label><input type="checkbox" checked> Distance Rings</label>
+              <label><input type="checkbox"> Track Vectors</label>
+              <label><input type="checkbox"> Path Indicator</label>
+              <label><input type="checkbox"> SVS View Cone</label>
+              <label><input type="checkbox"> Course</label>
+              <label><input type="checkbox" checked> Traffic</label>
+              <label><input type="checkbox" checked> METARs</label>
+              <label><input type="checkbox"> PIREPs</label>
+              <label><input type="checkbox"> TFR</label>
+              <label><input type="checkbox"> Lightning</label>
+              <label><input type="checkbox" checked> Graphical Weather</label>
+              <label><input type="checkbox" checked> Airports</label>
+              <label><input type="checkbox" checked> Airspace Outline</label>
+              <label><input type="checkbox" checked> Special Use Airspace</label>
+              <label><input type="checkbox" checked> Terrain Proximity</label>
+              <label><input type="checkbox"> Airways (Low)</label>
+              <label><input type="checkbox"> Airways (High)</label>
+              <label><input type="checkbox"> Fixes</label>
+              <label><input type="checkbox"> Navaids</label>
+              <label><input type="checkbox"> Obstacles</label>
+              <label><input type="checkbox" checked> Airport Diagrams</label>
+              <label style="padding-left:1.2em"><input type="checkbox"> Opaque Background</label>
+            </div>
+            <div id="base-layer-section" class="map-filter-controls">
+              <div class="map-filter-title">Base Layer</div>
+              <div class="layer-controls">
+                <label><input type="radio" name="bl1" checked> Vector</label>
+                <label><input type="radio" name="bl1"> Terrain</label>
+                <label><input type="radio" name="bl1"> VFR Sectional</label>
+                <label><input type="radio" name="bl1"> IFR Low</label>
+                <label><input type="radio" name="bl1"> Satellite</label>
+              </div>
+            </div>
+            <div class="map-filter-controls">
+              <div class="map-filter-title">Appearance</div>
+              <div class="layer-controls">
+                <label><input type="radio" name="ap1" checked> Night</label>
+                <label><input type="radio" name="ap1"> Day</label>
+              </div>
+            </div>
+            <div class="map-filter-controls">
+              <div class="map-filter-title">Graphical Weather</div>
+              <div class="layer-controls">
+                <label><input type="radio" name="gwx1"> Advisories</label>
+                <label><input type="radio" name="gwx1"> Turbulence</label>
+                <label><input type="radio" name="gwx1"> Cloud Tops</label>
+                <label><input type="radio" name="gwx1"> IR Clouds</label>
+                <label><input type="radio" name="gwx1"> Icing</label>
+                <label><input type="radio" name="gwx1" checked> NEXRAD</label>
+              </div>
+            </div>
+            <div class="map-filter-controls">
+              <div class="map-filter-title">Airport Options</div>
+              <div class="airport-option-grid">
+                <label><input type="checkbox" checked> Uncontrolled</label>
+                <label><input type="checkbox" checked> Soft Surface</label>
+                <label><input type="checkbox" checked> Private Use</label>
+                <label><input type="checkbox" checked> Sea Plane Bases</label>
+                <label><input type="checkbox" checked> Heliports</label>
+              </div>
+              <label class="runway-min-control"><span>Runway Minimum</span><span class="runway-min-label">Any</span><input type="range" min="0" max="5" step="1" value="0"></label>
+            </div>
+          </div>
+        </div>
+
+        <div class="map-nav-controls">
+          <button class="map-nav-btn map-nav-btn-mode" type="button"><img src="../assets/track-up.png" alt=""></button>
+          <button class="map-nav-btn map-nav-btn-mode" type="button"><img src="../assets/center-on.png" alt=""></button>
+          <button class="map-nav-btn map-nav-btn-mode" type="button"><img src="../assets/layers.png" alt=""></button>
+          <button class="map-nav-btn map-nav-btn-mode" type="button"><img src="../assets/synvis.png" alt=""></button>
+          <button class="map-nav-btn map-nav-btn-mode" type="button"><img src="../assets/procs.png" alt=""></button>
+        </div>
+      </div>
+    </div>
+    <div id="soft-button-bar" class="soft-button-bar" role="toolbar">
+      <button type="button" class="soft-button soft-button--hybrid" style="--soft-button-icon-height:24px;"><span class="soft-button-inner"><img class="soft-button-icon" alt="" src="../assets/direct-to.png"><span class="soft-button-label">Direct-To</span></span></button>
+      <button type="button" class="soft-button soft-button--hybrid" style="--soft-button-icon-height:24px;"><span class="soft-button-inner"><img class="soft-button-icon" alt="" src="../assets/flight-plan.png"><span class="soft-button-label">Flight Plan</span></span></button>
+      <button type="button" class="soft-button soft-button--hybrid" style="--soft-button-icon-height:24px;"><span class="soft-button-inner"><img class="soft-button-icon" alt="" src="../assets/nearest-apt.png"><span class="soft-button-label">Nearest</span></span></button>
+      <button type="button" class="soft-button soft-button--hybrid" style="--soft-button-icon-height:24px;"><span class="soft-button-inner"><img class="soft-button-icon" alt="" src="../assets/pfd-icon.png"><span class="soft-button-label">PFD</span></span></button>
+      <button type="button" class="soft-button soft-button--hybrid" style="--soft-button-icon-height:24px;"><span class="soft-button-inner"><img class="soft-button-icon" alt="" src="../assets/airplane.png"><span class="soft-button-label">Aircraft</span></span></button>
+      <button type="button" class="soft-button soft-button--hybrid" style="--soft-button-icon-height:24px;"><span class="soft-button-inner"><img class="soft-button-icon" alt="" src="../assets/more_icon.png"><span class="soft-button-label">More</span></span></button>
+    </div>
+  </div>
+  <div class="scene-watermark">SANDBOX · maplayers</div>
+  <script src="scene.js"></script>
+</body>
+</html>

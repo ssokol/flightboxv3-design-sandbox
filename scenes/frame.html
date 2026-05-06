@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<!--
+  Scene: Frame Overview
+
+  The whole webfs app frame, no overlays. The frame layout that every
+  disclosure / dialog sits on top of. Real CSS, real DOM, hard-coded button
+  bar (since the live one is JS-populated).
+
+  Run from the iframe shell at design-sandbox/index.html. To open standalone:
+      python3 -m http.server   # in design-sandbox/
+      → http://localhost:8765/scenes/frame.html
+-->
+<html lang="en" data-airspace-awareness-page="1">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Frame · Sandbox</title>
+  <link rel="stylesheet" href="../styles/index-tokens.css">
+  <link rel="stylesheet" href="../styles/index-base.css">
+  <link rel="stylesheet" href="../styles/index-layout.css">
+  <link rel="stylesheet" href="../styles/index-map.css">
+  <link rel="stylesheet" href="../styles/index-navigation.css">
+  <link rel="stylesheet" href="../styles/index-flightbox.css">
+  <link rel="stylesheet" href="../styles/index-overlays.css">
+  <link rel="stylesheet" href="../styles/index-dialogs.css">
+  <link rel="stylesheet" href="../styles/index-aircraft-profile.css">
+  <link rel="stylesheet" href="../styles/index-responsive.css">
+  <link rel="stylesheet" href="scene.css">
+</head>
+<body>
+  <div id="app-frame">
+    <div id="health-status-bar" class="health-status-bar">
+      <div class="health-status-cell is-green">FlightBox</div>
+      <div class="health-status-cell is-green">ADS-B</div>
+      <div class="health-status-cell is-green">GPS</div>
+      <div class="health-status-cell is-green">AHRS</div>
+      <div class="health-status-cell is-green">ALT</div>
+      <div class="health-status-cell is-green">CO</div>
+    </div>
+    <div id="content-area">
+      <div id="map-surface" class="map-surface">
+        <div class="scene-map-bg"></div>
+        <img class="scene-map-bg-image" src="../assets/map-placeholder.png" alt="" data-loaded="false">
+
+        <div class="zoom-level-badge">Z: 8.50</div>
+        <div class="net-wx-badge">NET WX</div>
+        <div class="graphical-wx-badge">ICING SEV: INTERNET</div>
+
+        <div class="ground-track-badge">
+          <div class="ground-track-value">274°</div>
+          <div class="ground-track-label">GROUND TRACK</div>
+        </div>
+
+        <div class="nav-dest-bottom">
+          <div class="nav-dest-row nav-dest-row-top">
+            <div class="nav-dest-item nav-dest-item-dest"><div class="nav-dest-label">DEST</div><div class="nav-dest-value">KMDW</div></div>
+            <div class="nav-dest-item"><div class="nav-dest-label">ELEV</div><div class="nav-dest-value">620'</div></div>
+            <div class="nav-dest-item"><div class="nav-dest-label">DIS DST</div><div class="nav-dest-value">42.6</div></div>
+            <div class="nav-dest-item"><div class="nav-dest-label">GS</div><div class="nav-dest-value">112</div></div>
+            <div class="nav-dest-item"><div class="nav-dest-label">ETE DST</div><div class="nav-dest-value">22:50</div></div>
+            <div class="nav-dest-item"><div class="nav-dest-label">ETA DST</div><div class="nav-dest-value">14:18</div></div>
+          </div>
+          <div class="nav-dest-row nav-dest-row-leg">
+            <div class="nav-dest-item"><div class="nav-dest-label">WPT</div><div class="nav-dest-value">PMM</div></div>
+            <div class="nav-dest-item"><div class="nav-dest-label">DIS NXT</div><div class="nav-dest-value">11.3</div></div>
+            <div class="nav-dest-item"><div class="nav-dest-label">BRG</div><div class="nav-dest-value">271°</div></div>
+            <div class="nav-dest-item"><div class="nav-dest-label">DTK</div><div class="nav-dest-value">274°</div></div>
+            <div class="nav-dest-item"><div class="nav-dest-label">TRK</div><div class="nav-dest-value">274°</div></div>
+            <div class="nav-dest-item"><div class="nav-dest-label">XTE</div><div class="nav-dest-value">0.04L</div></div>
+          </div>
+        </div>
+
+        <div class="map-nav-controls">
+          <button class="map-nav-btn map-nav-btn-mode" type="button" aria-label="Map orientation: Track Up"><img src="../assets/track-up.png" alt="Track Up"></button>
+          <button class="map-nav-btn map-nav-btn-mode" type="button" aria-label="Center Lock: On"><img src="../assets/center-on.png" alt="Center Lock: On"></button>
+          <button class="map-nav-btn map-nav-btn-mode" type="button" aria-label="Open map layers"><img src="../assets/layers.png" alt="Layers"></button>
+          <button class="map-nav-btn map-nav-btn-mode" type="button" aria-label="Synthetic Vision: Off"><img src="../assets/synvis.png" alt="Synthetic Vision"></button>
+          <button class="map-nav-btn map-nav-btn-mode" type="button" aria-label="Procedures"><img src="../assets/procs.png" alt="Procedures"></button>
+        </div>
+        <button class="map-nav-btn map-nav-btn-small map-nav-btn-sim" type="button" aria-label="Open ownship simulator">SIM</button>
+
+        <div class="map-attribution">Hydrography · NHD / OSM Urban areas · Natural Earth</div>
+      </div>
+    </div>
+    <div id="soft-button-bar" class="soft-button-bar" role="toolbar" aria-label="Map quick action buttons">
+      <button type="button" class="soft-button soft-button--hybrid" aria-label="Direct-To" style="--soft-button-fg:#ffffff;--soft-button-bg:rgba(38,46,69,0.85);--soft-button-bg-solid:rgb(38,46,69);--soft-button-icon-height:24px;"><span class="soft-button-inner"><img class="soft-button-icon" alt="" src="../assets/direct-to.png"><span class="soft-button-label">Direct-To</span></span></button>
+      <button type="button" class="soft-button soft-button--hybrid" aria-label="Flight Plan" style="--soft-button-icon-height:24px;"><span class="soft-button-inner"><img class="soft-button-icon" alt="" src="../assets/flight-plan.png"><span class="soft-button-label">Flight Plan</span></span></button>
+      <button type="button" class="soft-button soft-button--hybrid" aria-label="Nearest" style="--soft-button-icon-height:24px;"><span class="soft-button-inner"><img class="soft-button-icon" alt="" src="../assets/nearest-apt.png"><span class="soft-button-label">Nearest</span></span></button>
+      <button type="button" class="soft-button soft-button--hybrid" aria-label="PFD" style="--soft-button-icon-height:24px;"><span class="soft-button-inner"><img class="soft-button-icon" alt="" src="../assets/pfd-icon.png"><span class="soft-button-label">PFD</span></span></button>
+      <button type="button" class="soft-button soft-button--hybrid" aria-label="Aircraft" style="--soft-button-icon-height:24px;"><span class="soft-button-inner"><img class="soft-button-icon" alt="" src="../assets/airplane.png"><span class="soft-button-label">Aircraft</span></span></button>
+      <button type="button" class="soft-button soft-button--hybrid" aria-label="More" style="--soft-button-icon-height:24px;"><span class="soft-button-inner"><img class="soft-button-icon" alt="" src="../assets/more_icon.png"><span class="soft-button-label">More</span></span></button>
+    </div>
+  </div>
+  <div class="scene-watermark">SANDBOX · frame</div>
+  <script src="scene.js"></script>
+</body>
+</html>

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<!--
+  Scene: Procedures (verbatim webfs DOM).
+  Split layout: list on left, plate preview on right. Tabs for Approaches /
+  SIDs (disabled at LXT) / STARs. The transition picker controls the route
+  variant; "Display On Map" / "Remove Procedure" are the two preview actions.
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Procedures · Sandbox</title>
+  <link rel="stylesheet" href="../styles/index-tokens.css">
+  <link rel="stylesheet" href="../styles/index-base.css">
+  <link rel="stylesheet" href="../styles/index-layout.css">
+  <link rel="stylesheet" href="../styles/index-map.css">
+  <link rel="stylesheet" href="../styles/index-navigation.css">
+  <link rel="stylesheet" href="../styles/index-flightbox.css">
+  <link rel="stylesheet" href="../styles/index-overlays.css">
+  <link rel="stylesheet" href="../styles/index-dialogs.css">
+  <link rel="stylesheet" href="../styles/index-aircraft-profile.css">
+  <link rel="stylesheet" href="../styles/index-responsive.css">
+  <link rel="stylesheet" href="scene.css">
+</head>
+<body>
+  <div id="app-frame">
+    <div id="content-area">
+      <div id="map-surface" class="map-surface">
+        <div class="scene-map-bg"></div>
+        <img class="scene-map-bg-image" src="../assets/map-placeholder.png" alt="" data-loaded="false">
+
+        <div id="procedures-overlay" class="procedures-overlay">
+          <div class="procedures-modal" role="dialog" aria-modal="true" aria-labelledby="procedures-title">
+            <div class="procedures-head">
+              <div>
+                <div class="procedures-title" id="procedures-title">Procedures</div>
+                <div class="procedures-airport-label">KLXT — KANSAS CITY/LEE'S SUMMIT RGNL</div>
+              </div>
+              <button id="procedures-close" class="mini-btn" type="button">X</button>
+            </div>
+            <div class="procedures-tabs" role="tablist">
+              <button class="procedures-tab is-active" data-procedures-tab="approaches" role="tab">Approaches</button>
+              <button class="procedures-tab" data-procedures-tab="sids" role="tab" disabled>SIDs</button>
+              <button class="procedures-tab" data-procedures-tab="stars" role="tab">STARs</button>
+            </div>
+            <div class="procedures-body">
+              <div class="procedures-list-pane">
+                <div class="procedures-list">
+                  <div class="procedures-list-item">RNAV (GPS) RWY 11</div>
+                  <div class="procedures-list-item">RNAV (GPS) RWY 18</div>
+                  <div class="procedures-list-item">RNAV (GPS) RWY 29</div>
+                  <div class="procedures-list-item is-selected">RNAV (GPS) RWY 36</div>
+                  <div class="procedures-list-item">VOR-A</div>
+                </div>
+              </div>
+              <div class="procedures-preview-pane">
+                <div class="procedures-preview-info">RNAV (GPS) RWY 36</div>
+                <div class="procedures-transition-picker">
+                  <div class="procedures-transition-group">
+                    <span class="procedures-transition-label">Transition</span>
+                    <select class="procedures-transition-select"><option>Vectors</option><option selected>WOMPO</option></select>
+                  </div>
+                </div>
+                <div class="procedures-preview-actions">
+                  <button class="mini-btn" type="button">Display On Map</button>
+                  <button class="mini-btn is-active" type="button">Remove Procedure</button>
+                </div>
+                <div class="procedures-preview-canvas-wrap">
+                  <div class="procedures-no-plate"><div class="procedures-no-plate-text">Plate preview (plate viewer renders PDF here in the live app)</div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="soft-button-bar" class="soft-button-bar" role="toolbar">
+      <button type="button" class="soft-button soft-button--hybrid" style="--soft-button-icon-height:24px;"><span class="soft-button-inner"><img class="soft-button-icon" alt="" src="../assets/direct-to.png"><span class="soft-button-label">Direct-To</span></span></button>
+      <button type="button" class="soft-button soft-button--hybrid" style="--soft-button-icon-height:24px;"><span class="soft-button-inner"><img class="soft-button-icon" alt="" src="../assets/flight-plan.png"><span class="soft-button-label">Flight Plan</span></span></button>
+      <button type="button" class="soft-button soft-button--hybrid" style="--soft-button-icon-height:24px;"><span class="soft-button-inner"><img class="soft-button-icon" alt="" src="../assets/nearest-apt.png"><span class="soft-button-label">Nearest</span></span></button>
+      <button type="button" class="soft-button soft-button--hybrid" style="--soft-button-icon-height:24px;"><span class="soft-button-inner"><img class="soft-button-icon" alt="" src="../assets/pfd-icon.png"><span class="soft-button-label">PFD</span></span></button>
+      <button type="button" class="soft-button soft-button--hybrid" style="--soft-button-icon-height:24px;"><span class="soft-button-inner"><img class="soft-button-icon" alt="" src="../assets/airplane.png"><span class="soft-button-label">Aircraft</span></span></button>
+      <button type="button" class="soft-button soft-button--hybrid" style="--soft-button-icon-height:24px;"><span class="soft-button-inner"><img class="soft-button-icon" alt="" src="../assets/more_icon.png"><span class="soft-button-label">More</span></span></button>
+    </div>
+  </div>
+  <div class="scene-watermark">SANDBOX · procedures</div>
+  <script src="scene.js"></script>
+</body>
+</html>

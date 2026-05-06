@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<!-- Scene: FlightBox Diagnostics (Status tab; full-page modal) -->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>FlightBox · Sandbox</title>
+  <link rel="stylesheet" href="../styles/index-tokens.css">
+  <link rel="stylesheet" href="../styles/index-base.css">
+  <link rel="stylesheet" href="../styles/index-layout.css">
+  <link rel="stylesheet" href="../styles/index-map.css">
+  <link rel="stylesheet" href="../styles/index-navigation.css">
+  <link rel="stylesheet" href="../styles/index-flightbox.css">
+  <link rel="stylesheet" href="../styles/index-overlays.css">
+  <link rel="stylesheet" href="../styles/index-dialogs.css">
+  <link rel="stylesheet" href="../styles/index-aircraft-profile.css">
+  <link rel="stylesheet" href="../styles/index-responsive.css">
+  <link rel="stylesheet" href="scene.css">
+</head>
+<body>
+  <div id="app-frame">
+    <div id="content-area">
+      <div id="map-surface" class="map-surface">
+        <div class="scene-map-bg"></div>
+        <img class="scene-map-bg-image" src="../assets/map-placeholder.png" alt="" data-loaded="false">
+
+        <div id="flightbox-overlay" class="app-settings-overlay" style="display:block;">
+          <div class="app-settings-dialog" role="dialog" aria-modal="true">
+            <div class="app-settings-head">
+              <div class="app-settings-title">FlightBox</div>
+              <button class="mini-btn" type="button">Close</button>
+            </div>
+            <div class="app-settings-body flightbox-body">
+              <div class="flightbox-tabs" role="tablist">
+                <button class="flightbox-tab is-active" type="button" role="tab" aria-selected="true">Status</button>
+                <button class="flightbox-tab" type="button" role="tab" aria-selected="false">Settings</button>
+                <button class="flightbox-tab" type="button" role="tab" aria-selected="false">Diagnostics</button>
+              </div>
+              <section class="flightbox-panel">
+                <div class="flightbox-section">
+                  <div class="flightbox-section-title">Module Health</div>
+                  <div class="flightbox-health-grid">
+                    <div class="flightbox-health-item"><span>ADSB</span><span class="flightbox-status-pill is-online">Online</span></div>
+                    <div class="flightbox-health-item"><span>GPS</span><span class="flightbox-status-pill is-online">Online</span></div>
+                    <div class="flightbox-health-item"><span>AHRS</span><span class="flightbox-status-pill is-online">Online</span></div>
+                    <div class="flightbox-health-item"><span>BMP</span><span class="flightbox-status-pill is-online">Online</span></div>
+                    <div class="flightbox-health-item"><span>COMON</span><span class="flightbox-status-pill is-online">Online</span></div>
+                    <div class="flightbox-health-item"><span>System</span><span class="flightbox-status-pill is-online">Online</span></div>
+                  </div>
+                </div>
+                <div class="flightbox-section">
+                  <div class="flightbox-section-title">GPS</div>
+                  <div class="flightbox-row-grid">
+                    <div class="flightbox-row"><div class="flightbox-label">Fix</div><div class="flightbox-value">SBAS/WAAS</div></div>
+                    <div class="flightbox-row"><div class="flightbox-label">Satellites</div><div class="flightbox-value">9</div></div>
+                    <div class="flightbox-row"><div class="flightbox-label">Accuracy (H/V)</div><div class="flightbox-value">3.3 m / 5.0 m</div></div>
+                    <div class="flightbox-row"><div class="flightbox-label">Location</div><div class="flightbox-value">30.52144, -97.78241</div></div>
+                    <div class="flightbox-row"><div class="flightbox-label">Altitude</div><div class="flightbox-value">897 ft MSL</div></div>
+                  </div>
+                </div>
+                <div class="flightbox-section">
+                  <div class="flightbox-section-title">ADS-B (GDL90)</div>
+                  <div class="flightbox-row-grid">
+                    <div class="flightbox-row"><div class="flightbox-label">1090 Traffic</div><div class="flightbox-value">12 / 18</div></div>
+                    <div class="flightbox-row"><div class="flightbox-label">UAT Traffic</div><div class="flightbox-value">7 / 11</div></div>
+                    <div class="flightbox-row"><div class="flightbox-label">UAT Uplink</div><div class="flightbox-value">3 / 4</div></div>
+                  </div>
+                  <div class="flightbox-section-note">Current minute / max minute</div>
+                </div>
+                <div class="flightbox-section">
+                  <div class="flightbox-section-title">AHRS</div>
+                  <div class="flightbox-row-grid">
+                    <div class="flightbox-row"><div class="flightbox-label">Pitch</div><div class="flightbox-value">+0.3°</div></div>
+                    <div class="flightbox-row"><div class="flightbox-label">Roll</div><div class="flightbox-value">-1.2°</div></div>
+                    <div class="flightbox-row"><div class="flightbox-label">G-Load</div><div class="flightbox-value">1.00 g</div></div>
+                  </div>
+                </div>
+                <div class="flightbox-section">
+                  <div class="flightbox-section-title">Barometric Sensor</div>
+                  <div class="flightbox-row-grid">
+                    <div class="flightbox-row"><div class="flightbox-label">Pressure Altitude</div><div class="flightbox-value">847 ft</div></div>
+                    <div class="flightbox-row"><div class="flightbox-label">MSL Altitude</div><div class="flightbox-value">897 ft</div></div>
+                    <div class="flightbox-row"><div class="flightbox-label">Vertical Speed</div><div class="flightbox-value">0 fpm</div></div>
+                    <div class="flightbox-row"><div class="flightbox-label">Pressure</div><div class="flightbox-value">29.92 inHg</div></div>
+                  </div>
+                </div>
+                <div class="flightbox-section">
+                  <div class="flightbox-section-title">CO Sensor</div>
+                  <div class="flightbox-row-grid">
+                    <div class="flightbox-row"><div class="flightbox-label">CO (PPM)</div><div class="flightbox-value">2 ppm</div></div>
+                  </div>
+                </div>
+              </section>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="scene-watermark">SANDBOX · flightbox</div>
+  <script src="scene.js"></script>
+</body>
+</html>
