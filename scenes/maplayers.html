@@ -257,6 +257,51 @@
     }
 
     /* =========================================================
+       Picker rows — Icing Field / Icing Alt / Turb Alt under
+       Graphical Wx Mode. Always visible (pilots may pre-set even
+       when not the active mode). Matches the runway-min-row
+       hairline-and-pad rhythm so they feel native to the section.
+       ========================================================= */
+    .picker-row-group{
+      display:flex;flex-direction:column;
+      border-top:1px solid var(--popup-rule-color);
+      margin-top:6px;
+    }
+    .picker-row{
+      display:flex;align-items:center;gap:12px;
+      padding:10px 10px;
+      border-bottom:1px solid var(--popup-rule-color);
+    }
+    .picker-row:last-child{border-bottom:0}
+    .picker-row-label{
+      flex:0 0 88px;
+      font:600 13px/1.15 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
+      letter-spacing:.04em;color:var(--popup-label-color);
+    }
+    .picker-row-select{
+      flex:1 1 auto;min-width:0;
+      font:600 14px/1.2 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+      letter-spacing:.01em;color:var(--popup-value-color);
+      background:var(--layer-check-bg);
+      border:1px solid var(--layer-check-border);
+      border-radius:6px;
+      padding:9px 30px 9px 12px;
+      appearance:none;-webkit-appearance:none;-moz-appearance:none;
+      background-image:
+        linear-gradient(45deg,transparent 50%,var(--popup-label-color) 50%),
+        linear-gradient(135deg,var(--popup-label-color) 50%,transparent 50%);
+      background-position:calc(100% - 16px) 50%, calc(100% - 11px) 50%;
+      background-size:5px 5px,5px 5px;
+      background-repeat:no-repeat;
+      cursor:pointer;
+      font-variant-numeric:tabular-nums;
+    }
+    .picker-row-select:focus{
+      outline:2px solid var(--accent);outline-offset:1px;
+      border-color:var(--accent);
+    }
+
+    /* =========================================================
        Footer action row (canon).
        ========================================================= */
     .popup-action-row{
@@ -385,6 +430,51 @@
                       <li><label class="layer-toggle"><span class="layer-toggle-label">IR Clouds</span><input type="radio" name="gwx-mode" value="IR Clouds"><span class="layer-toggle-radio"></span></label></li>
                       <li><label class="layer-toggle"><span class="layer-toggle-label">Icing</span><input type="radio" name="gwx-mode" value="Icing"><span class="layer-toggle-radio"></span></label></li>
                     </ul>
+                    <!-- Conditional pickers (always visible; tied to Icing / Turbulence modes) -->
+                    <div class="picker-row-group" data-group="gwx-fields">
+                      <div class="picker-row">
+                        <div class="picker-row-label">Icing Field</div>
+                        <select class="picker-row-select" id="picker-icing-field" data-meta-key="icingField">
+                          <option selected>Severity</option>
+                          <option>Probability</option>
+                          <option>SLD</option>
+                        </select>
+                      </div>
+                      <div class="picker-row">
+                        <div class="picker-row-label">Icing Alt</div>
+                        <select class="picker-row-select" id="picker-icing-alt" data-meta-key="icingAlt">
+                          <option>2,000 ft</option>
+                          <option>4,000 ft</option>
+                          <option>6,000 ft</option>
+                          <option>8,000 ft</option>
+                          <option>10,000 ft</option>
+                          <option selected>12,000 ft</option>
+                          <option>14,000 ft</option>
+                          <option>16,000 ft</option>
+                          <option>18,000 ft</option>
+                          <option>20,000 ft</option>
+                          <option>22,000 ft</option>
+                          <option>24,000 ft</option>
+                        </select>
+                      </div>
+                      <div class="picker-row">
+                        <div class="picker-row-label">Turb Alt</div>
+                        <select class="picker-row-select" id="picker-turb-alt" data-meta-key="turbAlt">
+                          <option>2,000 ft</option>
+                          <option>4,000 ft</option>
+                          <option>6,000 ft</option>
+                          <option>8,000 ft</option>
+                          <option>10,000 ft</option>
+                          <option>12,000 ft</option>
+                          <option>14,000 ft</option>
+                          <option selected>16,000 ft</option>
+                          <option>18,000 ft</option>
+                          <option>20,000 ft</option>
+                          <option>22,000 ft</option>
+                          <option>24,000 ft</option>
+                        </select>
+                      </div>
+                    </div>
                   </div>
                 </section>
 
@@ -501,6 +591,9 @@
       const RUNWAY_LABELS = ["Any", "≥2,000 ft", "≥3,000 ft", "≥4,000 ft", "≥5,000 ft", "≥6,000 ft"];
       const RUNWAY_META   = ["≥0 ft",  "≥2k ft",  "≥3k ft",  "≥4k ft",  "≥5k ft",  "≥6k ft"];
 
+      // Compress "12,000 ft" → "12K" for tight meta strings.
+      function compactAlt(s) { return (s || '').replace(/,000 ft$/, 'K'); }
+
       // Update section-meta strings live.
       function updateMeta(group) {
         const list = document.querySelector(`.layer-toggle-list[data-group="${group}"]`);
@@ -508,7 +601,17 @@
         if (!list || !meta) return;
         if (group === 'gwx-mode' || group === 'base') {
           const sel = list.querySelector('input:checked');
-          meta.textContent = sel ? sel.value.toUpperCase() : '—';
+          if (!sel) { meta.textContent = '—'; return; }
+          if (group === 'gwx-mode' && sel.value === 'Icing') {
+            const f = (document.getElementById('picker-icing-field')?.value || '').toUpperCase();
+            const a = compactAlt(document.getElementById('picker-icing-alt')?.value);
+            meta.textContent = `ICING · ${f} · ${a}`;
+          } else if (group === 'gwx-mode' && sel.value === 'Turbulence') {
+            const a = compactAlt(document.getElementById('picker-turb-alt')?.value);
+            meta.textContent = `TURB · ${a}`;
+          } else {
+            meta.textContent = sel.value.toUpperCase();
+          }
           return;
         }
         if (group === 'airports') {
@@ -542,12 +645,17 @@
       // React to changes.
       document.addEventListener('change', (e) => {
         const list = e.target.closest('.layer-toggle-list');
-        if (!list) return;
-        const group = list.dataset.group;
-        updateMeta(group);
-        // Cross-group: GWX master in "trafwx" gates the gwx-mode section visually.
-        if (group === 'trafwx') syncMasters();
-        if (group === 'airports') syncMasters();
+        if (list) {
+          const group = list.dataset.group;
+          updateMeta(group);
+          // Cross-group: GWX master in "trafwx" gates the gwx-mode section visually.
+          if (group === 'trafwx') syncMasters();
+          if (group === 'airports') syncMasters();
+          return;
+        }
+        // Picker selects: refresh the gwx-mode meta so collapsed-section header
+        // reflects the chosen Icing/Turbulence parameters.
+        if (e.target.matches('.picker-row-select')) updateMeta('gwx-mode');
       });
 
       // Runway-min slider — fill + label + meta.
