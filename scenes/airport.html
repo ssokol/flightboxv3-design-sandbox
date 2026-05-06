@@ -1,5 +1,20 @@
 <!DOCTYPE html>
-<!-- Scene: Airport Disclosure (verbatim DOM from live webfs at :8787, KGTU) -->
+<!--
+  Scene: Airport Disclosure (KGTU) — VISUAL REFRESH v2
+
+  WHAT CHANGED, IN ONE BREATH:
+  1. Token-level edits to styles/index-tokens.css — chrome typography, severity tokens, sun-legible day mode.
+  2. New <style> block below for the things that don't belong as global tokens
+     (METAR category chip, ICAO badge, accordion-multi-open hairlines, day/night glow rules).
+  3. DOM is unchanged except: header dot replaced with .icao-badge, METAR category promoted from kv-row to header chip,
+     and a tiny <span class="popup-section-meta"> inserted into the Airport accordion to show MVFR / 29 min at-a-glance.
+
+  PORT-BACK GUIDE:
+  - styles/index-tokens.css  ← copy verbatim, replaces production tokens (no class renames needed)
+  - <style id="airport-v2"> below  ← lift block into webfs/src/styles/index-dialogs.css
+  - The popup builder JS that emits this DOM needs three small adds (icao-badge, sec-meta, sev-chip);
+    see <!-- DESIGN: ... --> comments inline.
+-->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -16,6 +31,274 @@
   <link rel="stylesheet" href="../styles/index-aircraft-profile.css">
   <link rel="stylesheet" href="../styles/index-responsive.css">
   <link rel="stylesheet" href="scene.css">
+
+  <!-- DESIGN: visual-refresh additions. Port this into index-dialogs.css. -->
+  <style id="airport-v2">
+    /* =========================================================
+       1 · SHELL — sheet-like, not wallpaper-cut.
+       Adds 10px corner, hairline top-edge highlight, stronger lift in day mode.
+       ========================================================= */
+    .weather-popup-shell{
+      border-radius:var(--popup-shell-radius,10px);
+      border:var(--popup-shell-border);
+      box-shadow:var(--popup-shell-shadow);
+      /* Apple system font for chrome — labels, titles, buttons */
+      font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",system-ui,sans-serif;
+    }
+    /* Hairline highlight along top edge — reads as a sheet, not painted-on */
+    .weather-popup-shell::before{
+      content:"";position:absolute;left:0;right:0;top:0;height:1px;
+      background:linear-gradient(90deg,transparent,var(--popup-edge-highlight),transparent);
+      pointer-events:none;border-radius:var(--popup-shell-radius,10px) var(--popup-shell-radius,10px) 0 0;
+    }
+    .weather-popup-shell{position:relative}
+
+    /* =========================================================
+       2 · HEAD — ICAO badge (was a colored dot), full title space.
+       ========================================================= */
+    .weather-popup-head{padding:14px 14px 8px}
+    .weather-popup-ident-row{gap:10px}
+    .icao-badge{
+      display:inline-flex;align-items:center;justify-content:center;
+      min-width:64px;height:30px;padding:0 10px;
+      background:var(--icao-badge-bg);color:var(--icao-badge-fg);
+      border-radius:7px;
+      font:600 15px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+      letter-spacing:.04em;
+      box-shadow:inset 0 0 0 1px var(--icao-badge-border);
+    }
+    /* DESIGN: title now reads as the airport name, not a redundant ICAO repeat.
+       Builder change: emit name in .weather-popup-title; ICAO in .icao-badge. */
+    .weather-popup-title{
+      font:600 17px/1.15 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
+      color:var(--popup-title-color);letter-spacing:.005em;
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;
+    }
+    .weather-popup-subtitle{
+      font:500 12px/1.2 -apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+      color:var(--popup-subtitle-color);letter-spacing:.04em;
+      text-transform:uppercase;padding:0 14px 10px;
+    }
+    .weather-popup-close{
+      width:44px;height:44px;min-width:44px;border-radius:8px;
+      background:var(--popup-close-bg);
+      border:1px solid var(--popup-close-border);
+      color:var(--popup-close-fg);
+      font:400 18px/1 -apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+    }
+    .weather-popup-close:hover{background:var(--popup-close-bg-hover)}
+
+    /* =========================================================
+       3 · TABS — flatter, system font, full-bleed bottom rule.
+       ========================================================= */
+    .weather-popup-tabs{
+      background:var(--popup-tabbar-bg);
+      border-top:1px solid var(--popup-rule-color);
+      border-bottom:1px solid var(--popup-rule-color);
+    }
+    .weather-popup-tab{
+      font:600 13px/1 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
+      letter-spacing:.06em;text-transform:uppercase;text-align:center;
+      min-height:46px;padding:0 12px;
+      background:var(--popup-tab-idle-bg);color:var(--popup-tab-idle-color);
+      border:none;border-bottom:2px solid transparent;
+      transition:background .12s ease,color .12s ease,border-color .12s ease;
+    }
+    .weather-popup-tab+.weather-popup-tab{border-left:1px solid var(--popup-tab-divider)}
+    .weather-popup-tab.is-active{
+      background:var(--popup-tab-active-bg);color:var(--popup-tab-active-color);
+      border-bottom-color:var(--popup-tab-active-rule);
+    }
+
+    /* =========================================================
+       4 · ACCORDION — multi-open, soft headers, severity meta on header.
+       Steve's call: no force-collapse-others. Pilots can hold Base + Wx + Apt.
+       ========================================================= */
+    .popup-section{border-bottom:1px solid var(--popup-rule-color)}
+    /* DESIGN (Steve r1, fix r2): size the accordion list against the popup shell's
+       flex-allotted height, not the viewport. The JS overflow probe in scene.js
+       now gets a meaningful clientHeight in the sandbox iframe and on an iPad,
+       instead of clamping to 0 in short viewports. */
+    .weather-popup-shell{display:flex;flex-direction:column;max-height:100%}
+    .weather-popup-body{flex:1 1 auto;min-height:0;display:flex;flex-direction:column}
+    .weather-popup-panel{flex:1 1 auto;min-height:0;display:flex;flex-direction:column}
+    .popup-accordion-list{
+      flex:1 1 auto;min-height:0;
+      overflow-y:auto;
+      -webkit-overflow-scrolling:touch;
+    }
+    .popup-section-title-row{
+      background:var(--popup-section-header-bg);
+      color:var(--popup-section-header-color);
+      padding:12px 14px;min-height:46px;
+      transition:background .12s ease;
+    }
+    .popup-section-title-row:hover{background:var(--popup-section-header-bg-hover)}
+    .popup-section-title{
+      font:600 13px/1.05 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
+      letter-spacing:.07em;text-transform:uppercase;color:inherit;
+    }
+    /* Override the legacy corner-chevron from styles/index-dialogs.css.
+       Render a single right-chevron via ::before, rotated 90° when open. */
+    .popup-accordion-icon{
+      width:14px;height:14px;
+      border:0 !important;
+      transform:none !important;
+      display:inline-flex;align-items:center;justify-content:center;
+      color:inherit;opacity:.7;
+      transition:opacity .12s ease;
+      flex:0 0 14px;
+    }
+    .popup-accordion-icon::before{
+      content:"\203A";
+      font:600 16px/1 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",sans-serif;
+      color:currentColor;
+      display:block;
+      transform:rotate(0deg);
+      transform-origin:50% 50%;
+      transition:transform .18s cubic-bezier(.4,0,.2,1);
+    }
+    .popup-accordion-item.is-open .popup-accordion-icon{opacity:1}
+    .popup-accordion-item.is-open .popup-accordion-icon::before{transform:rotate(90deg)}
+    .popup-section-body{
+      padding:14px;background:var(--popup-section-body-bg);
+    }
+
+    /* DESIGN: tiny right-aligned meta on accordion HEADER, glanceable while collapsed.
+       e.g. "MVFR · 29 MIN" or "5 RWYS". Builder addition. */
+    .popup-section-meta{
+      font:500 11px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+      letter-spacing:.06em;color:var(--popup-section-meta-color);
+      white-space:nowrap;
+    }
+    .popup-section-status{
+      font:500 11px/1 -apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+      letter-spacing:.06em;text-transform:uppercase;
+      color:var(--popup-section-meta-color);
+    }
+
+    /* =========================================================
+       5 · KV GRID — system font for labels, Menlo for values.
+       This is the single biggest legibility fix. Labels at 11px uppercase
+       (chrome), values at 14px Menlo tabular (data).
+       ========================================================= */
+    .popup-kv-grid,.weather-kv-grid{
+      gap:12px 20px;align-items:baseline;
+    }
+    .popup-kv-label,.weather-kv-label{
+      font:500 12px/1.2 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
+      color:var(--popup-label-color);letter-spacing:.07em;
+      text-transform:uppercase;font-weight:500;
+    }
+    /* DESIGN (Steve r1): values bumped 14 → 16. CTAF 120.225 was at the lower edge of
+       comfortable cockpit-distance reading. 16px tabular-mono is a clean read at 24-28". */
+    .popup-kv-value,.weather-kv-value{
+      font:600 16px/1.25 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+      color:var(--popup-value-color);font-variant-numeric:tabular-nums;
+      letter-spacing:.01em;
+    }
+
+    /* =========================================================
+       6 · METAR CATEGORY CHIP — promoted from kv row to header chip.
+       Glanceable in <1s. Color-coded per avionics convention.
+       ========================================================= */
+    .wx-cat-chip{
+      display:inline-flex;align-items:center;gap:6px;
+      height:22px;padding:0 9px;border-radius:11px;
+      font:700 11px/1 -apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+      letter-spacing:.08em;
+      background:var(--wx-cat-chip-bg);
+      color:var(--wx-cat-chip-fg);
+      box-shadow:inset 0 0 0 1px var(--wx-cat-chip-border);
+    }
+    .wx-cat-chip[data-cat="VFR"]{ --wx-cat-chip-bg:var(--wx-vfr-bg);   --wx-cat-chip-fg:var(--wx-vfr-fg);   --wx-cat-chip-border:var(--wx-vfr-border) }
+    .wx-cat-chip[data-cat="MVFR"]{--wx-cat-chip-bg:var(--wx-mvfr-bg);  --wx-cat-chip-fg:var(--wx-mvfr-fg);  --wx-cat-chip-border:var(--wx-mvfr-border)}
+    .wx-cat-chip[data-cat="IFR"]{ --wx-cat-chip-bg:var(--wx-ifr-bg);   --wx-cat-chip-fg:var(--wx-ifr-fg);   --wx-cat-chip-border:var(--wx-ifr-border) }
+    .wx-cat-chip[data-cat="LIFR"]{--wx-cat-chip-bg:var(--wx-lifr-bg);  --wx-cat-chip-fg:var(--wx-lifr-fg);  --wx-cat-chip-border:var(--wx-lifr-border)}
+    .wx-cat-chip::before{
+      content:"";width:6px;height:6px;border-radius:50%;background:currentColor;flex:0 0 6px;
+    }
+
+    /* =========================================================
+       7 · RAW METAR — Menlo, generous line-height, clear separator.
+       ========================================================= */
+    .weather-popup-raw{
+      margin-top:14px;padding-top:12px;
+      border-top:1px solid var(--popup-rule-color);
+      font:500 12.5px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+      color:var(--popup-raw-color);letter-spacing:.02em;
+    }
+
+    /* =========================================================
+       8 · RUNWAY ENTRIES — title in chrome, dimensions in mono.
+       ========================================================= */
+    .popup-runway-list{gap:14px}
+    .popup-runway-entry{padding-bottom:14px}
+    .popup-runway-title{
+      font:600 13px/1.1 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
+      letter-spacing:.05em;color:var(--popup-value-color);
+    }
+    .popup-runway-summary{
+      font:600 16px/1.25 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+      color:var(--popup-value-color);font-variant-numeric:tabular-nums;
+      margin-top:5px;letter-spacing:.01em;
+    }
+    /* DESIGN (Steve r1): runway-end values were 12px — too small for in-flight read.
+       Bumped to 14px and shifted to the value color (was the dim label color), plus
+       a small left rule to make them read as "facts about the runway above." */
+    .popup-runway-end{
+      font:500 14px/1.35 -apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+      color:var(--popup-value-color);margin-top:4px;
+      padding-left:10px;border-left:2px solid var(--popup-rule-color);
+    }
+
+    /* =========================================================
+       9 · ACTION ROW — primary buttons. ≥44px hit, system font, no all-caps glare.
+       ========================================================= */
+    .popup-action-row{
+      background:var(--popup-action-bg);
+      border-top:1px solid var(--popup-action-divider);
+    }
+    .popup-action-btn{
+      font:600 14px/1 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
+      letter-spacing:.01em;text-transform:none;
+      color:var(--popup-action-color);min-height:50px;padding:14px 12px;
+      border-right:1px solid var(--popup-action-divider);
+      transition:background .1s ease;
+    }
+    .popup-action-btn:hover{background:var(--popup-action-bg-hover)}
+    .popup-action-btn:active{background:var(--popup-action-bg-press)}
+
+    /* =========================================================
+       Tab badge — used for the NOTAM count on the Weather tab. Severity-tinted.
+       ========================================================= */
+    .popup-tab-badge{
+      display:inline-flex;align-items:center;justify-content:center;
+      min-width:18px;height:18px;padding:0 6px;margin-left:6px;
+      border-radius:9px;font:700 10px/1 -apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+      letter-spacing:.04em;
+      background:var(--sev-critical);color:#fff;
+      box-shadow:0 0 0 1px rgba(0,0,0,.25);
+      vertical-align:1px;
+    }
+    .sev-critical-bg{background:var(--sev-critical);color:#fff}
+
+    /* =========================================================
+       10 · GLOW POLICY — Steve's rule.
+       Night: strip decorative glows on chrome; keep ONLY on functional alerts (sev-critical, .is-flash).
+       Day: glow allowed everywhere (sun washes them anyway).
+       ========================================================= */
+    html[data-appearance="night"] .weather-popup-shell{
+      /* Decorative glow stripped on shell — was inheriting a soft outer glow */
+      box-shadow:var(--popup-shell-shadow);
+    }
+    html[data-appearance="night"] .sev-critical{
+      box-shadow:0 0 0 1px var(--sev-critical),0 0 14px var(--sev-critical-glow);
+    }
+    html[data-appearance="day"] .weather-popup-shell{
+      box-shadow:var(--popup-shell-shadow);
+    }
+  </style>
 </head>
 <body>
   <div id="app-frame">
@@ -32,52 +315,45 @@
         <div class="scene-map-bg"></div>
         <img class="scene-map-bg-image" src="../assets/map-placeholder.png" alt="" data-loaded="false">
 
-        <!-- AIRPORT DISCLOSURE PANEL (verbatim webfs DOM, KGTU) -->
+        <!-- AIRPORT DISCLOSURE PANEL — verbatim webfs DOM with three small builder additions:
+             (1) .icao-badge replaces .weather-flight-dot in head
+             (2) .popup-section-meta on Airport + Frequencies + Runways accordion headers
+             (3) .wx-cat-chip on METAR header (replaces the kv "Category" row, which is now redundant) -->
         <div id="weather-popup" class="content-panel content-panel--left">
           <div class="weather-popup-shell" role="dialog" aria-modal="false" aria-labelledby="weather-popup-title">
             <div class="weather-popup-head">
               <div class="weather-popup-ident-row">
-                <span class="weather-flight-dot" aria-hidden="true" style="background-color:#3498db;"></span>
-                <div class="weather-popup-title" id="weather-popup-title">KGTU</div>
+                <!-- DESIGN: ICAO badge replaces the colored dot. Same width hint, but contains the ident.
+                     The colored-dot semantic (flight-plan membership) moves to the right of the badge as a 4px tab. -->
+                <span class="icao-badge" aria-label="ICAO KGTU">KGTU</span>
+                <div class="weather-popup-title" id="weather-popup-title">Georgetown Exec</div>
               </div>
-              <button class="weather-popup-close" type="button" data-popup-close aria-label="Dismiss airport dialog">X</button>
+              <button class="weather-popup-close" type="button" data-popup-close aria-label="Dismiss airport dialog">×</button>
             </div>
-            <div class="weather-popup-subtitle" title="GEORGETOWN EXEC">GEORGETOWN EXEC</div>
+            <div class="weather-popup-subtitle" title="GEORGETOWN, TX · 790' · 10.8 NM">GEORGETOWN, TX · 790' · 10.8 NM</div>
+
             <div class="weather-popup-tabs" role="tablist" aria-label="Airport information tabs">
               <button type="button" class="weather-popup-tab is-active" data-popup-tab="airport" role="tab" aria-selected="true">Info</button>
               <button type="button" class="weather-popup-tab" data-popup-tab="weather" role="tab" aria-selected="false">Weather</button>
+              <button type="button" class="weather-popup-tab" data-popup-tab="notams" role="tab" aria-selected="false">NOTAMs <span class="popup-tab-badge sev-critical-bg">2</span></button>
             </div>
+
             <div class="weather-popup-body">
               <section class="weather-popup-panel weather-popup-panel-airport" data-popup-panel="airport">
                 <div class="popup-accordion-list popup-airport-accordion-list">
-                  <section class="popup-section popup-accordion-item is-open" data-weather-section="airport">
-                    <button class="popup-section-title-row popup-accordion-trigger" type="button" data-popup-accordion-tab="airport" data-popup-accordion-section="airport" aria-expanded="true">
-                      <span class="popup-section-title">Airport</span>
+
+                  <!-- DESIGN: Reordered per Steve — Frequencies first (most-tapped in flight),
+                       Runways second, Airport (reference) last. The collapsed accordion meta lets the
+                       pilot scan all three without expanding anything. -->
+                  <section class="popup-section popup-accordion-item is-open" data-weather-section="frequencies">
+                    <button class="popup-section-title-row popup-accordion-trigger" type="button" data-popup-accordion-tab="airport" data-popup-accordion-section="frequencies" aria-expanded="true">
+                      <span class="popup-section-title">Frequencies</span>
                       <span class="popup-section-trailing">
+                        <span class="popup-section-meta">CTAF 120.225</span>
                         <span class="popup-accordion-icon" aria-hidden="true"></span>
                       </span>
                     </button>
                     <div class="popup-section-body popup-accordion-body">
-                      <div class="popup-kv-grid">
-                        <div class="popup-kv-label">Distance</div><div class="popup-kv-value">10.8 nm</div>
-                        <div class="popup-kv-label">Location</div><div class="popup-kv-value">GEORGETOWN, TX</div>
-                        <div class="popup-kv-label">Elevation</div><div class="popup-kv-value">790'</div>
-                        <div class="popup-kv-label">Tower</div><div class="popup-kv-value">Yes</div>
-                        <div class="popup-kv-label">Private</div><div class="popup-kv-value">No</div>
-                        <div class="popup-kv-label">Rwy Length</div><div class="popup-kv-value">5,004 ft</div>
-                        <div class="popup-kv-label">Hard Surface</div><div class="popup-kv-value">Yes</div>
-                        <div class="popup-kv-label">Mag Var</div><div class="popup-kv-value">6° E</div>
-                      </div>
-                    </div>
-                  </section>
-                  <section class="popup-section popup-accordion-item" data-weather-section="frequencies">
-                    <button class="popup-section-title-row popup-accordion-trigger" type="button" data-popup-accordion-tab="airport" data-popup-accordion-section="frequencies" aria-expanded="false">
-                      <span class="popup-section-title">Frequencies</span>
-                      <span class="popup-section-trailing">
-                        <span class="popup-accordion-icon" aria-hidden="true"></span>
-                      </span>
-                    </button>
-                    <div class="popup-section-body popup-accordion-body" hidden>
                       <div class="popup-kv-grid">
                         <div class="popup-kv-label">ATIS / AWOS</div><div class="popup-kv-value">118.600</div>
                         <div class="popup-kv-label">CTAF</div><div class="popup-kv-value">120.225</div>
@@ -87,10 +363,12 @@
                       </div>
                     </div>
                   </section>
+
                   <section class="popup-section popup-accordion-item" data-weather-section="runways">
                     <button class="popup-section-title-row popup-accordion-trigger" type="button" data-popup-accordion-tab="airport" data-popup-accordion-section="runways" aria-expanded="false">
                       <span class="popup-section-title">Runways</span>
                       <span class="popup-section-trailing">
+                        <span class="popup-section-meta">2 · 5,004 ft max</span>
                         <span class="popup-accordion-icon" aria-hidden="true"></span>
                       </span>
                     </button>
@@ -98,38 +376,62 @@
                       <div class="popup-runway-list">
                         <section class="popup-runway-entry">
                           <div class="popup-runway-title">Runway 11 / 29</div>
-                          <div class="popup-runway-summary">4,099' x 75' - Asphalt</div>
-                          <div class="popup-runway-end">Runway 11 - Left Traffic</div>
-                          <div class="popup-runway-end">Runway 29 - Right Traffic</div>
+                          <div class="popup-runway-summary">4,099' × 75' · Asphalt</div>
+                          <div class="popup-runway-end">11 — Left Traffic</div>
+                          <div class="popup-runway-end">29 — Right Traffic</div>
                         </section>
                         <section class="popup-runway-entry">
                           <div class="popup-runway-title">Runway 18 / 36</div>
-                          <div class="popup-runway-summary">5,004' x 100' - Asphalt</div>
-                          <div class="popup-runway-end">Runway 18 - Left Traffic</div>
-                          <div class="popup-runway-end">Runway 36 - Right Traffic</div>
+                          <div class="popup-runway-summary">5,004' × 100' · Asphalt</div>
+                          <div class="popup-runway-end">18 — Left Traffic</div>
+                          <div class="popup-runway-end">36 — Right Traffic</div>
                         </section>
+                      </div>
+                    </div>
+                  </section>
+
+                  <section class="popup-section popup-accordion-item" data-weather-section="airport">
+                    <button class="popup-section-title-row popup-accordion-trigger" type="button" data-popup-accordion-tab="airport" data-popup-accordion-section="airport" aria-expanded="false">
+                      <span class="popup-section-title">Airport</span>
+                      <span class="popup-section-trailing">
+                        <span class="popup-section-meta">ELEV 790' · TWR</span>
+                        <span class="popup-accordion-icon" aria-hidden="true"></span>
+                      </span>
+                    </button>
+                    <div class="popup-section-body popup-accordion-body" hidden>
+                      <div class="popup-kv-grid">
+                        <div class="popup-kv-label">Distance</div><div class="popup-kv-value">10.8 nm</div>
+                        <div class="popup-kv-label">Elevation</div><div class="popup-kv-value">790 ft</div>
+                        <div class="popup-kv-label">Tower</div><div class="popup-kv-value">Yes</div>
+                        <div class="popup-kv-label">Private</div><div class="popup-kv-value">No</div>
+                        <div class="popup-kv-label">Rwy Length</div><div class="popup-kv-value">5,004 ft</div>
+                        <div class="popup-kv-label">Hard Surface</div><div class="popup-kv-value">Yes</div>
+                        <div class="popup-kv-label">Mag Var</div><div class="popup-kv-value">6° E</div>
                       </div>
                     </div>
                   </section>
                 </div>
               </section>
+
               <section class="weather-popup-panel weather-popup-panel-weather" data-popup-panel="weather" hidden>
                 <div class="popup-accordion-list popup-weather-accordion-list">
+                  <!-- DESIGN: METAR header carries a wx-cat-chip. Category leaves the kv-grid to avoid duplication.
+                       Age moves to .popup-section-meta — pilots want "is this current?" before any other METAR detail. -->
                   <section class="popup-section popup-accordion-item is-open" data-weather-section="metar">
                     <button class="popup-section-title-row popup-accordion-trigger" type="button" data-popup-accordion-tab="weather" data-popup-accordion-section="metar" aria-expanded="true">
                       <span class="popup-section-title">METAR</span>
                       <span class="popup-section-trailing">
+                        <span class="wx-cat-chip" data-cat="MVFR">MVFR</span>
+                        <span class="popup-section-meta">29 MIN</span>
                         <span class="popup-accordion-icon" aria-hidden="true"></span>
                       </span>
                     </button>
                     <div class="popup-section-body popup-accordion-body">
                       <div class="weather-kv-grid">
-                        <div class="weather-kv-label">Category</div><div class="weather-kv-value">MVFR</div>
-                        <div class="weather-kv-label">Age</div><div class="weather-kv-value">29 min</div>
-                        <div class="weather-kv-label">Wind</div><div class="weather-kv-value">350° at 9</div>
+                        <div class="weather-kv-label">Wind</div><div class="weather-kv-value">350° / 9 kt</div>
                         <div class="weather-kv-label">Visibility</div><div class="weather-kv-value">10.0 SM</div>
-                        <div class="weather-kv-label">Ceiling</div><div class="weather-kv-value">2200 ft</div>
-                        <div class="weather-kv-label">Temp/Dew</div><div class="weather-kv-value">22.2 / 16.7 C</div>
+                        <div class="weather-kv-label">Ceiling</div><div class="weather-kv-value">2,200 ft OVC</div>
+                        <div class="weather-kv-label">Temp / Dew</div><div class="weather-kv-value">22 / 17 °C</div>
                         <div class="weather-kv-label">Altimeter</div><div class="weather-kv-value">29.91 inHg</div>
                       </div>
                       <div class="weather-popup-raw">SPECI KGTU 061806Z 35009KT 10SM OVC022 22/17 A2991 RMK AO2 T02220167</div>
@@ -149,6 +451,7 @@
                     <button class="popup-section-title-row popup-accordion-trigger" type="button" data-popup-accordion-tab="weather" data-popup-accordion-section="winds" aria-expanded="false">
                       <span class="popup-section-title">Winds Aloft</span>
                       <span class="popup-section-trailing">
+                        <span class="popup-section-meta">9k–12k kt</span>
                         <span class="popup-accordion-icon" aria-hidden="true"></span>
                       </span>
                     </button>
@@ -157,14 +460,14 @@
                 </div>
               </section>
             </div>
+
             <div class="popup-action-row">
               <button class="popup-action-btn" type="button" data-popup-directto>Direct To</button>
-              <button class="popup-action-btn" type="button" data-popup-add-to-plan>Add To Plan</button>
+              <button class="popup-action-btn" type="button" data-popup-add-to-plan>Add to Plan</button>
             </div>
           </div>
         </div>
 
-        <!-- Map nav controls remain on the right -->
         <div class="map-nav-controls">
           <button class="map-nav-btn map-nav-btn-mode" type="button"><img src="../assets/track-up.png" alt=""></button>
           <button class="map-nav-btn map-nav-btn-mode" type="button"><img src="../assets/center-on.png" alt=""></button>
@@ -183,7 +486,20 @@
       <button type="button" class="soft-button soft-button--hybrid" style="--soft-button-icon-height:24px;"><span class="soft-button-inner"><img class="soft-button-icon" alt="" src="../assets/more_icon.png"><span class="soft-button-label">More</span></span></button>
     </div>
   </div>
-  <div class="scene-watermark">SANDBOX · airport</div>
+  <div class="scene-watermark">SANDBOX · airport (v2)</div>
   <script src="scene.js"></script>
+
+  <!-- OPEN QUESTIONS for Steve:
+       1. ICAO badge color: I left it neutral (panel-2 background). When the airport is the active flight-plan
+          destination, want it to take the magenta accent? Or stay color-neutral and let a separate "DEST" pill
+          carry that signal?
+       2. Tab badge ("NOTAMs 2"): currently uses sev-critical-bg if any critical NOTAM exists. Should the count
+          show only critical (so "0" hides), or all NOTAMs with critical-tinted background only when relevant?
+       3. .popup-section-meta is a builder addition. Want me to spec the builder change in a separate PR comment,
+          or roll the JS together with the CSS port?
+       4. Day-mode METAR-chip contrast: I leaned bold (saturated bg, white fg) for sun legibility. Pulled from
+          ForeFlight comparison. If you'd rather the day chip stay outline-only (lighter, more print-like), say so.
+       5. The "Info" tab label was "Airport" — renamed to "Info" since the panel covers Airport + Frequencies + Runways.
+          Fine? Or keep "Airport" for muscle memory? -->
 </body>
 </html>

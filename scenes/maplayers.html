@@ -1,8 +1,37 @@
 <!DOCTYPE html>
-<!-- Scene: Map Layers Dialog (verbatim webfs DOM, top-right of map) -->
+<!--
+  Scene: Map Layers — VISUAL REFRESH v2 (canon: airport.html)
+
+  CANON LOCK:
+    Visual language inherited verbatim from scenes/airport.html v2 — same shell radius,
+    same hairline edge highlight, same accordion (multi-open + intelligent LRU), same
+    type system (Apple system for chrome, Menlo only for tabular data, no all-caps
+    button labels). Anywhere this scene re-declares CSS that lives in airport.html, it
+    is the SAME RULE — copied here only because each scene is its own iframe document
+    and we don't yet have a shared dialogs.css. When we port to webfs, the airport block
+    becomes the single source of truth.
+
+  WHY ACCORDION (Steve r0): Map Layers is "give me the whole control surface" — that
+  wants always-visible section headers, scannable in turbulence, with multi-open allowed
+  so a pilot can configure Base Layer + Graphical Weather + Airport Options simultaneously.
+
+  SECTIONS (in order, by frequency-of-use in flight):
+    1. Visibility       — Ownship, Distance Rings, Track Vectors, Path Indicator, SVS, Course
+    2. Traffic & Weather — Traffic, METARs, PIREPs, TFR, Lightning, Graphical Weather toggle
+    3. Graphical Weather — radio: NEXRAD / Advisories / Turbulence / Cloud Tops / IR / Icing
+    4. Airports          — Airports toggle, Diagrams, filters (uncontrolled/soft/private/seaplane/heli), Runway-min slider
+    5. Airspace & Charts — Airspace Outline, SUA, Terrain, Airways Lo/Hi, Fixes, Navaids, Obstacles
+    6. Base Layer        — radio: Vector / Terrain / VFR Sectional / IFR Low / Satellite
+
+  The original flat 23-checkbox dump split into semantic groups so a pilot can find what
+  they're looking for in one glance. Headers carry .popup-section-meta showing the active
+  selection or count (e.g. "VECTOR", "NEXRAD", "5 of 6 on") so configuration state is
+  legible while collapsed.
+-->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Map Layers · Sandbox</title>
   <link rel="stylesheet" href="../styles/index-tokens.css">
   <link rel="stylesheet" href="../styles/index-base.css">
@@ -15,83 +44,430 @@
   <link rel="stylesheet" href="../styles/index-aircraft-profile.css">
   <link rel="stylesheet" href="../styles/index-responsive.css">
   <link rel="stylesheet" href="scene.css">
+
+  <!-- DESIGN: canonical popup chrome (mirrors airport.html). When we port: this whole
+       block becomes part of webfs/styles/index-dialogs.css and both scenes drop it. -->
+  <style id="maplayers-v2">
+    /* Full-height rail — no floating gap, no rounded shell. The disclosure is
+       part of the chrome, not a card on top of the map. (Steve r2) */
+    .weather-popup-shell{
+      border-radius:0;
+      border:0;
+      border-right:1px solid var(--popup-shell-border, rgba(180,205,222,.14));
+      box-shadow:none;
+      height:100%;
+      font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",system-ui,sans-serif;
+      display:flex;flex-direction:column;
+      position:relative;
+    }
+    /* The hairline edge highlight reads as a "card edge"; on a full-height rail
+       it'd just float in the middle of the screen — strip it. */
+    .weather-popup-shell::before{display:none}
+    .weather-popup-shell::before{
+      content:"";position:absolute;left:0;right:0;top:0;height:1px;
+      background:linear-gradient(90deg,transparent,var(--popup-edge-highlight),transparent);
+      pointer-events:none;border-radius:var(--popup-shell-radius,10px) var(--popup-shell-radius,10px) 0 0;
+    }
+    .weather-popup-head{padding:14px 14px 10px;display:flex;align-items:center;gap:10px}
+    .weather-popup-title{
+      font:600 17px/1.15 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
+      color:var(--popup-title-color);letter-spacing:.005em;flex:1;
+      min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    }
+    .weather-popup-close{
+      width:44px;height:44px;min-width:44px;border-radius:8px;
+      background:var(--popup-close-bg);
+      border:1px solid var(--popup-close-border);
+      color:var(--popup-close-fg);
+      font:400 18px/1 -apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+      cursor:pointer;
+    }
+    .weather-popup-close:hover{background:var(--popup-close-bg-hover)}
+
+    /* ===== Body / panels (canon) ===== */
+    .weather-popup-body{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;
+      border-top:1px solid var(--popup-rule-color)}
+    .weather-popup-panel{flex:1 1 auto;min-height:0;display:flex;flex-direction:column}
+    /* DESIGN (Steve r3): on a full-height left-rail disclosure the accordion is
+       mutually-exclusive (one open at a time). The open section's body fills the
+       remaining vertical space and scrolls internally if its content exceeds it.
+       Closed sections render only their header row — no overlap, clean stack. */
+    .popup-accordion-list{
+      display:flex;flex-direction:column;
+      flex:1 1 auto;min-height:0;overflow:hidden;
+    }
+    .popup-section{flex:0 0 auto;display:flex;flex-direction:column;min-height:0}
+    .popup-section.popup-accordion-item.is-open{flex:1 1 auto;min-height:0}
+    .popup-section-body{flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch}
+    .popup-section-body[hidden]{display:none !important}
+
+    /* ===== Section header (canon) ===== */
+    .popup-section{border-bottom:1px solid var(--popup-rule-color)}
+    .popup-section-title-row{
+      display:flex;align-items:center;justify-content:space-between;gap:12px;
+      width:100%;
+      background:var(--popup-section-header-bg);
+      color:var(--popup-section-header-color);
+      padding:12px 14px;min-height:46px;
+      border:0;border-radius:0;cursor:pointer;text-align:left;
+      transition:background .12s ease;
+    }
+    .popup-section-title-row:hover{background:var(--popup-section-header-bg-hover)}
+    .popup-section-title{
+      font:600 13px/1.05 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
+      letter-spacing:.07em;text-transform:uppercase;color:inherit;
+    }
+    .popup-section-trailing{display:inline-flex;align-items:center;gap:10px;color:inherit}
+    .popup-section-meta{
+      font:500 11px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+      letter-spacing:.06em;color:var(--popup-section-meta-color);white-space:nowrap;
+    }
+    /* Override the legacy corner-chevron from styles/index-dialogs.css.
+       Render a single right-chevron via ::before, rotated 90° when open. */
+    .popup-accordion-icon{
+      width:14px;height:14px;
+      border:0 !important;            /* kill legacy border-right/border-bottom */
+      transform:none !important;       /* kill legacy rotate(-45deg) */
+      display:inline-flex;align-items:center;justify-content:center;
+      color:inherit;opacity:.7;
+      transition:opacity .12s ease;
+      flex:0 0 14px;
+    }
+    .popup-accordion-icon::before{
+      content:"\203A";                  /* › single right-pointing angle quotation */
+      font:600 16px/1 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",sans-serif;
+      color:currentColor;
+      display:block;
+      transform:rotate(0deg);
+      transform-origin:50% 50%;
+      transition:transform .18s cubic-bezier(.4,0,.2,1);
+    }
+    .popup-accordion-item.is-open .popup-accordion-icon{opacity:1}
+    .popup-accordion-item.is-open .popup-accordion-icon::before{transform:rotate(90deg)}
+    .popup-section-body{padding:8px 8px 12px;background:var(--popup-section-body-bg)}
+
+    /* =========================================================
+       NEW · LAYER TOGGLE — the atomic control of this dialog.
+       Big tap target (44px min), label on the left, custom check/radio on the right.
+       Tapping anywhere on the row toggles the input. Typed in system, not Menlo.
+       ========================================================= */
+    .layer-toggle-list{display:flex;flex-direction:column;gap:2px;margin:0;padding:0;list-style:none}
+    .layer-toggle{
+      display:flex;align-items:center;justify-content:space-between;gap:14px;
+      min-height:44px;padding:0 10px;border-radius:6px;
+      background:transparent;color:var(--popup-value-color);
+      cursor:pointer;user-select:none;
+      transition:background .1s ease;
+    }
+    .layer-toggle:hover{background:var(--layer-toggle-bg-hover)}
+    .layer-toggle:active{background:var(--layer-toggle-bg-press)}
+    .layer-toggle-label{
+      font:500 15px/1.2 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
+      letter-spacing:.005em;flex:1;min-width:0;
+    }
+    .layer-toggle-sub{
+      display:block;font:400 12px/1.2 -apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+      color:var(--popup-label-color);margin-top:2px;letter-spacing:.01em;
+    }
+    /* Hide the native input; we render our own indicator. */
+    .layer-toggle input{position:absolute;opacity:0;pointer-events:none;width:0;height:0}
+
+    /* Checkbox indicator — hollow when off, filled accent + checkmark when on. */
+    .layer-toggle-check{
+      width:22px;height:22px;border-radius:5px;flex:0 0 22px;
+      background:var(--layer-check-bg);
+      box-shadow:inset 0 0 0 1.5px var(--layer-check-border);
+      position:relative;transition:background .1s ease,box-shadow .1s ease;
+    }
+    .layer-toggle input:checked ~ .layer-toggle-check{
+      background:var(--accent);box-shadow:inset 0 0 0 1.5px var(--accent);
+    }
+    .layer-toggle-check::after{
+      content:"";position:absolute;left:6px;top:2px;width:6px;height:11px;
+      border-right:2px solid #fff;border-bottom:2px solid #fff;
+      transform:rotate(45deg) scale(0);transform-origin:center;
+      transition:transform .12s cubic-bezier(.4,0,.2,1);
+    }
+    .layer-toggle input:checked ~ .layer-toggle-check::after{transform:rotate(45deg) scale(1)}
+
+    /* Radio indicator — same footprint as check, circular, dot when active. */
+    .layer-toggle-radio{
+      width:22px;height:22px;border-radius:50%;flex:0 0 22px;
+      background:var(--layer-check-bg);
+      box-shadow:inset 0 0 0 1.5px var(--layer-check-border);
+      position:relative;transition:background .1s ease,box-shadow .1s ease;
+    }
+    .layer-toggle-radio::after{
+      content:"";position:absolute;inset:5px;border-radius:50%;
+      background:var(--accent);transform:scale(0);transition:transform .12s cubic-bezier(.4,0,.2,1);
+    }
+    .layer-toggle input:checked ~ .layer-toggle-radio{box-shadow:inset 0 0 0 1.5px var(--accent)}
+    .layer-toggle input:checked ~ .layer-toggle-radio::after{transform:scale(1)}
+
+    /* Sub-toggle — visually nested under a parent toggle (e.g. Airport Diagrams under
+       Airports). Indented + lighter rule on the left. */
+    .layer-toggle.is-sub{margin-left:14px;border-left:2px solid var(--popup-rule-color);padding-left:14px;border-radius:0 6px 6px 0}
+
+    /* When a sub-toggle's parent is OFF, the sub-toggle is dimmed but still tappable. */
+    .layer-toggle.is-disabled{opacity:.45}
+
+    /* =========================================================
+       NEW · RUNWAY-MIN SLIDER — single value, snaps to a discrete length.
+       The value reads as the actual minimum runway length, not a numeric step.
+       ========================================================= */
+    .runway-min-row{
+      display:flex;flex-direction:column;gap:8px;
+      padding:14px 10px 6px;
+      border-top:1px solid var(--popup-rule-color);
+      margin-top:6px;
+    }
+    .runway-min-row-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+    .runway-min-row-title{
+      font:600 13px/1.05 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
+      letter-spacing:.04em;color:var(--popup-value-color);
+    }
+    .runway-min-row-value{
+      font:600 16px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+      letter-spacing:.01em;color:var(--popup-title-color);font-variant-numeric:tabular-nums;
+    }
+    .runway-min-row input[type="range"]{
+      -webkit-appearance:none;appearance:none;
+      width:100%;height:6px;border-radius:3px;
+      background:linear-gradient(to right,
+        var(--accent) 0%,
+        var(--accent) var(--rmin-fill, 0%),
+        var(--layer-check-border) var(--rmin-fill, 0%),
+        var(--layer-check-border) 100%);
+      outline:none;margin:8px 0 4px;
+    }
+    .runway-min-row input[type="range"]::-webkit-slider-thumb{
+      -webkit-appearance:none;appearance:none;width:24px;height:24px;
+      border-radius:50%;background:#fff;border:0;
+      box-shadow:0 1px 3px rgba(0,0,0,.45),inset 0 0 0 4px var(--accent);
+      cursor:pointer;
+    }
+    .runway-min-row input[type="range"]::-moz-range-thumb{
+      width:24px;height:24px;border-radius:50%;background:#fff;border:0;
+      box-shadow:0 1px 3px rgba(0,0,0,.45),inset 0 0 0 4px var(--accent);
+    }
+    .runway-min-row-ticks{
+      display:flex;justify-content:space-between;
+      font:500 10px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+      color:var(--popup-label-color);letter-spacing:.04em;padding:0 2px;
+    }
+
+    /* =========================================================
+       Footer action row (canon).
+       ========================================================= */
+    .popup-action-row{
+      display:flex;
+      background:var(--popup-action-bg);
+      border-top:1px solid var(--popup-action-divider);
+    }
+    .popup-action-btn{
+      flex:1;
+      font:600 14px/1 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
+      letter-spacing:.01em;text-transform:none;color:var(--popup-action-color);
+      min-height:50px;padding:14px 12px;
+      background:transparent;border:0;cursor:pointer;
+      transition:background .1s ease;
+    }
+    .popup-action-btn+.popup-action-btn{border-left:1px solid var(--popup-action-divider)}
+    .popup-action-btn:hover{background:var(--popup-action-bg-hover)}
+    .popup-action-btn:active{background:var(--popup-action-bg-press)}
+    .popup-action-btn--quiet{color:var(--popup-label-color)}
+
+    /* New tokens local to this scene — port to index-tokens.css. */
+    :root{
+      --layer-toggle-bg-hover: rgba(255,255,255,.04);
+      --layer-toggle-bg-press: rgba(255,255,255,.08);
+      --layer-check-bg: rgba(0,0,0,.25);
+      --layer-check-border: rgba(180,205,222,.35);
+    }
+    html[data-appearance="day"]{
+      --layer-toggle-bg-hover: rgba(20,40,56,.05);
+      --layer-toggle-bg-press: rgba(20,40,56,.10);
+      --layer-check-bg: rgba(20,40,56,.04);
+      --layer-check-border: rgba(20,40,56,.40);
+    }
+
+    /* DESIGN (Steve r2): all disclosures use the same structure as airport —
+       locked to the LEFT edge of the map area, full-height of the content area,
+       not a floating dialog. The popup shell takes 100% of this rail's height. */
+    #map-layers-popup{
+      position:absolute;top:0;left:0;bottom:0;
+      width:min(380px, 100%);
+      display:flex;flex-direction:column;
+    }
+  </style>
 </head>
 <body>
   <div id="app-frame">
     <div id="health-status-bar" class="health-status-bar">
-      <div class="health-status-cell is-green">FlightBox</div><div class="health-status-cell is-green">ADS-B</div><div class="health-status-cell is-green">GPS</div><div class="health-status-cell is-green">AHRS</div><div class="health-status-cell is-green">ALT</div><div class="health-status-cell is-green">CO</div>
+      <div class="health-status-cell is-green">FlightBox</div>
+      <div class="health-status-cell is-green">ADS-B</div>
+      <div class="health-status-cell is-green">GPS</div>
+      <div class="health-status-cell is-green">AHRS</div>
+      <div class="health-status-cell is-green">ALT</div>
+      <div class="health-status-cell is-green">CO</div>
     </div>
     <div id="content-area">
       <div id="map-surface" class="map-surface">
         <div class="scene-map-bg"></div>
         <img class="scene-map-bg-image" src="../assets/map-placeholder.png" alt="" data-loaded="false">
 
-        <div id="map-layers-dialog" class="map-layers-dialog" role="dialog" aria-modal="false" aria-label="Map layers">
-          <div class="map-layers-head"><div class="map-layers-title">Map Layers</div><button id="map-layers-dismiss" class="mini-btn" type="button">Dismiss</button></div>
-          <div class="map-layers-body">
-            <div class="layer-controls">
-              <label><input type="checkbox" checked> Ownship</label>
-              <label><input type="checkbox" checked> Distance Rings</label>
-              <label><input type="checkbox"> Track Vectors</label>
-              <label><input type="checkbox"> Path Indicator</label>
-              <label><input type="checkbox"> SVS View Cone</label>
-              <label><input type="checkbox"> Course</label>
-              <label><input type="checkbox" checked> Traffic</label>
-              <label><input type="checkbox" checked> METARs</label>
-              <label><input type="checkbox"> PIREPs</label>
-              <label><input type="checkbox"> TFR</label>
-              <label><input type="checkbox"> Lightning</label>
-              <label><input type="checkbox" checked> Graphical Weather</label>
-              <label><input type="checkbox" checked> Airports</label>
-              <label><input type="checkbox" checked> Airspace Outline</label>
-              <label><input type="checkbox" checked> Special Use Airspace</label>
-              <label><input type="checkbox" checked> Terrain Proximity</label>
-              <label><input type="checkbox"> Airways (Low)</label>
-              <label><input type="checkbox"> Airways (High)</label>
-              <label><input type="checkbox"> Fixes</label>
-              <label><input type="checkbox"> Navaids</label>
-              <label><input type="checkbox"> Obstacles</label>
-              <label><input type="checkbox" checked> Airport Diagrams</label>
-              <label style="padding-left:1.2em"><input type="checkbox"> Opaque Background</label>
+        <div id="map-layers-popup">
+          <div class="weather-popup-shell" role="dialog" aria-modal="false" aria-labelledby="map-layers-title">
+            <div class="weather-popup-head">
+              <div class="weather-popup-title" id="map-layers-title">Map Layers</div>
+              <button class="weather-popup-close" type="button" aria-label="Dismiss map layers">×</button>
             </div>
-            <div id="base-layer-section" class="map-filter-controls">
-              <div class="map-filter-title">Base Layer</div>
-              <div class="layer-controls">
-                <label><input type="radio" name="bl1" checked> Vector</label>
-                <label><input type="radio" name="bl1"> Terrain</label>
-                <label><input type="radio" name="bl1"> VFR Sectional</label>
-                <label><input type="radio" name="bl1"> IFR Low</label>
-                <label><input type="radio" name="bl1"> Satellite</label>
+
+            <div class="weather-popup-body">
+              <div class="popup-accordion-list" data-accordion-mode="exclusive">
+
+                <!-- 1 · VISIBILITY ============================================ -->
+                <section class="popup-section popup-accordion-item is-open">
+                  <button class="popup-section-title-row popup-accordion-trigger" type="button" aria-expanded="true">
+                    <span class="popup-section-title">Visibility</span>
+                    <span class="popup-section-trailing">
+                      <span class="popup-section-meta" data-meta-for="visibility">2 of 6</span>
+                      <span class="popup-accordion-icon" aria-hidden="true"></span>
+                    </span>
+                  </button>
+                  <div class="popup-section-body popup-accordion-body">
+                    <ul class="layer-toggle-list" data-group="visibility">
+                      <li><label class="layer-toggle"><span class="layer-toggle-label">Ownship</span><input type="checkbox" checked><span class="layer-toggle-check"></span></label></li>
+                      <li><label class="layer-toggle"><span class="layer-toggle-label">Distance Rings</span><input type="checkbox" checked><span class="layer-toggle-check"></span></label></li>
+                      <li><label class="layer-toggle"><span class="layer-toggle-label">Track Vectors</span><input type="checkbox"><span class="layer-toggle-check"></span></label></li>
+                      <li><label class="layer-toggle"><span class="layer-toggle-label">Path Indicator</span><input type="checkbox"><span class="layer-toggle-check"></span></label></li>
+                      <li><label class="layer-toggle"><span class="layer-toggle-label">SVS View Cone</span><input type="checkbox"><span class="layer-toggle-check"></span></label></li>
+                      <li><label class="layer-toggle"><span class="layer-toggle-label">Course Line</span><input type="checkbox"><span class="layer-toggle-check"></span></label></li>
+                    </ul>
+                  </div>
+                </section>
+
+                <!-- 2 · TRAFFIC & WEATHER ===================================== -->
+                <section class="popup-section popup-accordion-item">
+                  <button class="popup-section-title-row popup-accordion-trigger" type="button" aria-expanded="false">
+                    <span class="popup-section-title">Traffic &amp; Weather</span>
+                    <span class="popup-section-trailing">
+                      <span class="popup-section-meta" data-meta-for="trafwx">2 of 6</span>
+                      <span class="popup-accordion-icon" aria-hidden="true"></span>
+                    </span>
+                  </button>
+                  <div class="popup-section-body popup-accordion-body">
+                    <ul class="layer-toggle-list" data-group="trafwx">
+                      <li><label class="layer-toggle"><span class="layer-toggle-label">Traffic</span><input type="checkbox" checked><span class="layer-toggle-check"></span></label></li>
+                      <li><label class="layer-toggle"><span class="layer-toggle-label">METARs</span><input type="checkbox" checked><span class="layer-toggle-check"></span></label></li>
+                      <li><label class="layer-toggle"><span class="layer-toggle-label">PIREPs</span><input type="checkbox"><span class="layer-toggle-check"></span></label></li>
+                      <li><label class="layer-toggle"><span class="layer-toggle-label">TFRs</span><input type="checkbox"><span class="layer-toggle-check"></span></label></li>
+                      <li><label class="layer-toggle"><span class="layer-toggle-label">Lightning</span><input type="checkbox"><span class="layer-toggle-check"></span></label></li>
+                      <li><label class="layer-toggle" data-master="gwx"><span class="layer-toggle-label">Graphical Weather</span><input type="checkbox" checked><span class="layer-toggle-check"></span></label></li>
+                    </ul>
+                  </div>
+                </section>
+
+                <!-- 3 · GRAPHICAL WEATHER (radio, depends on master toggle) ==== -->
+                <section class="popup-section popup-accordion-item">
+                  <button class="popup-section-title-row popup-accordion-trigger" type="button" aria-expanded="false">
+                    <span class="popup-section-title">Graphical Wx Mode</span>
+                    <span class="popup-section-trailing">
+                      <span class="popup-section-meta" data-meta-for="gwx-mode">NEXRAD</span>
+                      <span class="popup-accordion-icon" aria-hidden="true"></span>
+                    </span>
+                  </button>
+                  <div class="popup-section-body popup-accordion-body" hidden>
+                    <ul class="layer-toggle-list" data-group="gwx-mode">
+                      <li><label class="layer-toggle"><span class="layer-toggle-label">NEXRAD</span><input type="radio" name="gwx-mode" value="NEXRAD" checked><span class="layer-toggle-radio"></span></label></li>
+                      <li><label class="layer-toggle"><span class="layer-toggle-label">Advisories</span><input type="radio" name="gwx-mode" value="Advisories"><span class="layer-toggle-radio"></span></label></li>
+                      <li><label class="layer-toggle"><span class="layer-toggle-label">Turbulence</span><input type="radio" name="gwx-mode" value="Turbulence"><span class="layer-toggle-radio"></span></label></li>
+                      <li><label class="layer-toggle"><span class="layer-toggle-label">Cloud Tops</span><input type="radio" name="gwx-mode" value="Cloud Tops"><span class="layer-toggle-radio"></span></label></li>
+                      <li><label class="layer-toggle"><span class="layer-toggle-label">IR Clouds</span><input type="radio" name="gwx-mode" value="IR Clouds"><span class="layer-toggle-radio"></span></label></li>
+                      <li><label class="layer-toggle"><span class="layer-toggle-label">Icing</span><input type="radio" name="gwx-mode" value="Icing"><span class="layer-toggle-radio"></span></label></li>
+                    </ul>
+                  </div>
+                </section>
+
+                <!-- 4 · AIRPORTS ============================================== -->
+                <section class="popup-section popup-accordion-item">
+                  <button class="popup-section-title-row popup-accordion-trigger" type="button" aria-expanded="false">
+                    <span class="popup-section-title">Airports</span>
+                    <span class="popup-section-trailing">
+                      <span class="popup-section-meta" data-meta-for="airports">All · ≥0 ft</span>
+                      <span class="popup-accordion-icon" aria-hidden="true"></span>
+                    </span>
+                  </button>
+                  <div class="popup-section-body popup-accordion-body" hidden>
+                    <ul class="layer-toggle-list" data-group="airports">
+                      <li><label class="layer-toggle" data-master="airports"><span class="layer-toggle-label">Airports</span><input type="checkbox" checked><span class="layer-toggle-check"></span></label></li>
+                      <li><label class="layer-toggle is-sub" data-sub-of="airports"><span class="layer-toggle-label">Airport Diagrams<span class="layer-toggle-sub">Show runway layout when zoomed in</span></span><input type="checkbox" checked><span class="layer-toggle-check"></span></label></li>
+                      <li><label class="layer-toggle is-sub" data-sub-of="airports"><span class="layer-toggle-label">Uncontrolled</span><input type="checkbox" checked><span class="layer-toggle-check"></span></label></li>
+                      <li><label class="layer-toggle is-sub" data-sub-of="airports"><span class="layer-toggle-label">Soft Surface</span><input type="checkbox" checked><span class="layer-toggle-check"></span></label></li>
+                      <li><label class="layer-toggle is-sub" data-sub-of="airports"><span class="layer-toggle-label">Private Use</span><input type="checkbox" checked><span class="layer-toggle-check"></span></label></li>
+                      <li><label class="layer-toggle is-sub" data-sub-of="airports"><span class="layer-toggle-label">Sea Plane Bases</span><input type="checkbox" checked><span class="layer-toggle-check"></span></label></li>
+                      <li><label class="layer-toggle is-sub" data-sub-of="airports"><span class="layer-toggle-label">Heliports</span><input type="checkbox" checked><span class="layer-toggle-check"></span></label></li>
+                    </ul>
+                    <div class="runway-min-row">
+                      <div class="runway-min-row-head">
+                        <span class="runway-min-row-title">Runway Minimum</span>
+                        <span class="runway-min-row-value" id="rmin-value">Any</span>
+                      </div>
+                      <input type="range" min="0" max="5" step="1" value="0" id="rmin-input">
+                      <div class="runway-min-row-ticks"><span>Any</span><span>2k</span><span>3k</span><span>4k</span><span>5k</span><span>6k+</span></div>
+                    </div>
+                  </div>
+                </section>
+
+                <!-- 5 · AIRSPACE & CHARTS ===================================== -->
+                <section class="popup-section popup-accordion-item">
+                  <button class="popup-section-title-row popup-accordion-trigger" type="button" aria-expanded="false">
+                    <span class="popup-section-title">Airspace &amp; Charts</span>
+                    <span class="popup-section-trailing">
+                      <span class="popup-section-meta" data-meta-for="airspace">3 of 7</span>
+                      <span class="popup-accordion-icon" aria-hidden="true"></span>
+                    </span>
+                  </button>
+                  <div class="popup-section-body popup-accordion-body" hidden>
+                    <ul class="layer-toggle-list" data-group="airspace">
+                      <li><label class="layer-toggle"><span class="layer-toggle-label">Airspace Outline</span><input type="checkbox" checked><span class="layer-toggle-check"></span></label></li>
+                      <li><label class="layer-toggle"><span class="layer-toggle-label">Special Use Airspace</span><input type="checkbox" checked><span class="layer-toggle-check"></span></label></li>
+                      <li><label class="layer-toggle"><span class="layer-toggle-label">Terrain Proximity</span><input type="checkbox" checked><span class="layer-toggle-check"></span></label></li>
+                      <li><label class="layer-toggle"><span class="layer-toggle-label">Airways (Low)</span><input type="checkbox"><span class="layer-toggle-check"></span></label></li>
+                      <li><label class="layer-toggle"><span class="layer-toggle-label">Airways (High)</span><input type="checkbox"><span class="layer-toggle-check"></span></label></li>
+                      <li><label class="layer-toggle"><span class="layer-toggle-label">Fixes</span><input type="checkbox"><span class="layer-toggle-check"></span></label></li>
+                      <li><label class="layer-toggle"><span class="layer-toggle-label">Navaids</span><input type="checkbox"><span class="layer-toggle-check"></span></label></li>
+                      <li><label class="layer-toggle"><span class="layer-toggle-label">Obstacles</span><input type="checkbox"><span class="layer-toggle-check"></span></label></li>
+                    </ul>
+                  </div>
+                </section>
+
+                <!-- 6 · BASE LAYER (radio) =================================== -->
+                <section class="popup-section popup-accordion-item">
+                  <button class="popup-section-title-row popup-accordion-trigger" type="button" aria-expanded="false">
+                    <span class="popup-section-title">Base Layer</span>
+                    <span class="popup-section-trailing">
+                      <span class="popup-section-meta" data-meta-for="base">VECTOR</span>
+                      <span class="popup-accordion-icon" aria-hidden="true"></span>
+                    </span>
+                  </button>
+                  <div class="popup-section-body popup-accordion-body" hidden>
+                    <ul class="layer-toggle-list" data-group="base">
+                      <li><label class="layer-toggle"><span class="layer-toggle-label">Vector</span><input type="radio" name="base" value="Vector" checked><span class="layer-toggle-radio"></span></label></li>
+                      <li><label class="layer-toggle"><span class="layer-toggle-label">Terrain</span><input type="radio" name="base" value="Terrain"><span class="layer-toggle-radio"></span></label></li>
+                      <li><label class="layer-toggle"><span class="layer-toggle-label">VFR Sectional</span><input type="radio" name="base" value="VFR"><span class="layer-toggle-radio"></span></label></li>
+                      <li><label class="layer-toggle"><span class="layer-toggle-label">IFR Low</span><input type="radio" name="base" value="IFRLow"><span class="layer-toggle-radio"></span></label></li>
+                      <li><label class="layer-toggle"><span class="layer-toggle-label">Satellite</span><input type="radio" name="base" value="Satellite"><span class="layer-toggle-radio"></span></label></li>
+                    </ul>
+                  </div>
+                </section>
+
               </div>
             </div>
-            <div class="map-filter-controls">
-              <div class="map-filter-title">Appearance</div>
-              <div class="layer-controls">
-                <label><input type="radio" name="ap1" checked> Night</label>
-                <label><input type="radio" name="ap1"> Day</label>
-              </div>
-            </div>
-            <div class="map-filter-controls">
-              <div class="map-filter-title">Graphical Weather</div>
-              <div class="layer-controls">
-                <label><input type="radio" name="gwx1"> Advisories</label>
-                <label><input type="radio" name="gwx1"> Turbulence</label>
-                <label><input type="radio" name="gwx1"> Cloud Tops</label>
-                <label><input type="radio" name="gwx1"> IR Clouds</label>
-                <label><input type="radio" name="gwx1"> Icing</label>
-                <label><input type="radio" name="gwx1" checked> NEXRAD</label>
-              </div>
-            </div>
-            <div class="map-filter-controls">
-              <div class="map-filter-title">Airport Options</div>
-              <div class="airport-option-grid">
-                <label><input type="checkbox" checked> Uncontrolled</label>
-                <label><input type="checkbox" checked> Soft Surface</label>
-                <label><input type="checkbox" checked> Private Use</label>
-                <label><input type="checkbox" checked> Sea Plane Bases</label>
-                <label><input type="checkbox" checked> Heliports</label>
-              </div>
-              <label class="runway-min-control"><span>Runway Minimum</span><span class="runway-min-label">Any</span><input type="range" min="0" max="5" step="1" value="0"></label>
+
+            <div class="popup-action-row">
+              <button class="popup-action-btn popup-action-btn--quiet" type="button" id="reset-defaults">Reset to Defaults</button>
+              <button class="popup-action-btn" type="button">Done</button>
             </div>
           </div>
         </div>
@@ -114,7 +490,103 @@
       <button type="button" class="soft-button soft-button--hybrid" style="--soft-button-icon-height:24px;"><span class="soft-button-inner"><img class="soft-button-icon" alt="" src="../assets/more_icon.png"><span class="soft-button-label">More</span></span></button>
     </div>
   </div>
-  <div class="scene-watermark">SANDBOX · maplayers</div>
+  <div class="scene-watermark">SANDBOX · maplayers (v2)</div>
   <script src="scene.js"></script>
+
+  <!-- DESIGN: live wiring — section-meta updates and master/sub toggle linkage.
+       Production webfs probably has its own state model; this is just enough to make
+       the prototype feel real for Steve to evaluate. -->
+  <script>
+    (function () {
+      const RUNWAY_LABELS = ["Any", "≥2,000 ft", "≥3,000 ft", "≥4,000 ft", "≥5,000 ft", "≥6,000 ft"];
+      const RUNWAY_META   = ["≥0 ft",  "≥2k ft",  "≥3k ft",  "≥4k ft",  "≥5k ft",  "≥6k ft"];
+
+      // Update section-meta strings live.
+      function updateMeta(group) {
+        const list = document.querySelector(`.layer-toggle-list[data-group="${group}"]`);
+        const meta = document.querySelector(`.popup-section-meta[data-meta-for="${group}"]`);
+        if (!list || !meta) return;
+        if (group === 'gwx-mode' || group === 'base') {
+          const sel = list.querySelector('input:checked');
+          meta.textContent = sel ? sel.value.toUpperCase() : '—';
+          return;
+        }
+        if (group === 'airports') {
+          const subs = list.querySelectorAll('.layer-toggle.is-sub input[type="checkbox"]');
+          const on = [...subs].filter(i => i.checked).length;
+          const rmin = document.getElementById('rmin-input');
+          const idx = rmin ? Number(rmin.value) : 0;
+          meta.textContent = `${on === subs.length ? 'All' : on + '/' + subs.length} · ${RUNWAY_META[idx]}`;
+          return;
+        }
+        const checks = list.querySelectorAll('input[type="checkbox"]');
+        const on = [...checks].filter(i => i.checked).length;
+        meta.textContent = `${on} of ${checks.length}`;
+      }
+
+      // Sub-toggle dim/disable when master is off.
+      function syncMasters() {
+        document.querySelectorAll('.layer-toggle[data-master]').forEach(master => {
+          const key = master.dataset.master;
+          const masterOn = master.querySelector('input').checked;
+          document.querySelectorAll(`.layer-toggle[data-sub-of="${key}"]`).forEach(sub => {
+            sub.classList.toggle('is-disabled', !masterOn);
+          });
+        });
+      }
+
+      // Initial paint.
+      ['visibility','trafwx','gwx-mode','airports','airspace','base'].forEach(updateMeta);
+      syncMasters();
+
+      // React to changes.
+      document.addEventListener('change', (e) => {
+        const list = e.target.closest('.layer-toggle-list');
+        if (!list) return;
+        const group = list.dataset.group;
+        updateMeta(group);
+        // Cross-group: GWX master in "trafwx" gates the gwx-mode section visually.
+        if (group === 'trafwx') syncMasters();
+        if (group === 'airports') syncMasters();
+      });
+
+      // Runway-min slider — fill + label + meta.
+      const rmin = document.getElementById('rmin-input');
+      const rval = document.getElementById('rmin-value');
+      function paintRmin() {
+        const idx = Number(rmin.value);
+        rval.textContent = RUNWAY_LABELS[idx];
+        rmin.style.setProperty('--rmin-fill', (idx / 5 * 100) + '%');
+        updateMeta('airports');
+      }
+      if (rmin) { rmin.addEventListener('input', paintRmin); paintRmin(); }
+
+      // Reset to defaults — placeholder, just visually re-runs the load state.
+      document.getElementById('reset-defaults')?.addEventListener('click', () => {
+        location.reload();
+      });
+    })();
+  </script>
+
+  <!-- OPEN QUESTIONS for Steve:
+       1. Section order. I went frequency-of-use: Visibility → Traffic & Wx → Wx Mode →
+          Airports → Airspace → Base Layer. Base Layer at the bottom because changing
+          base map is rare in flight. Object?
+       2. The "Graphical Weather" master is a row in Traffic & Weather, but the MODE
+          (NEXRAD/Turbulence/etc.) is a separate accordion section so it can collapse
+          independently. Alternative: nest the mode picker as sub-rows under the master.
+          The current split keeps the row-list rhythm consistent and avoids a 6-radio
+          inline group. Want me to sketch the nested alternative side-by-side?
+       3. Airports section uses one master ("Airports") + nested sub-toggles (Diagrams +
+          5 type filters), then a runway-minimum slider. The original UI lumps these as
+          flat checkboxes with one "Airports" toggle elsewhere — I think this colocation
+          is right but it does change the mental model. OK?
+       4. Removed "Appearance: Day/Night" radio from the dialog entirely. Reason: theme
+          is a global app setting, not a map layer; it lives in the sandbox sidebar's
+          theme toggle (and presumably belongs in Settings in webfs). If you want it back
+          here for muscle memory, easy to re-add as a 7th section.
+       5. "Reset to Defaults" — is this the right secondary action? The original dialog
+          has only "Dismiss". I added Reset because the sheer number of toggles makes a
+          1-tap escape hatch valuable. Push back if it's noise. -->
 </body>
 </html>
