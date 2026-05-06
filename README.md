@@ -3,6 +3,11 @@
 Iframe-based sandbox for refactoring webfs disclosures, dialogs, and the
 Map Layers modal without touching the live `webfs/` codebase.
 
+> **If you're a Claude Design instance reading this for the first time,
+> start with [`BRIEF.md`](BRIEF.md).** It explains the project, what's
+> already shipped on two reference scenes, and what's left to do. This
+> README is a tour of the sandbox plumbing; BRIEF.md is the work order.
+
 ## Architecture
 
 Each **scene** is a stand-alone HTML file that loads the verbatim webfs CSS
