@@ -595,10 +595,6 @@
               </div>
             </div>
 
-            <div class="popup-action-row">
-              <button class="popup-action-btn popup-action-btn--quiet" type="button" id="reset-defaults">Reset to Defaults</button>
-              <button class="popup-action-btn" type="button">Done</button>
-            </div>
           </div>
         </div>
 
@@ -730,10 +726,6 @@
       }
       if (rmin) { rmin.addEventListener('input', paintRmin); paintRmin(); }
 
-      // Reset to defaults — placeholder, just visually re-runs the load state.
-      document.getElementById('reset-defaults')?.addEventListener('click', () => {
-        location.reload();
-      });
     })();
   </script>
 
