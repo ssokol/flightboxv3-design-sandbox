@@ -255,6 +255,16 @@
       font:500 10px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
       color:var(--popup-label-color);letter-spacing:.04em;padding:0 2px;
     }
+    /* Detent tick marks under the slider — 13 spans at 500-ft increments,
+       no labels (labels live in .runway-min-row-ticks at the major points). */
+    .runway-min-row-detents{
+      position:relative;height:6px;margin:-2px 0 4px;pointer-events:none;
+    }
+    .runway-min-row-detents span{
+      position:absolute;top:0;width:1px;height:6px;
+      background:var(--popup-label-color);opacity:.45;
+      transform:translateX(-0.5px);
+    }
 
     /* =========================================================
        Picker rows — Icing Field / Icing Alt / Turb Alt under
@@ -523,8 +533,8 @@
                       <li><label class="layer-toggle" data-master="airports"><span class="layer-toggle-label">Airports</span><input type="checkbox" checked><span class="layer-toggle-check"></span></label></li>
                       <li><label class="layer-toggle is-sub" data-sub-of="airports"><span class="layer-toggle-label">Airport Diagrams<span class="layer-toggle-sub">Show runway layout when zoomed in</span></span><input type="checkbox" checked><span class="layer-toggle-check"></span></label></li>
                       <li><label class="layer-toggle is-sub" data-sub-of="airports"><span class="layer-toggle-label">Uncontrolled</span><input type="checkbox" checked><span class="layer-toggle-check"></span></label></li>
-                      <li><label class="layer-toggle is-sub" data-sub-of="airports"><span class="layer-toggle-label">Soft Surface</span><input type="checkbox" checked><span class="layer-toggle-check"></span></label></li>
                       <li><label class="layer-toggle is-sub" data-sub-of="airports"><span class="layer-toggle-label">Private Use</span><input type="checkbox" checked><span class="layer-toggle-check"></span></label></li>
+                      <li><label class="layer-toggle is-sub" data-sub-of="airports"><span class="layer-toggle-label">Soft Surface</span><input type="checkbox" checked><span class="layer-toggle-check"></span></label></li>
                       <li><label class="layer-toggle is-sub" data-sub-of="airports"><span class="layer-toggle-label">Sea Plane Bases</span><input type="checkbox" checked><span class="layer-toggle-check"></span></label></li>
                       <li><label class="layer-toggle is-sub" data-sub-of="airports"><span class="layer-toggle-label">Heliports</span><input type="checkbox" checked><span class="layer-toggle-check"></span></label></li>
                     </ul>
@@ -533,7 +543,13 @@
                         <span class="runway-min-row-title">Runway Minimum</span>
                         <span class="runway-min-row-value" id="rmin-value">Any</span>
                       </div>
-                      <input type="range" min="0" max="5" step="1" value="0" id="rmin-input">
+                      <input type="range" min="0" max="6000" step="500" value="0" id="rmin-input" list="rmin-detents">
+                      <datalist id="rmin-detents">
+                        <option value="0"></option><option value="500"></option><option value="1000"></option><option value="1500"></option><option value="2000"></option><option value="2500"></option><option value="3000"></option><option value="3500"></option><option value="4000"></option><option value="4500"></option><option value="5000"></option><option value="5500"></option><option value="6000"></option>
+                      </datalist>
+                      <div class="runway-min-row-detents" aria-hidden="true">
+                        <span style="left:0%"></span><span style="left:8.333%"></span><span style="left:16.667%"></span><span style="left:25%"></span><span style="left:33.333%"></span><span style="left:41.667%"></span><span style="left:50%"></span><span style="left:58.333%"></span><span style="left:66.667%"></span><span style="left:75%"></span><span style="left:83.333%"></span><span style="left:91.667%"></span><span style="left:100%"></span>
+                      </div>
                       <div class="runway-min-row-ticks"><span>Any</span><span>2k</span><span>3k</span><span>4k</span><span>5k</span><span>6k+</span></div>
                     </div>
                   </div>
@@ -596,8 +612,16 @@
        the prototype feel real for Steve to evaluate. -->
   <script>
     (function () {
-      const RUNWAY_LABELS = ["Any", "≥2,000 ft", "≥3,000 ft", "≥4,000 ft", "≥5,000 ft", "≥6,000 ft"];
-      const RUNWAY_META   = ["≥0 ft",  "≥2k ft",  "≥3k ft",  "≥4k ft",  "≥5k ft",  "≥6k ft"];
+      // Runway minimum is now ft-based with 500-ft detents (0–6000).
+      function formatRunwayLabel(ft) {
+        if (ft === 0) return 'Any';
+        return '≥ ' + ft.toLocaleString() + ' ft';
+      }
+      function formatRunwayMeta(ft) {
+        if (ft === 0) return '≥0 ft';
+        const k = ft / 1000;
+        return '≥' + (k % 1 === 0 ? k : k.toFixed(1)) + 'k ft';
+      }
 
       // Compress "12,000 ft" → "12K" for tight meta strings.
       function compactAlt(s) { return (s || '').replace(/,000 ft$/, 'K'); }
@@ -626,8 +650,8 @@
           const subs = list.querySelectorAll('.layer-toggle.is-sub input[type="checkbox"]');
           const on = [...subs].filter(i => i.checked).length;
           const rmin = document.getElementById('rmin-input');
-          const idx = rmin ? Number(rmin.value) : 0;
-          meta.textContent = `${on === subs.length ? 'All' : on + '/' + subs.length} · ${RUNWAY_META[idx]}`;
+          const ft = rmin ? Number(rmin.value) : 0;
+          meta.textContent = `${on === subs.length ? 'All' : on + '/' + subs.length} · ${formatRunwayMeta(ft)}`;
           return;
         }
         const checks = list.querySelectorAll('input[type="checkbox"]');
@@ -683,9 +707,9 @@
       const rmin = document.getElementById('rmin-input');
       const rval = document.getElementById('rmin-value');
       function paintRmin() {
-        const idx = Number(rmin.value);
-        rval.textContent = RUNWAY_LABELS[idx];
-        rmin.style.setProperty('--rmin-fill', (idx / 5 * 100) + '%');
+        const ft = Number(rmin.value);
+        rval.textContent = formatRunwayLabel(ft);
+        rmin.style.setProperty('--rmin-fill', (ft / 6000 * 100) + '%');
         updateMeta('airports');
       }
       if (rmin) { rmin.addEventListener('input', paintRmin); paintRmin(); }
