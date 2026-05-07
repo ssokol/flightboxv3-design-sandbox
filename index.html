@@ -10,8 +10,9 @@
   <aside class="sb-sidebar">
     <div class="sb-brand">
       <div class="sb-brand-title">FlightBoxV3 Sandbox</div>
-      <div class="sb-brand-sub">Visual refresh — Airport disclosure first</div>
+      <div class="sb-brand-sub">Disclosure refresh in progress — see <a href="BRIEF.md" target="_blank">BRIEF.md</a></div>
     </div>
+
     <div class="sb-controls">
       <div class="sb-control-row">
         <label>Theme</label>
@@ -21,17 +22,53 @@
         </div>
       </div>
     </div>
+
+    <div class="sb-nav-section">App Frame</div>
+    <ul class="sb-nav">
+      <li><a class="sb-nav-link" data-scene="frame">Frame Overview</a></li>
+      <li><a class="sb-nav-link" data-scene="splash">Splash / Bootcheck</a></li>
+      <li><a class="sb-nav-link" data-scene="buttonbar">Button Bar (HARD)<span class="sb-nav-tag is-warn">6-btn</span></a></li>
+    </ul>
+
     <div class="sb-nav-section">Existing Disclosures</div>
     <ul class="sb-nav">
-      <li><a class="sb-nav-link is-active" data-scene="airport">Airport Disclosure (v2)</a></li>
+      <li><a class="sb-nav-link is-active" data-scene="airport">Airport Disclosure<span class="sb-nav-tag is-new">v2</span></a></li>
       <li><a class="sb-nav-link" data-scene="airport_original">Airport — Original</a></li>
-      <li><a class="sb-nav-link" data-scene="maplayers">Map Layers (v2)</a></li>
+      <li><a class="sb-nav-link" data-scene="weather">Weather Tabs</a></li>
+      <li><a class="sb-nav-link" data-scene="mappoint">Map-Point Popup</a></li>
+      <li><a class="sb-nav-link" data-scene="navaid">Navaid Popup</a></li>
+      <li><a class="sb-nav-link" data-scene="advisory">Advisory / TFR</a></li>
     </ul>
+
+    <div class="sb-nav-section">Existing Modals</div>
+    <ul class="sb-nav">
+      <li><a class="sb-nav-link" data-scene="maplayers">Map Layers<span class="sb-nav-tag is-new">v2</span></a></li>
+      <li><a class="sb-nav-link" data-scene="settings">Settings</a></li>
+      <li><a class="sb-nav-link" data-scene="aircraft">Aircraft Profile</a></li>
+      <li><a class="sb-nav-link" data-scene="aircraft-templates">… Template picker</a></li>
+      <li><a class="sb-nav-link" data-scene="downloads">Downloads / Region<span class="sb-nav-tag">PNG</span></a></li>
+      <li><a class="sb-nav-link" data-scene="flightbox">FlightBox (Status)</a></li>
+      <li><a class="sb-nav-link" data-scene="flightplan">Flight Plan</a></li>
+      <li><a class="sb-nav-link" data-scene="procedures">Procedures</a></li>
+    </ul>
+
+    <div class="sb-nav-section">Proposed New</div>
+    <ul class="sb-nav">
+      <li><a class="sb-nav-link" data-scene="notam">NOTAM Tab<span class="sb-nav-tag is-new">new</span></a></li>
+      <li><a class="sb-nav-link" data-scene="briefing">Briefing Screen<span class="sb-nav-tag is-new">new</span></a></li>
+    </ul>
+
     <div class="sb-footer">
-      <div>v0.3 · airport refresh</div>
+      <div>v0.4 · sidebar restored</div>
+      <div style="margin-top:4px">
+        <a href="BRIEF.md" target="_blank">BRIEF.md</a> ·
+        <a href="CONSTRAINTS.md" target="_blank">CONSTRAINTS.md</a> ·
+        <a href="README.md" target="_blank">README</a>
+      </div>
       <div style="margin-top:6px"><a id="open-standalone" href="#" target="_blank">Open scene standalone ↗</a></div>
     </div>
   </aside>
+
   <main class="sb-stage">
     <div class="sb-stage-header">
       <div class="sb-stage-title" id="stage-title">Airport Disclosure (v2)</div>
@@ -42,14 +79,11 @@
         <iframe id="scene-frame" title="Sandbox scene" src="scenes/airport.html"></iframe>
       </div>
       <div class="sb-note">
-        <strong>How to read this:</strong> compare against "Airport — Original" in the sidebar. The diff
-        is (a) edits to <code>styles/index-tokens.css</code> (color + size token values), and (b) a new
-        <code>&lt;style&gt;</code> block in <code>scenes/airport.html</code>. New severity classes are prefixed
-        <code>.sev-*</code>. New popup vocabulary uses <code>-v2</code> suffix on classes only where the diff
-        would be ambiguous otherwise.
+        <strong>Two reference scenes are done:</strong> Airport Disclosure (v2) and Map Layers (v2). Use them as the canon for everything else. Read <code>BRIEF.md</code> before starting on a new scene.
       </div>
     </div>
   </main>
+
   <script>
     (function () {
       const frame = document.getElementById('scene-frame');
@@ -57,16 +91,42 @@
       const sub = document.getElementById('stage-sub');
       const standalone = document.getElementById('open-standalone');
       const links = [...document.querySelectorAll('.sb-nav-link')];
+
       const scenes = {
-        airport: { title: 'Airport Disclosure (v2)', sub: 'KGTU. Token edits + new <style> block. New: severity tokens, sun-legible day mode, Apple-system chrome, Menlo only on tabular data.' },
-        airport_original: { title: 'Airport — Original', sub: 'Pre-refresh state. Same DOM, original tokens.' },
-        maplayers: { title: 'Map Layers (v2)', sub: 'Six-section accordion; always-visible headers; multi-open with intelligent LRU collapse. Same canon as airport.' },
+        // App frame
+        frame: { title: 'Frame Overview', sub: 'The full webfs frame with no overlays — the floor every disclosure sits on.' },
+        splash: { title: 'Splash / Bootcheck', sub: '6-row boot system check; dismiss is timer-driven (3s cap).' },
+        buttonbar: { title: 'Button Bar (HARD CONSTRAINT)', sub: '6 buttons mapped 1:1 to physical FlightBar hardware. Cannot add/remove/reorder.' },
+
+        // Existing disclosures
+        airport: { title: 'Airport Disclosure (v2)', sub: 'Reference scene. Token edits + new <style> block. Severity tokens, sun-legible day mode, Apple-system chrome, Menlo only on tabular data.' },
+        airport_original: { title: 'Airport — Original', sub: 'Pre-refresh state for comparison. Same DOM, original tokens.' },
+        weather: { title: 'Weather Disclosure', sub: 'Same shell as Airport, Weather tab active. METAR / TAF / Winds Aloft accordion. Refresh pending.' },
+        mappoint: { title: 'Map-Point Popup', sub: 'Long-press popup. Airspace + nearby airports/navaids/fixes accordions. Refresh pending.' },
+        navaid: { title: 'Navaid Popup', sub: 'Standalone navaid detail. VOR/NDB/DME/Fix. Refresh pending.' },
+        advisory: { title: 'Advisory / TFR Popup', sub: 'SIGMET / G-AIRMET / CWA / TFR. Severity drives header tint. Refresh pending.' },
+
+        // Existing modals
+        maplayers: { title: 'Map Layers (v2)', sub: 'Reference scene. Six-section accordion; full-height left rail; exclusive accordion. Same canon as airport.' },
+        settings: { title: 'Settings Modal', sub: 'Full-page overlay. FlightBar pairing + Alerts (categories + suppressions). Refresh pending.' },
+        aircraft: { title: 'Aircraft Profile', sub: 'Saved aircraft profiles. 5 tabs (last 2 disabled until P6). Refresh pending.' },
+        'aircraft-templates': { title: 'Aircraft Profile · Template Picker', sub: 'Sub-modal that appears on first run / new profile. Cessna 152/172, Piper PA-28, Van\'s RV series. Refresh pending.' },
+        downloads: { title: 'Downloads / Region Picker', sub: 'Captured as a PNG screenshot — the live dialog has too much iOS-side signaling to recreate cleanly.' },
+        flightbox: { title: 'FlightBox Diagnostics', sub: '3 tabs: Status / Settings / Diagnostics. Power-user surface — dense by design. Refresh pending.' },
+        flightplan: { title: 'Flight Plan Editor', sub: 'Centered modal with chip-based waypoint editor + leg view. Refresh pending.' },
+        procedures: { title: 'Procedures', sub: 'Approach / SID / STAR plate viewer. Split layout (list left, plate right). Refresh pending.' },
+
+        // Proposed new
+        notam: { title: 'NOTAM Tab — proposed new (Phase D)', sub: '3rd tab in airport disclosure; severity-tinted rows from Wally\'s API. Use --sev-* token family. Refresh pending.' },
+        briefing: { title: 'Briefing Screen — proposed new', sub: 'Pre-flight half-page briefing across the route: NOTAMs + TFRs + per-airport METAR/TAF (v1). Refresh pending.' },
       };
+
       function paramsFor() {
         const p = new URLSearchParams();
         p.set('theme', document.documentElement.dataset.appTheme || 'night');
         return p.toString();
       }
+
       function navigate(name) {
         const meta = scenes[name]; if (!meta) return;
         title.textContent = meta.title; sub.textContent = meta.sub;
@@ -75,9 +135,11 @@
         frame.src = url; standalone.href = url;
         if (location.hash !== '#' + name) history.replaceState(null, '', '#' + name);
       }
+
       links.forEach(el => el.addEventListener('click', e => { e.preventDefault(); navigate(el.dataset.scene); }));
       const initial = (location.hash || '#airport').replace('#', '');
       navigate(scenes[initial] ? initial : 'airport');
+
       document.querySelectorAll('.sb-toggle').forEach(tg => {
         const which = tg.dataset.toggle;
         tg.addEventListener('click', e => {
