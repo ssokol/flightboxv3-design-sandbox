@@ -1,8 +1,34 @@
 <!DOCTYPE html>
-<!-- Scene: Map-Point Disclosure (long-press popup; same shell, no tabs, sections accordion) -->
+<!--
+  Scene: Map-Point Disclosure (long-press popup) — VISUAL REFRESH v2
+
+  WHAT THIS IS:
+  Long-press anywhere on the map → ad-hoc popup with three accordion sections:
+  Airspace, Nearby Airports, Nearby Navaids/Fixes. There's no entity at the tap
+  point; the "ident" is a coordinate.
+
+  CANON BORROWED FROM AIRPORT-V2:
+  - 31vw shell, 10px radius, hairline rules, system chrome / mono data
+  - Single ›-chevron accordion, Mode A multi-open + LRU
+  - .popup-action-row footer
+
+  WHAT'S DIFFERENT:
+  - .coord-badge replaces the ICAO badge — the lat/lon IS the identity here
+  - Each kv row in Nearby* sections becomes a richer two-cell row: ident on left
+    (mono ICAO chip / type pill), human name + distance/bearing on right (system
+    + mono numerics), so distances align in a column and the eye scans by ident.
+  - Airspace section uses sev-style class chips (B/C/D/E/MOA/etc.) with floor/
+    ceiling in mono.
+
+  PRODUCTION PORT:
+  Lift the <style id="mappoint-v2"> block into index-dialogs.css. The DOM had to
+  change from the original kv-grid to the structured row pattern below — port
+  team should update the long-press popup builder accordingly.
+-->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Map-Point · Sandbox</title>
   <link rel="stylesheet" href="../styles/index-tokens.css">
   <link rel="stylesheet" href="../styles/index-base.css">
@@ -15,6 +41,231 @@
   <link rel="stylesheet" href="../styles/index-aircraft-profile.css">
   <link rel="stylesheet" href="../styles/index-responsive.css">
   <link rel="stylesheet" href="scene.css">
+
+  <style id="mappoint-v2">
+    /* ============================================================
+       SHELL — same canon as airport-v2.
+       ============================================================ */
+    #weather-popup.content-panel--left{
+      width:31vw;min-width:340px;max-width:520px;
+    }
+    .weather-popup-shell{
+      border-radius:var(--popup-shell-radius,10px);
+      border:var(--popup-shell-border);
+      box-shadow:var(--popup-shell-shadow);
+      font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",system-ui,sans-serif;
+      position:relative;
+      display:flex;flex-direction:column;max-height:100%;
+    }
+    .weather-popup-shell::before{
+      content:"";position:absolute;left:0;right:0;top:0;height:1px;
+      background:linear-gradient(90deg,transparent,var(--popup-edge-highlight),transparent);
+      pointer-events:none;
+    }
+    .weather-popup-body{flex:1 1 auto;min-height:0;display:flex;flex-direction:column}
+
+    /* ============================================================
+       HEAD — coord badge replaces ICAO badge.
+       ============================================================ */
+    .weather-popup-head{padding:14px 14px 6px}
+    .weather-popup-ident-row{gap:10px}
+    .coord-badge{
+      display:inline-flex;align-items:center;justify-content:center;
+      gap:6px;
+      min-width:64px;height:30px;padding:0 10px;
+      background:var(--icao-badge-bg);color:var(--icao-badge-fg);
+      border-radius:7px;
+      font:600 12.5px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+      letter-spacing:.04em;
+      box-shadow:inset 0 0 0 1px var(--icao-badge-border);
+    }
+    .coord-badge::before{
+      content:"⌖";font:500 13px/1 -apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+      opacity:.7;
+    }
+    .weather-popup-title{
+      font:600 17px/1.15 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
+      color:var(--popup-title-color);letter-spacing:.005em;
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;
+    }
+    .weather-popup-subtitle{
+      font:500 12px/1.2 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+      color:var(--popup-subtitle-color);letter-spacing:.04em;
+      padding:0 14px 10px;
+    }
+    .weather-popup-close{
+      width:44px;height:44px;min-width:44px;border-radius:8px;
+      background:var(--popup-close-bg);border:1px solid var(--popup-close-border);
+      color:var(--popup-close-fg);
+      font:400 18px/1 -apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+    }
+    .weather-popup-close:hover{background:var(--popup-close-bg-hover)}
+
+    /* ============================================================
+       ACCORDION — Mode A (multi-open + LRU). Single › chevron.
+       ============================================================ */
+    .popup-section{border-bottom:1px solid var(--popup-rule-color)}
+    .popup-accordion-list{
+      flex:1 1 auto;min-height:0;
+      overflow-y:auto;-webkit-overflow-scrolling:touch;
+      border-top:1px solid var(--popup-rule-color);
+    }
+    .popup-section-title-row{
+      background:var(--popup-section-header-bg);
+      color:var(--popup-section-header-color);
+      padding:12px 14px;min-height:46px;
+      transition:background .12s ease;
+    }
+    .popup-section-title-row:hover{background:var(--popup-section-header-bg-hover)}
+    .popup-section-title{
+      font:600 13px/1.05 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
+      letter-spacing:.07em;text-transform:uppercase;color:inherit;
+    }
+    .popup-section-trailing{display:inline-flex;align-items:center;gap:10px}
+    .popup-section-meta{
+      font:500 11px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+      letter-spacing:.06em;color:var(--popup-section-meta-color);white-space:nowrap;
+    }
+    .popup-accordion-icon{
+      width:14px;height:14px;
+      border:0 !important;transform:none !important;
+      display:inline-flex;align-items:center;justify-content:center;
+      color:inherit;opacity:.7;flex:0 0 14px;
+    }
+    .popup-accordion-icon::before{
+      content:"\203A";
+      font:600 16px/1 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
+      transform:rotate(0deg);transform-origin:50% 50%;
+      transition:transform .18s cubic-bezier(.4,0,.2,1);
+    }
+    .popup-accordion-item.is-open .popup-accordion-icon::before{transform:rotate(90deg)}
+    .popup-section-body{padding:8px 14px 14px;background:var(--popup-section-body-bg)}
+
+    /* ============================================================
+       NEARBY ROW — structured two-column row (replaces kv-grid).
+       Left: ident chip (or class chip for airspace).
+       Right: name (system) + distance/bearing (mono, right-aligned).
+       ============================================================ */
+    .nearby-list{display:flex;flex-direction:column}
+    .nearby-row{
+      display:flex;align-items:center;gap:12px;
+      min-height:44px;padding:8px 0;
+      border-top:1px solid var(--popup-rule-color);
+    }
+    .nearby-row:first-child{border-top:0}
+
+    .nearby-ident{
+      flex:0 0 auto;
+      display:inline-flex;align-items:center;justify-content:center;
+      min-width:60px;height:26px;padding:0 8px;border-radius:6px;
+      background:var(--icao-badge-bg);color:var(--icao-badge-fg);
+      font:600 12.5px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+      letter-spacing:.04em;
+      box-shadow:inset 0 0 0 1px var(--icao-badge-border);
+      text-align:center;
+    }
+
+    .nearby-mid{
+      flex:1 1 auto;min-width:0;
+      display:flex;flex-direction:column;gap:2px;
+    }
+    .nearby-name{
+      font:500 13.5px/1.2 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
+      color:var(--popup-value-color);
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    }
+    .nearby-sub{
+      font:500 11px/1 -apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+      color:var(--popup-section-meta-color);
+      letter-spacing:.05em;text-transform:uppercase;
+    }
+
+    .nearby-end{
+      flex:0 0 auto;text-align:right;
+      display:flex;flex-direction:column;gap:3px;align-items:flex-end;
+    }
+    .nearby-dist{
+      font:600 14px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+      color:var(--popup-value-color);
+      font-variant-numeric:tabular-nums;letter-spacing:.01em;
+    }
+    .nearby-brg{
+      font:500 11px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+      color:var(--popup-section-meta-color);
+      font-variant-numeric:tabular-nums;letter-spacing:.04em;
+    }
+
+    /* ============================================================
+       AIRSPACE ROW — class chip on left, floor/ceiling mono on right.
+       ============================================================ */
+    .airspace-row{
+      display:flex;align-items:center;gap:12px;
+      min-height:44px;padding:8px 0;
+      border-top:1px solid var(--popup-rule-color);
+    }
+    .airspace-row:first-child{border-top:0}
+    .airspace-class{
+      flex:0 0 auto;
+      display:inline-flex;align-items:center;justify-content:center;
+      min-width:42px;height:26px;padding:0 9px;border-radius:6px;
+      font:700 12px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+      letter-spacing:.06em;
+      background:var(--airspace-chip-bg, rgba(120,160,210,.16));
+      color:var(--airspace-chip-fg, #b8d3ff);
+      box-shadow:inset 0 0 0 1px var(--airspace-chip-border, rgba(120,160,210,.32));
+    }
+    .airspace-class[data-class="B"]{
+      --airspace-chip-bg:rgba(95,160,220,.18);
+      --airspace-chip-fg:#bcdcff;
+      --airspace-chip-border:rgba(95,160,220,.42);
+    }
+    .airspace-class[data-class="C"]{
+      --airspace-chip-bg:rgba(160,140,210,.16);
+      --airspace-chip-fg:#d3c4f5;
+      --airspace-chip-border:rgba(160,140,210,.36);
+    }
+    .airspace-class[data-class="D"]{
+      --airspace-chip-bg:rgba(120,170,160,.16);
+      --airspace-chip-fg:#bfe1d4;
+      --airspace-chip-border:rgba(120,170,160,.36);
+    }
+    .airspace-class[data-class="MOA"],.airspace-class[data-class="P"],.airspace-class[data-class="R"]{
+      --airspace-chip-bg:rgba(220,140,90,.16);
+      --airspace-chip-fg:#f0c39a;
+      --airspace-chip-border:rgba(220,140,90,.36);
+    }
+    .airspace-mid{flex:1 1 auto;min-width:0}
+    .airspace-name{
+      font:500 13.5px/1.2 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
+      color:var(--popup-value-color);
+    }
+    .airspace-end{
+      flex:0 0 auto;text-align:right;
+      font:600 13px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+      color:var(--popup-value-color);
+      font-variant-numeric:tabular-nums;letter-spacing:.01em;
+    }
+
+    /* ============================================================
+       ACTION ROW — Direct To / Save Point.
+       ============================================================ */
+    .popup-action-row{
+      background:var(--popup-action-bg);
+      border-top:1px solid var(--popup-action-divider);
+    }
+    .popup-action-btn{
+      font:600 14px/1 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
+      letter-spacing:.01em;text-transform:none;
+      color:var(--popup-action-color);min-height:50px;padding:14px 12px;
+      border-right:1px solid var(--popup-action-divider);
+      transition:background .1s ease;
+    }
+    .popup-action-btn:last-child{border-right:0}
+    .popup-action-btn:hover{background:var(--popup-action-bg-hover)}
+
+    /* Glow policy */
+    html[data-appearance="night"] .weather-popup-shell{box-shadow:var(--popup-shell-shadow)}
+  </style>
 </head>
 <body>
   <div id="app-frame">
@@ -31,66 +282,141 @@
         <div class="scene-map-bg"></div>
         <img class="scene-map-bg-image" src="../assets/map-placeholder.png" alt="" data-loaded="false">
 
+        <!-- DESIGN: Map-point disclosure. No tabs (single panel), Mode A accordion.
+             Builder changes: emit .coord-badge with the lat/lon, replace kv-grid
+             rows with .nearby-row + .airspace-row structures. -->
         <div id="weather-popup" class="content-panel content-panel--left">
-          <div class="weather-popup-shell" role="dialog">
+          <div class="weather-popup-shell" role="dialog" aria-modal="false" aria-labelledby="mappoint-popup-title">
             <div class="weather-popup-head">
               <div class="weather-popup-ident-row">
-                <span class="weather-flight-dot" aria-hidden="true" style="background-color:#888;"></span>
-                <div class="weather-popup-title">Map Point</div>
+                <span class="coord-badge" aria-label="Map coordinate">N41 58.4 · W87 45.6</span>
+                <div class="weather-popup-title" id="mappoint-popup-title">Map Point</div>
               </div>
-              <button class="weather-popup-close" type="button" aria-label="Close">X</button>
+              <button class="weather-popup-close" type="button" data-popup-close aria-label="Dismiss">×</button>
             </div>
-            <div class="weather-popup-subtitle">N 41° 58.4' · W 87° 45.6'</div>
+            <div class="weather-popup-subtitle">11.4 NM · 042° FROM OWNSHIP · MAG VAR 3°W</div>
+
             <div class="weather-popup-body">
-              <div class="popup-accordion-list">
-                <section class="popup-section popup-accordion-item is-open">
+              <div class="popup-accordion-list" data-accordion-mode="multi">
+
+                <!-- DESIGN: Airspace open by default — most useful tap context.
+                     Class chip + name + floor/ceiling all in one row. -->
+                <section class="popup-section popup-accordion-item is-open" data-mappoint-section="airspace">
                   <button class="popup-section-title-row popup-accordion-trigger" type="button" aria-expanded="true">
                     <span class="popup-section-title">Airspace</span>
                     <span class="popup-section-trailing">
+                      <span class="popup-section-meta">B + 1</span>
                       <span class="popup-accordion-icon" aria-hidden="true"></span>
                     </span>
                   </button>
                   <div class="popup-section-body popup-accordion-body">
-                    <div class="popup-kv-grid">
-                      <div class="popup-kv-label">Class B</div><div class="popup-kv-value">ORD · SFC – 10,000</div>
-                      <div class="popup-kv-label">Class D</div><div class="popup-kv-value">PWK · SFC – 3,500</div>
+                    <div class="airspace-list">
+                      <div class="airspace-row">
+                        <span class="airspace-class" data-class="B">B</span>
+                        <div class="airspace-mid"><div class="airspace-name">Chicago O'Hare</div></div>
+                        <div class="airspace-end">SFC – 10,000</div>
+                      </div>
+                      <div class="airspace-row">
+                        <span class="airspace-class" data-class="D">D</span>
+                        <div class="airspace-mid"><div class="airspace-name">Chicago Exec (PWK)</div></div>
+                        <div class="airspace-end">SFC – 3,500</div>
+                      </div>
                     </div>
                   </div>
                 </section>
-                <section class="popup-section popup-accordion-item is-open">
+
+                <!-- DESIGN: Nearby Airports — ICAO chip + name + distance/bearing.
+                     Distance + bearing right-aligned, mono, tabular-nums. -->
+                <section class="popup-section popup-accordion-item is-open" data-mappoint-section="airports">
                   <button class="popup-section-title-row popup-accordion-trigger" type="button" aria-expanded="true">
                     <span class="popup-section-title">Nearby Airports</span>
                     <span class="popup-section-trailing">
+                      <span class="popup-section-meta">3 WITHIN 15 NM</span>
                       <span class="popup-accordion-icon" aria-hidden="true"></span>
                     </span>
                   </button>
                   <div class="popup-section-body popup-accordion-body">
-                    <div class="popup-kv-grid">
-                      <div class="popup-kv-label">KMDW</div><div class="popup-kv-value">Chicago Midway · 4.6 SE</div>
-                      <div class="popup-kv-label">KORD</div><div class="popup-kv-value">Chicago O'Hare · 11.8 NW</div>
-                      <div class="popup-kv-label">KPWK</div><div class="popup-kv-value">Chicago Exec · 12.5 N</div>
+                    <div class="nearby-list">
+                      <div class="nearby-row">
+                        <span class="nearby-ident">KMDW</span>
+                        <div class="nearby-mid">
+                          <div class="nearby-name">Chicago Midway Intl</div>
+                          <div class="nearby-sub">Class C · TWR</div>
+                        </div>
+                        <div class="nearby-end">
+                          <span class="nearby-dist">4.6 NM</span>
+                          <span class="nearby-brg">132°</span>
+                        </div>
+                      </div>
+                      <div class="nearby-row">
+                        <span class="nearby-ident">KORD</span>
+                        <div class="nearby-mid">
+                          <div class="nearby-name">Chicago O'Hare Intl</div>
+                          <div class="nearby-sub">Class B · TWR</div>
+                        </div>
+                        <div class="nearby-end">
+                          <span class="nearby-dist">11.8 NM</span>
+                          <span class="nearby-brg">298°</span>
+                        </div>
+                      </div>
+                      <div class="nearby-row">
+                        <span class="nearby-ident">KPWK</span>
+                        <div class="nearby-mid">
+                          <div class="nearby-name">Chicago Exec</div>
+                          <div class="nearby-sub">Class D · TWR</div>
+                        </div>
+                        <div class="nearby-end">
+                          <span class="nearby-dist">12.5 NM</span>
+                          <span class="nearby-brg">003°</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </section>
-                <section class="popup-section popup-accordion-item is-open">
-                  <button class="popup-section-title-row popup-accordion-trigger" type="button" aria-expanded="true">
+
+                <!-- DESIGN: Nearby Navaids/Fixes — ident + type + freq line + distance/bearing.
+                     Sub line shows type (VOR-DME / FIX) + freq (when navaid). -->
+                <section class="popup-section popup-accordion-item" data-mappoint-section="navaids">
+                  <button class="popup-section-title-row popup-accordion-trigger" type="button" aria-expanded="false">
                     <span class="popup-section-title">Nearby Navaids / Fixes</span>
                     <span class="popup-section-trailing">
+                      <span class="popup-section-meta">2 WITHIN 25 NM</span>
                       <span class="popup-accordion-icon" aria-hidden="true"></span>
                     </span>
                   </button>
-                  <div class="popup-section-body popup-accordion-body">
-                    <div class="popup-kv-grid">
-                      <div class="popup-kv-label">PMM</div><div class="popup-kv-value">Pullman VOR · 6.3 NM</div>
-                      <div class="popup-kv-label">PLANO</div><div class="popup-kv-value">Fix · 9.1 NM</div>
+                  <div class="popup-section-body popup-accordion-body" hidden>
+                    <div class="nearby-list">
+                      <div class="nearby-row">
+                        <span class="nearby-ident">PMM</span>
+                        <div class="nearby-mid">
+                          <div class="nearby-name">Pullman</div>
+                          <div class="nearby-sub">VOR-DME · 112.20</div>
+                        </div>
+                        <div class="nearby-end">
+                          <span class="nearby-dist">6.3 NM</span>
+                          <span class="nearby-brg">221°</span>
+                        </div>
+                      </div>
+                      <div class="nearby-row">
+                        <span class="nearby-ident">PLANO</span>
+                        <div class="nearby-mid">
+                          <div class="nearby-name">Plano</div>
+                          <div class="nearby-sub">Fix · enroute</div>
+                        </div>
+                        <div class="nearby-end">
+                          <span class="nearby-dist">9.1 NM</span>
+                          <span class="nearby-brg">078°</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </section>
               </div>
             </div>
+
             <div class="popup-action-row">
               <button class="popup-action-btn" type="button">Direct To</button>
-              <button class="popup-action-btn" type="button">Add To Plan</button>
+              <button class="popup-action-btn" type="button">Save Point</button>
             </div>
           </div>
         </div>
@@ -113,7 +439,24 @@
       <button type="button" class="soft-button soft-button--hybrid" style="--soft-button-icon-height:24px;"><span class="soft-button-inner"><img class="soft-button-icon" alt="" src="../assets/more_icon.png"><span class="soft-button-label">More</span></span></button>
     </div>
   </div>
-  <div class="scene-watermark">SANDBOX · mappoint</div>
+  <div class="scene-watermark">SANDBOX · mappoint (v2)</div>
   <script src="scene.js"></script>
+
+  <!-- OPEN QUESTIONS for Steve:
+       1. Subtitle reads "11.4 NM · 042° FROM OWNSHIP · MAG VAR 3°W". Mag var is
+          probably overkill for a long-press popup — pull it? Or keep so the
+          bearing is fully qualified?
+       2. Action row: I went Direct To + Save Point. Original had "Add to Plan."
+          Save Point = create a user waypoint at the coord; Add to Plan inserts
+          it as the next leg. They're different actions. Pick one — or three
+          buttons (Direct To / Save / Add to Plan)?
+       3. Airspace chip taxonomy — covered B/C/D/MOA/P/R; Class E and G aren't
+          chip-worthy (everywhere is one or the other) but might want a "SUA"
+          chip for special-use composites. Want me to spec the full set?
+       4. Nearby Navaids/Fixes — closed by default (least-tapped of the three).
+          Or default-open since the LRU will collapse it under pressure anyway?
+       5. Subtitle rendered in mono now (was system). Reads more like a coordinate
+          measurement — but it's mixed (NM + bearing + chrome words). Push back
+          if it should split: mono for numerics, system for "FROM OWNSHIP". -->
 </body>
 </html>

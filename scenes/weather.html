@@ -1,8 +1,26 @@
 <!DOCTYPE html>
-<!-- Scene: Weather Disclosure (same shell as airport, Weather tab active) -->
+<!--
+  Scene: Weather Disclosure (KGTU) — VISUAL REFRESH v2
+
+  WHAT CHANGED, IN ONE BREATH:
+  1. Adopts the canon shell from airport-v2 — 31vw width, ICAO badge replaces
+     dot, system-font chrome / mono data, 10px shell, hairline rules.
+  2. METAR header carries the .wx-cat-chip (MVFR), pulled out of the kv-grid
+     to avoid duplication. Age moves to .popup-section-meta on the header so
+     pilots see "is this current?" before any other detail.
+  3. TAF section: when present, tinted by category-deterioration (e.g. VFR→IFR
+     gets a sev-caution accent); when unavailable, a clean .taf-empty state
+     instead of the legacy gray block.
+  4. Winds Aloft: re-typeset as a proper tabular grid — labels in chrome,
+     altitudes/winds/temps in mono, tabular-nums for column alignment.
+  5. Single ›-chevron icon override; same accordion semantics as airport-v2
+     (Mode A, multi-open with LRU). Glow policy applied — no decorative glow
+     on chrome at night.
+-->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Weather · Sandbox</title>
   <link rel="stylesheet" href="../styles/index-tokens.css">
   <link rel="stylesheet" href="../styles/index-base.css">
@@ -15,6 +33,246 @@
   <link rel="stylesheet" href="../styles/index-aircraft-profile.css">
   <link rel="stylesheet" href="../styles/index-responsive.css">
   <link rel="stylesheet" href="scene.css">
+
+  <!-- DESIGN: visual-refresh additions for the Weather tab. The shell rules
+       duplicate airport-v2 because the production builder shares the
+       weather-popup shell. Port back into index-dialogs.css alongside airport-v2. -->
+  <style id="weather-v2">
+    /* =========================================================
+       0 · SHELL — 31vw width per the real-app geometry, canon shell.
+       ========================================================= */
+    #weather-popup.content-panel--left{
+      width:31vw;
+      min-width:340px;
+      max-width:520px;
+    }
+    .weather-popup-shell{
+      border-radius:var(--popup-shell-radius,10px);
+      border:var(--popup-shell-border);
+      box-shadow:var(--popup-shell-shadow);
+      font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",system-ui,sans-serif;
+      position:relative;
+      display:flex;flex-direction:column;max-height:100%;
+    }
+    .weather-popup-shell::before{
+      content:"";position:absolute;left:0;right:0;top:0;height:1px;
+      background:linear-gradient(90deg,transparent,var(--popup-edge-highlight),transparent);
+      pointer-events:none;
+      border-radius:var(--popup-shell-radius,10px) var(--popup-shell-radius,10px) 0 0;
+    }
+    .weather-popup-body{flex:1 1 auto;min-height:0;display:flex;flex-direction:column}
+    .weather-popup-panel{flex:1 1 auto;min-height:0;display:flex;flex-direction:column}
+
+    /* Head */
+    .weather-popup-head{padding:14px 14px 8px}
+    .weather-popup-ident-row{gap:10px}
+    .icao-badge{
+      display:inline-flex;align-items:center;justify-content:center;
+      min-width:64px;height:30px;padding:0 10px;
+      background:var(--icao-badge-bg);color:var(--icao-badge-fg);
+      border-radius:7px;
+      font:600 15px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+      letter-spacing:.04em;
+      box-shadow:inset 0 0 0 1px var(--icao-badge-border);
+    }
+    .weather-popup-title{
+      font:600 17px/1.15 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
+      color:var(--popup-title-color);letter-spacing:.005em;
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;
+    }
+    .weather-popup-subtitle{
+      font:500 12px/1.2 -apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+      color:var(--popup-subtitle-color);letter-spacing:.04em;
+      text-transform:uppercase;padding:0 14px 10px;
+    }
+    .weather-popup-close{
+      width:44px;height:44px;min-width:44px;border-radius:8px;
+      background:var(--popup-close-bg);
+      border:1px solid var(--popup-close-border);
+      color:var(--popup-close-fg);
+      font:400 18px/1 -apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+    }
+    .weather-popup-close:hover{background:var(--popup-close-bg-hover)}
+
+    /* Tabs */
+    .weather-popup-tabs{
+      background:var(--popup-tabbar-bg);
+      border-top:1px solid var(--popup-rule-color);
+      border-bottom:1px solid var(--popup-rule-color);
+    }
+    .weather-popup-tab{
+      font:600 13px/1 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
+      letter-spacing:.06em;text-transform:uppercase;text-align:center;
+      min-height:46px;padding:0 12px;
+      background:var(--popup-tab-idle-bg);color:var(--popup-tab-idle-color);
+      border:none;border-bottom:2px solid transparent;
+      transition:background .12s ease,color .12s ease,border-color .12s ease;
+    }
+    .weather-popup-tab+.weather-popup-tab{border-left:1px solid var(--popup-tab-divider)}
+    .weather-popup-tab.is-active{
+      background:var(--popup-tab-active-bg);color:var(--popup-tab-active-color);
+      border-bottom-color:var(--popup-tab-active-rule);
+    }
+
+    /* Accordion */
+    .popup-section{border-bottom:1px solid var(--popup-rule-color)}
+    .popup-accordion-list{
+      flex:1 1 auto;min-height:0;
+      overflow-y:auto;
+      -webkit-overflow-scrolling:touch;
+    }
+    .popup-section-title-row{
+      background:var(--popup-section-header-bg);
+      color:var(--popup-section-header-color);
+      padding:12px 14px;min-height:46px;
+      transition:background .12s ease;
+    }
+    .popup-section-title-row:hover{background:var(--popup-section-header-bg-hover)}
+    .popup-section-title{
+      font:600 13px/1.05 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
+      letter-spacing:.07em;text-transform:uppercase;color:inherit;
+    }
+    .popup-accordion-icon{
+      width:14px;height:14px;
+      border:0 !important;transform:none !important;
+      display:inline-flex;align-items:center;justify-content:center;
+      color:inherit;opacity:.7;flex:0 0 14px;
+      transition:opacity .12s ease;
+    }
+    .popup-accordion-icon::before{
+      content:"\203A";
+      font:600 16px/1 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",sans-serif;
+      color:currentColor;display:block;
+      transform:rotate(0deg);transform-origin:50% 50%;
+      transition:transform .18s cubic-bezier(.4,0,.2,1);
+    }
+    .popup-accordion-item.is-open .popup-accordion-icon{opacity:1}
+    .popup-accordion-item.is-open .popup-accordion-icon::before{transform:rotate(90deg)}
+    .popup-section-body{padding:14px;background:var(--popup-section-body-bg)}
+
+    .popup-section-trailing{display:inline-flex;align-items:center;gap:10px}
+    .popup-section-meta{
+      font:500 11px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+      letter-spacing:.06em;color:var(--popup-section-meta-color);
+      white-space:nowrap;
+    }
+    .popup-section-status{
+      font:500 11px/1 -apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+      letter-spacing:.06em;text-transform:uppercase;
+      color:var(--popup-section-meta-color);
+    }
+
+    /* KV grid */
+    .popup-kv-grid,.weather-kv-grid{gap:12px 20px;align-items:baseline}
+    .popup-kv-label,.weather-kv-label{
+      font:500 12px/1.2 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
+      color:var(--popup-label-color);letter-spacing:.07em;
+      text-transform:uppercase;font-weight:500;
+    }
+    .popup-kv-value,.weather-kv-value{
+      font:600 16px/1.25 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+      color:var(--popup-value-color);font-variant-numeric:tabular-nums;
+      letter-spacing:.01em;
+    }
+
+    /* WX category chip */
+    .wx-cat-chip{
+      display:inline-flex;align-items:center;gap:6px;
+      height:22px;padding:0 9px;border-radius:11px;
+      font:700 11px/1 -apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+      letter-spacing:.08em;
+      background:var(--wx-cat-chip-bg);color:var(--wx-cat-chip-fg);
+      box-shadow:inset 0 0 0 1px var(--wx-cat-chip-border);
+    }
+    .wx-cat-chip[data-cat="VFR"]{ --wx-cat-chip-bg:var(--wx-vfr-bg);   --wx-cat-chip-fg:var(--wx-vfr-fg);   --wx-cat-chip-border:var(--wx-vfr-border) }
+    .wx-cat-chip[data-cat="MVFR"]{--wx-cat-chip-bg:var(--wx-mvfr-bg);  --wx-cat-chip-fg:var(--wx-mvfr-fg);  --wx-cat-chip-border:var(--wx-mvfr-border)}
+    .wx-cat-chip[data-cat="IFR"]{ --wx-cat-chip-bg:var(--wx-ifr-bg);   --wx-cat-chip-fg:var(--wx-ifr-fg);   --wx-cat-chip-border:var(--wx-ifr-border) }
+    .wx-cat-chip[data-cat="LIFR"]{--wx-cat-chip-bg:var(--wx-lifr-bg);  --wx-cat-chip-fg:var(--wx-lifr-fg);  --wx-cat-chip-border:var(--wx-lifr-border)}
+    .wx-cat-chip::before{
+      content:"";width:6px;height:6px;border-radius:50%;background:currentColor;flex:0 0 6px;
+    }
+
+    /* Raw METAR */
+    .weather-popup-raw{
+      margin-top:14px;padding-top:12px;
+      border-top:1px solid var(--popup-rule-color);
+      font:500 12.5px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+      color:var(--popup-raw-color);letter-spacing:.02em;
+    }
+
+    /* TAF empty state — clean confidence signal, not a gray block */
+    .taf-empty{
+      padding:18px 4px;text-align:center;
+      font:500 12px/1.4 -apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+      color:var(--popup-empty-color);
+      letter-spacing:.04em;text-transform:uppercase;
+    }
+
+    /* =========================================================
+       Winds Aloft — proper tabular grid.
+       Three columns: Level (mono), Wind (mono dir/spd), Temp (mono °C).
+       Right-aligned numerics, baseline grid via gap; tabular-nums.
+       ========================================================= */
+    .winds-aloft-meta{
+      font:500 11px/1.3 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+      color:var(--popup-section-meta-color);
+      letter-spacing:.05em;
+      margin-bottom:10px;
+    }
+    .winds-aloft-table{
+      width:100%;border-collapse:collapse;
+      font-variant-numeric:tabular-nums;
+    }
+    .winds-aloft-table thead th{
+      font:500 10.5px/1 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
+      letter-spacing:.08em;text-transform:uppercase;
+      color:var(--popup-label-color);
+      text-align:right;font-weight:500;
+      padding:0 0 8px;
+      border-bottom:1px solid var(--popup-rule-color);
+    }
+    .winds-aloft-table thead th:first-child{text-align:left}
+    .winds-aloft-table tbody td{
+      padding:7px 0;
+      border-bottom:1px solid var(--popup-rule-color);
+      text-align:right;
+    }
+    .winds-aloft-table tbody tr:last-child td{border-bottom:0}
+    .winds-aloft-table .winds-level{
+      text-align:left;
+      font:600 13px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+      color:var(--popup-section-header-color);
+      letter-spacing:.04em;
+    }
+    .winds-aloft-table .winds-wind{
+      font:500 14px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+      color:var(--popup-value-color);letter-spacing:.02em;
+    }
+    .winds-aloft-table .winds-temp{
+      font:500 14px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+      color:var(--popup-value-color);letter-spacing:.02em;
+      width:56px;
+    }
+
+    /* Action row */
+    .popup-action-row{
+      background:var(--popup-action-bg);
+      border-top:1px solid var(--popup-action-divider);
+    }
+    .popup-action-btn{
+      font:600 14px/1 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
+      letter-spacing:.01em;text-transform:none;
+      color:var(--popup-action-color);min-height:50px;padding:14px 12px;
+      border-right:1px solid var(--popup-action-divider);
+      transition:background .1s ease;
+    }
+    .popup-action-btn:hover{background:var(--popup-action-bg-hover)}
+    .popup-action-btn:active{background:var(--popup-action-bg-press)}
+
+    /* Glow policy: night strips decorative glows, day allows them. */
+    html[data-appearance="night"] .weather-popup-shell{box-shadow:var(--popup-shell-shadow)}
+    html[data-appearance="day"]   .weather-popup-shell{box-shadow:var(--popup-shell-shadow)}
+  </style>
 </head>
 <body>
   <div id="app-frame">
@@ -32,72 +290,89 @@
         <img class="scene-map-bg-image" src="../assets/map-placeholder.png" alt="" data-loaded="false">
 
         <div id="weather-popup" class="content-panel content-panel--left">
-          <div class="weather-popup-shell" role="dialog">
+          <div class="weather-popup-shell" role="dialog" aria-modal="false" aria-labelledby="wx-popup-title">
             <div class="weather-popup-head">
               <div class="weather-popup-ident-row">
-                <span class="weather-flight-dot" aria-hidden="true" style="background-color:#f1cc7c;"></span>
-                <div class="weather-popup-title">KGTU</div>
+                <!-- DESIGN: ICAO badge replaces the colored dot, matches airport-v2. -->
+                <span class="icao-badge" aria-label="ICAO KGTU">KGTU</span>
+                <div class="weather-popup-title" id="wx-popup-title">Georgetown Exec</div>
               </div>
-              <button class="weather-popup-close" type="button" aria-label="Close">X</button>
+              <button class="weather-popup-close" type="button" data-popup-close aria-label="Dismiss weather dialog">×</button>
             </div>
-            <div class="weather-popup-subtitle">GEORGETOWN EXEC</div>
-            <div class="weather-popup-tabs" role="tablist">
+            <div class="weather-popup-subtitle" title="GEORGETOWN, TX · 790' · 10.8 NM">GEORGETOWN, TX · 790' · 10.8 NM</div>
+
+            <div class="weather-popup-tabs" role="tablist" aria-label="Airport information tabs">
               <button class="weather-popup-tab" data-popup-tab="airport" role="tab" aria-selected="false">Info</button>
               <button class="weather-popup-tab is-active" data-popup-tab="weather" role="tab" aria-selected="true">Weather</button>
+              <button class="weather-popup-tab" data-popup-tab="notams" role="tab" aria-selected="false">NOTAMs</button>
             </div>
+
             <div class="weather-popup-body">
-              <section class="weather-popup-panel weather-popup-panel-airport" data-popup-panel="airport" hidden>
-                <div class="popup-accordion-list">
-                  <section class="popup-section popup-accordion-item is-open"><button class="popup-section-title-row popup-accordion-trigger" type="button" aria-expanded="true"><span class="popup-section-title">Airport</span><span class="popup-section-trailing"><span class="popup-accordion-icon" aria-hidden="true"></span></span></button><div class="popup-section-body popup-accordion-body"><div class="popup-kv-grid"><div class="popup-kv-label">Distance</div><div class="popup-kv-value">10.8 nm</div></div></div></section>
-                </div>
-              </section>
+              <!-- Other tab mounts left empty so tab switching reads in the sandbox. -->
+              <section class="weather-popup-panel" data-popup-panel="airport" hidden></section>
+              <section class="weather-popup-panel" data-popup-panel="notams" hidden></section>
+
               <section class="weather-popup-panel weather-popup-panel-weather" data-popup-panel="weather">
                 <div class="popup-accordion-list popup-weather-accordion-list">
-                  <section class="popup-section popup-accordion-item is-open">
-                    <button class="popup-section-title-row popup-accordion-trigger" type="button" aria-expanded="true">
+
+                  <!-- DESIGN: METAR header carries wx-cat-chip + age in meta.
+                       Category leaves the kv-grid (was duplicating the chip). -->
+                  <section class="popup-section popup-accordion-item is-open" data-weather-section="metar">
+                    <button class="popup-section-title-row popup-accordion-trigger" type="button" data-popup-accordion-tab="weather" data-popup-accordion-section="metar" aria-expanded="true">
                       <span class="popup-section-title">METAR</span>
                       <span class="popup-section-trailing">
+                        <span class="wx-cat-chip" data-cat="MVFR">MVFR</span>
+                        <span class="popup-section-meta">29 MIN</span>
                         <span class="popup-accordion-icon" aria-hidden="true"></span>
                       </span>
                     </button>
                     <div class="popup-section-body popup-accordion-body">
                       <div class="weather-kv-grid">
-                        <div class="weather-kv-label">Category</div><div class="weather-kv-value">MVFR</div>
-                        <div class="weather-kv-label">Age</div><div class="weather-kv-value">29 min</div>
-                        <div class="weather-kv-label">Wind</div><div class="weather-kv-value">350° at 9</div>
+                        <div class="weather-kv-label">Wind</div><div class="weather-kv-value">350° / 9 kt</div>
                         <div class="weather-kv-label">Visibility</div><div class="weather-kv-value">10.0 SM</div>
-                        <div class="weather-kv-label">Ceiling</div><div class="weather-kv-value">2200 ft</div>
-                        <div class="weather-kv-label">Temp/Dew</div><div class="weather-kv-value">22.2 / 16.7 C</div>
+                        <div class="weather-kv-label">Ceiling</div><div class="weather-kv-value">2,200 ft OVC</div>
+                        <div class="weather-kv-label">Temp / Dew</div><div class="weather-kv-value">22 / 17 °C</div>
                         <div class="weather-kv-label">Altimeter</div><div class="weather-kv-value">29.91 inHg</div>
                       </div>
                       <div class="weather-popup-raw">SPECI KGTU 061806Z 35009KT 10SM OVC022 22/17 A2991 RMK AO2 T02220167</div>
                     </div>
                   </section>
-                  <section class="popup-section popup-accordion-item">
-                    <button class="popup-section-title-row popup-accordion-trigger" type="button" aria-expanded="false">
+
+                  <!-- DESIGN: TAF — collapsed by default, status chip on header. -->
+                  <section class="popup-section popup-accordion-item" data-weather-section="taf">
+                    <button class="popup-section-title-row popup-accordion-trigger" type="button" data-popup-accordion-tab="weather" data-popup-accordion-section="taf" aria-expanded="false">
                       <span class="popup-section-title">TAF</span>
                       <span class="popup-section-trailing">
                         <span class="popup-section-status">Unavailable</span>
                         <span class="popup-accordion-icon" aria-hidden="true"></span>
                       </span>
                     </button>
-                    <div class="popup-section-body popup-accordion-body" hidden><div class="taf-empty">TAF unavailable</div></div>
+                    <div class="popup-section-body popup-accordion-body" hidden>
+                      <div class="taf-empty">TAF unavailable for this station</div>
+                    </div>
                   </section>
-                  <section class="popup-section popup-accordion-item">
-                    <button class="popup-section-title-row popup-accordion-trigger" type="button" aria-expanded="false">
+
+                  <!-- DESIGN: Winds Aloft retypeset as a real tabular grid.
+                       Sample dataset includes a representative cross-section of FLs. -->
+                  <section class="popup-section popup-accordion-item" data-weather-section="winds">
+                    <button class="popup-section-title-row popup-accordion-trigger" type="button" data-popup-accordion-tab="weather" data-popup-accordion-section="winds" aria-expanded="false">
                       <span class="popup-section-title">Winds Aloft</span>
                       <span class="popup-section-trailing">
+                        <span class="popup-section-meta">CLL · 65 NM</span>
                         <span class="popup-accordion-icon" aria-hidden="true"></span>
                       </span>
                     </button>
                     <div class="popup-section-body popup-accordion-body" hidden>
-                      <div class="winds-aloft-meta">
-                        <span class="winds-aloft-station">CLL · College Station · 65 NM</span>
-                      </div>
+                      <div class="winds-aloft-meta">CLL · College Station · 65 NM · valid 18Z</div>
                       <table class="winds-aloft-table">
                         <thead><tr><th>Level</th><th>Wind</th><th>Temp °C</th></tr></thead>
                         <tbody>
-                          <tr><td class="winds-level">FL240</td><td class="winds-wind">080/123</td><td class="winds-temp">+4</td></tr>
+                          <tr><td class="winds-level">3,000</td><td class="winds-wind">340° / 14</td><td class="winds-temp">+17</td></tr>
+                          <tr><td class="winds-level">6,000</td><td class="winds-wind">320° / 22</td><td class="winds-temp">+11</td></tr>
+                          <tr><td class="winds-level">9,000</td><td class="winds-wind">300° / 31</td><td class="winds-temp">+05</td></tr>
+                          <tr><td class="winds-level">12,000</td><td class="winds-wind">290° / 44</td><td class="winds-temp">−02</td></tr>
+                          <tr><td class="winds-level">FL180</td><td class="winds-wind">280° / 68</td><td class="winds-temp">−18</td></tr>
+                          <tr><td class="winds-level">FL240</td><td class="winds-wind">270° / 92</td><td class="winds-temp">−32</td></tr>
                         </tbody>
                       </table>
                     </div>
@@ -105,9 +380,10 @@
                 </div>
               </section>
             </div>
+
             <div class="popup-action-row">
               <button class="popup-action-btn" type="button">Direct To</button>
-              <button class="popup-action-btn" type="button">Add To Plan</button>
+              <button class="popup-action-btn" type="button">Add to Plan</button>
             </div>
           </div>
         </div>
@@ -130,7 +406,19 @@
       <button type="button" class="soft-button soft-button--hybrid" style="--soft-button-icon-height:24px;"><span class="soft-button-inner"><img class="soft-button-icon" alt="" src="../assets/more_icon.png"><span class="soft-button-label">More</span></span></button>
     </div>
   </div>
-  <div class="scene-watermark">SANDBOX · weather</div>
+  <div class="scene-watermark">SANDBOX · weather (v2)</div>
   <script src="scene.js"></script>
+
+  <!-- OPEN QUESTIONS for Steve:
+       1. Winds Aloft levels: I sampled 3K/6K/9K/12K/FL180/FL240. Final list should
+          come from the real winds-aloft data feed. Six rows fits the disclosure
+          comfortably; up to ~9 before the section needs internal scroll.
+       2. TAF empty state: "TAF unavailable for this station" — terse and uppercase.
+          Alt: "No TAF issued for this station" (more conversational). Preference?
+       3. METAR age threshold: 29 MIN renders fine. At what threshold should the
+          meta turn caution-tinted? 60 min? 90 min? Currently no threshold — drives
+          a future severity-on-meta token if you want one.
+       4. Wind direction glyph: I wrote "340° / 14". Some EFBs prefer "340@14" or
+          a tiny SVG arrow. Stay numeric, or worth a wind-arrow glyph experiment? -->
 </body>
 </html>

@@ -1,8 +1,31 @@
 <!DOCTYPE html>
-<!-- Scene: Navaid Popup (single-section popup; no tabs) -->
+<!--
+  Scene: Navaid Disclosure (CWK · VOR-DME) — VISUAL REFRESH v2 (new file)
+
+  WHY THIS EXISTS:
+  Navaids are simpler than airports — no tabs, no NOTAM tab, no weather. The
+  payload is identity (ident, name, type), tuning (freq, channel), and geometry
+  (radial/distance from ownship, mag var). One section is enough; no accordion.
+
+  WHAT IT INHERITS FROM AIRPORT-V2:
+  - 31vw shell width, 10px radius, hairline top edge, system chrome / mono data
+  - ICAO-style badge for the navaid IDENT (here: "CWK")
+  - .popup-action-row footer with Direct-To / Add-to-Plan
+  - Glow policy (night strips decorative glow on shell)
+
+  WHAT'S DIFFERENT:
+  - No tabs (single-purpose popup)
+  - .navaid-type-pill — a small chip in the head showing "VOR-DME" / "VOR-TAC" / "NDB" etc.
+    Reads as taxonomy, not just text in the subtitle.
+  - .navaid-tune-row — a one-line emphasized FREQ + CHANNEL display, since tuning is
+    the most-tapped action. Bigger than kv-grid values, mono, generous letter-spacing.
+  - .navaid-radial-block — small triangulation summary (radial / distance / bearing-from-ownship)
+    that reads in one glance.
+-->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Navaid · Sandbox</title>
   <link rel="stylesheet" href="../styles/index-tokens.css">
   <link rel="stylesheet" href="../styles/index-base.css">
@@ -15,51 +38,272 @@
   <link rel="stylesheet" href="../styles/index-aircraft-profile.css">
   <link rel="stylesheet" href="../styles/index-responsive.css">
   <link rel="stylesheet" href="scene.css">
+
+  <!-- DESIGN: navaid-v2 lifts the canon shell from airport-v2 verbatim, then
+       adds a small set of navaid-specific patterns. Port to index-dialogs.css
+       under a `.navaid-popup-shell` selector when this lands. -->
+  <style id="navaid-v2">
+    /* =========================================================
+       SHELL — narrower than airport because there's less to show.
+       ========================================================= */
+    #navaid-popup.content-panel--left{
+      width:31vw;
+      min-width:320px;
+      max-width:480px;
+    }
+    .navaid-popup-shell{
+      border-radius:var(--popup-shell-radius,10px);
+      border:var(--popup-shell-border);
+      box-shadow:var(--popup-shell-shadow);
+      background:var(--popup-shell-bg, #181c22);
+      font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",system-ui,sans-serif;
+      position:relative;
+      display:flex;flex-direction:column;max-height:100%;
+      overflow:hidden;
+    }
+    .navaid-popup-shell::before{
+      content:"";position:absolute;left:0;right:0;top:0;height:1px;
+      background:linear-gradient(90deg,transparent,var(--popup-edge-highlight),transparent);
+      pointer-events:none;
+    }
+
+    /* =========================================================
+       HEAD — ident badge + name + type pill, close button.
+       Type pill replaces the airport-style tabs since there's only one panel.
+       ========================================================= */
+    .navaid-popup-head{
+      display:flex;align-items:flex-start;justify-content:space-between;
+      gap:12px;padding:14px 14px 8px;
+    }
+    .navaid-popup-ident-row{
+      display:flex;align-items:center;gap:10px;min-width:0;flex:1 1 auto;
+    }
+    .icao-badge{
+      display:inline-flex;align-items:center;justify-content:center;
+      min-width:54px;height:30px;padding:0 10px;
+      background:var(--icao-badge-bg);color:var(--icao-badge-fg);
+      border-radius:7px;
+      font:600 15px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+      letter-spacing:.04em;
+      box-shadow:inset 0 0 0 1px var(--icao-badge-border);
+    }
+    .navaid-popup-title{
+      font:600 17px/1.15 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
+      color:var(--popup-title-color);letter-spacing:.005em;
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;
+    }
+    .navaid-popup-close{
+      width:44px;height:44px;min-width:44px;border-radius:8px;
+      background:var(--popup-close-bg);
+      border:1px solid var(--popup-close-border);
+      color:var(--popup-close-fg);
+      font:400 18px/1 -apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+      flex:0 0 44px;
+      cursor:pointer;
+    }
+    .navaid-popup-close:hover{background:var(--popup-close-bg-hover)}
+
+    /* DESIGN: type pill — small chip below the head, e.g. "VOR-DME · CLASS H".
+       Sits where the tabs would be on airport popup, so the geometry stays
+       familiar. Subtitle line below carries the geographic distance summary. */
+    .navaid-popup-meta{
+      display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+      padding:0 14px 12px;
+    }
+    .navaid-type-pill{
+      display:inline-flex;align-items:center;gap:6px;
+      height:22px;padding:0 10px;border-radius:11px;
+      font:700 11px/1 -apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+      letter-spacing:.08em;text-transform:uppercase;
+      background:var(--navaid-pill-bg, rgba(120,160,210,.16));
+      color:var(--navaid-pill-fg, #b8d3ff);
+      box-shadow:inset 0 0 0 1px var(--navaid-pill-border, rgba(120,160,210,.32));
+    }
+    .navaid-type-pill[data-type="NDB"]{
+      --navaid-pill-bg:rgba(220,170,90,.16);
+      --navaid-pill-fg:#f0c987;
+      --navaid-pill-border:rgba(220,170,90,.34);
+    }
+    .navaid-type-pill[data-type="VORTAC"]{
+      --navaid-pill-bg:rgba(160,200,140,.16);
+      --navaid-pill-fg:#c5e0a8;
+      --navaid-pill-border:rgba(160,200,140,.34);
+    }
+    .navaid-popup-subtitle{
+      font:500 12px/1.2 -apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+      color:var(--popup-subtitle-color);letter-spacing:.04em;
+      text-transform:uppercase;
+    }
+
+    /* =========================================================
+       BODY — three blocks: tune row, radial block, kv detail grid.
+       No accordion: this is a single-section disclosure.
+       ========================================================= */
+    .navaid-popup-body{
+      padding:14px;
+      border-top:1px solid var(--popup-rule-color);
+      background:var(--popup-section-body-bg);
+      display:flex;flex-direction:column;gap:18px;
+    }
+
+    /* DESIGN: tune row is the headline — pilots come to this popup to tune
+       the navaid. Mono, big, generous letter-spacing. Channel (TACAN) is
+       secondary, half-tone. */
+    .navaid-tune-row{
+      display:flex;align-items:baseline;gap:12px;
+      padding:8px 0;
+    }
+    .navaid-tune-freq{
+      font:600 28px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+      color:var(--popup-value-color);
+      letter-spacing:.02em;
+      font-variant-numeric:tabular-nums;
+    }
+    .navaid-tune-unit{
+      font:500 12px/1 -apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+      color:var(--popup-label-color);
+      letter-spacing:.07em;text-transform:uppercase;
+      align-self:flex-end;padding-bottom:3px;
+    }
+    .navaid-tune-channel{
+      margin-left:auto;
+      font:500 14px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+      color:var(--popup-section-meta-color);
+      letter-spacing:.02em;
+    }
+
+    /* DESIGN: radial block — three big values, one row.
+       Pilots reading this just want "where is it relative to me?" answered
+       in one glance. Each cell has a tiny chrome label above mono data. */
+    .navaid-radial-block{
+      display:grid;grid-template-columns:repeat(3,1fr);
+      gap:12px;
+      padding:10px 0;
+      border-top:1px solid var(--popup-rule-color);
+      border-bottom:1px solid var(--popup-rule-color);
+    }
+    .navaid-radial-cell{
+      display:flex;flex-direction:column;gap:4px;
+    }
+    .navaid-radial-label{
+      font:500 10.5px/1 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
+      color:var(--popup-label-color);
+      letter-spacing:.08em;text-transform:uppercase;
+    }
+    .navaid-radial-value{
+      font:600 18px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+      color:var(--popup-value-color);
+      font-variant-numeric:tabular-nums;
+      letter-spacing:.01em;
+    }
+
+    /* KV grid — same conventions as airport-v2. */
+    .popup-kv-grid{display:grid;grid-template-columns:auto 1fr;gap:10px 20px;align-items:baseline}
+    .popup-kv-label{
+      font:500 12px/1.2 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
+      color:var(--popup-label-color);letter-spacing:.07em;
+      text-transform:uppercase;font-weight:500;
+    }
+    .popup-kv-value{
+      font:600 16px/1.25 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+      color:var(--popup-value-color);font-variant-numeric:tabular-nums;
+      letter-spacing:.01em;
+    }
+
+    /* Action row — verbatim from airport-v2 */
+    .popup-action-row{
+      display:flex;
+      background:var(--popup-action-bg);
+      border-top:1px solid var(--popup-action-divider);
+    }
+    .popup-action-btn{
+      flex:1 1 0;
+      font:600 14px/1 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
+      letter-spacing:.01em;text-transform:none;
+      color:var(--popup-action-color);min-height:50px;padding:14px 12px;
+      border:none;border-right:1px solid var(--popup-action-divider);
+      background:transparent;cursor:pointer;
+      transition:background .1s ease;
+    }
+    .popup-action-btn:last-child{border-right:0}
+    .popup-action-btn:hover{background:var(--popup-action-bg-hover)}
+    .popup-action-btn:active{background:var(--popup-action-bg-press)}
+
+    /* Glow policy */
+    html[data-appearance="night"] .navaid-popup-shell{box-shadow:var(--popup-shell-shadow)}
+    html[data-appearance="day"] .navaid-popup-shell{box-shadow:var(--popup-shell-shadow)}
+  </style>
 </head>
 <body>
   <div id="app-frame">
     <div id="health-status-bar" class="health-status-bar">
-      <div class="health-status-cell is-green">FlightBox</div><div class="health-status-cell is-green">ADS-B</div><div class="health-status-cell is-green">GPS</div><div class="health-status-cell is-green">AHRS</div><div class="health-status-cell is-green">ALT</div><div class="health-status-cell is-green">CO</div>
+      <div class="health-status-cell is-green">FlightBox</div>
+      <div class="health-status-cell is-green">ADS-B</div>
+      <div class="health-status-cell is-green">GPS</div>
+      <div class="health-status-cell is-green">AHRS</div>
+      <div class="health-status-cell is-green">ALT</div>
+      <div class="health-status-cell is-green">CO</div>
     </div>
     <div id="content-area">
       <div id="map-surface" class="map-surface">
         <div class="scene-map-bg"></div>
         <img class="scene-map-bg-image" src="../assets/map-placeholder.png" alt="" data-loaded="false">
 
-        <div id="weather-popup" class="content-panel content-panel--left">
-          <div class="weather-popup-shell" role="dialog">
-            <div class="weather-popup-head">
-              <div class="weather-popup-ident-row">
-                <span class="weather-flight-dot" aria-hidden="true" style="background-color:#bf5af2;"></span>
-                <div class="weather-popup-title">PMM</div>
+        <div id="navaid-popup" class="content-panel content-panel--left">
+          <div class="navaid-popup-shell" role="dialog" aria-modal="false" aria-labelledby="navaid-popup-title">
+            <div class="navaid-popup-head">
+              <div class="navaid-popup-ident-row">
+                <span class="icao-badge" aria-label="Navaid identifier CWK">CWK</span>
+                <div class="navaid-popup-title" id="navaid-popup-title">Centex</div>
               </div>
-              <button class="weather-popup-close" type="button" aria-label="Close">X</button>
+              <button class="navaid-popup-close" type="button" data-popup-close aria-label="Dismiss navaid dialog">×</button>
             </div>
-            <div class="weather-popup-subtitle">Pullman · VOR/DME · 6.3 NM N</div>
-            <div class="weather-popup-body">
-              <div class="popup-accordion-list">
-                <section class="popup-section popup-accordion-item is-open">
-                  <button class="popup-section-title-row popup-accordion-trigger" type="button" aria-expanded="true">
-                    <span class="popup-section-title">Info</span>
-                    <span class="popup-section-trailing">
-                      <span class="popup-accordion-icon" aria-hidden="true"></span>
-                    </span>
-                  </button>
-                  <div class="popup-section-body popup-accordion-body">
-                    <div class="popup-kv-grid">
-                      <div class="popup-kv-label">Frequency</div><div class="popup-kv-value">110.4</div>
-                      <div class="popup-kv-label">Ident</div><div class="popup-kv-value">·--·  --  --</div>
-                      <div class="popup-kv-label">Class</div><div class="popup-kv-value">High Altitude</div>
-                      <div class="popup-kv-label">Position</div><div class="popup-kv-value">N 42° 03.4' · W 87° 51.8'</div>
-                      <div class="popup-kv-label">Variation</div><div class="popup-kv-value">3° W</div>
-                    </div>
-                  </div>
-                </section>
+
+            <!-- DESIGN: type pill + geographic subtitle on one line.
+                 Type drives the pill color; subtitle is uppercase chrome. -->
+            <div class="navaid-popup-meta">
+              <span class="navaid-type-pill" data-type="VORDME">VOR-DME</span>
+              <span class="navaid-popup-subtitle">CLASS H · 22.4 NM SE</span>
+            </div>
+
+            <div class="navaid-popup-body">
+              <!-- DESIGN: TUNE ROW — the headline. Frequency in 28px mono, channel
+                   right-aligned. This is what the pilot came for. -->
+              <div class="navaid-tune-row">
+                <span class="navaid-tune-freq">112.50</span>
+                <span class="navaid-tune-unit">MHz</span>
+                <span class="navaid-tune-channel">CH 72</span>
+              </div>
+
+              <!-- DESIGN: RADIAL BLOCK — three-cell summary, all glanceable. -->
+              <div class="navaid-radial-block">
+                <div class="navaid-radial-cell">
+                  <span class="navaid-radial-label">Radial</span>
+                  <span class="navaid-radial-value">142°</span>
+                </div>
+                <div class="navaid-radial-cell">
+                  <span class="navaid-radial-label">DME</span>
+                  <span class="navaid-radial-value">22.4</span>
+                </div>
+                <div class="navaid-radial-cell">
+                  <span class="navaid-radial-label">Bearing</span>
+                  <span class="navaid-radial-value">322°</span>
+                </div>
+              </div>
+
+              <!-- KV grid — secondary detail. Mag var, elevation, owner. -->
+              <div class="popup-kv-grid">
+                <div class="popup-kv-label">Elevation</div><div class="popup-kv-value">1,210 ft</div>
+                <div class="popup-kv-label">Mag Var</div><div class="popup-kv-value">5° E</div>
+                <div class="popup-kv-label">Class</div><div class="popup-kv-value">High</div>
+                <div class="popup-kv-label">Usable</div><div class="popup-kv-value">130 NM @ 18k</div>
+                <div class="popup-kv-label">Owner</div><div class="popup-kv-value">FAA</div>
               </div>
             </div>
+
             <div class="popup-action-row">
-              <button class="popup-action-btn" type="button">Direct To</button>
-              <button class="popup-action-btn" type="button">Add To Plan</button>
+              <button class="popup-action-btn" type="button" data-popup-directto>Direct To</button>
+              <button class="popup-action-btn" type="button" data-popup-add-to-plan>Add to Plan</button>
             </div>
           </div>
         </div>
@@ -82,7 +326,24 @@
       <button type="button" class="soft-button soft-button--hybrid" style="--soft-button-icon-height:24px;"><span class="soft-button-inner"><img class="soft-button-icon" alt="" src="../assets/more_icon.png"><span class="soft-button-label">More</span></span></button>
     </div>
   </div>
-  <div class="scene-watermark">SANDBOX · navaid</div>
+  <div class="scene-watermark">SANDBOX · navaid (v2)</div>
   <script src="scene.js"></script>
+
+  <!-- OPEN QUESTIONS for Steve:
+       1. Type pill values — I covered VOR-DME, NDB, VORTAC. Production list?
+          Likely: VOR / VOR-DME / VORTAC / DME / NDB / TACAN / WAYPOINT / FIX.
+          Each one might want its own tint, or just a single neutral chip with text.
+       2. Tune row size — 28px mono is bigger than airport's 16px values.
+          Justified because tuning is the primary action. Push back if it feels showy.
+       3. Radial block — currently shows Radial/DME/Bearing. Bearing here is bearing-
+          FROM-ownship (i.e. where to point the airplane). Some pilots would want
+          MAG vs TRUE distinction. Worth a tiny "(MAG)" chrome under the value, or
+          assume MAG is implicit per cockpit convention?
+       4. Class line ("CLASS H · 22.4 NM SE") — distance is repeated in radial block.
+          Drop one? Subtitle is glanceable while collapsed (the head); radial is the
+          structured reading. Both reading paths matter, leaving both for now.
+       5. NDBs have no DME. Builder will need to suppress the channel/DME cells when
+          type=NDB. Want me to add a `data-no-dme` modifier class for that, or handle
+          via builder logic alone? -->
 </body>
 </html>

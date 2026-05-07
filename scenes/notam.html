@@ -1,22 +1,62 @@
 <!DOCTYPE html>
 <!--
-  Scene: NOTAM Tab — PROPOSED NEW (Phase D / 2026-05-06)
+  Scene: NOTAM Tab — VISUAL REFRESH v2 (Phase D, 2026-05-06)
 
-  Lives as a 3rd tab in the airport disclosure shell. List rows have:
-  severity-tinted left border, FAA keyword chip, time window, summary,
-  and a manual-override star ('*') when applicable. Sort: critical →
-  significant → advisory → info; within tier, effective_start DESC.
+  WHAT CHANGED, IN ONE BREATH:
+  1. Severity becomes the primary information architecture: the four FAA tiers
+     (Critical / Significant / Advisory / Info) are themselves the accordion
+     sections. Within a tier, rows sort by effective_start DESC. This lets the
+     pilot collapse the bottom tiers entirely and keep Critical fully visible
+     even at KORD's ~150-NOTAM volume.
+  2. Tier headers carry live count + a one-glance summary of the worst-affected
+     resource (e.g. "2 · 13C/31C, TWY A") in .popup-section-meta — so the
+     collapsed state is still glanceable.
+  3. List rows: severity-tinted left bar (4px), keyword chip (RWY/TWY/OBST/NAV/
+     COM/LIGHT), time window in mono, summary line. Tap a row to expand its
+     full prose detail + structured affected data. Single ›-chevron motif,
+     scoped per row, matches the accordion language exactly.
+  4. Manual-override marker: replaced the inline "*" with a proper
+     .notam-row-override badge — a small ✎ (pencil) glyph + "EDITED" hover
+     tooltip — so human-curated translations are visually distinct without
+     looking like a footnote.
+  5. Filter row above the list (All / Critical / Sig / Adv) — addresses the
+     KORD-150-NOTAMs case from CONSTRAINTS.md. Tap chip to scope the list
+     without leaving the tab.
+  6. NEW TOKEN proposal: --sev-significant-glow (parallel to sev-critical-glow,
+     but for day-mode-only, kept off in night per the glow policy). Not added
+     to index-tokens.css yet — flagged in OPEN QUESTIONS.
 
-  Real Wally NOTAM API shape:
-    {fns_id, version, faa_keyword, summary, detail, base_severity,
-     time_summary, manual_override, pushable, affected:{runway?:'13C/31C'}}
-
-  This is the only scene where the markup is NOT yet in webfs — Design's
-  task here is to land the visual treatment so we can wire it in.
+  PORT-BACK GUIDE:
+  - <style id="notam-v2"> below ports into webfs/src/styles/index-dialogs.css.
+  - The list builder (new — does not exist in webfs yet) emits:
+      .popup-accordion-list[data-accordion-mode] (Mode A)
+        > .popup-section.popup-accordion-item.notam-tier[data-sev="critical|…"]
+          > .popup-section-title-row.popup-accordion-trigger
+              span.popup-section-title  ("CRITICAL")
+              span.popup-section-trailing
+                span.notam-tier-count  ("2")
+                span.popup-section-meta  ("13C/31C, TWY A")
+                span.popup-accordion-icon
+          > .popup-section-body.popup-accordion-body
+              ul.notam-list
+                li.notam-row[data-sev="critical"]  ← tap-to-expand
+                  div.notam-row-head
+                    span.notam-row-keyword  ("RWY")
+                    span.notam-row-time     ("MAY 7 · 12-14Z")
+                    span.notam-row-override (optional)
+                    span.notam-row-icon     (›)
+                  div.notam-row-summary
+                  div.notam-row-detail (revealed when .is-expanded)
+                    div.notam-row-affected
+                    p.notam-row-prose
+  - notam-row tap-to-expand is a small JS add: toggle .is-expanded on the row,
+    flip aria-expanded on the trigger. (Not strictly the accordion JS — wire it
+    in scene.js or webfs's notam panel JS as a separate listener.)
 -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>NOTAM · Sandbox</title>
   <link rel="stylesheet" href="../styles/index-tokens.css">
   <link rel="stylesheet" href="../styles/index-base.css">
@@ -29,64 +69,691 @@
   <link rel="stylesheet" href="../styles/index-aircraft-profile.css">
   <link rel="stylesheet" href="../styles/index-responsive.css">
   <link rel="stylesheet" href="scene.css">
-  <style>
-    /* Sandbox-only strawman styles for the NOTAM list. Design decides what
-       these become; they're here so the scene reads. */
-    .notam-list { display:flex; flex-direction:column; gap:1px; background:rgba(0,0,0,0.4); }
-    .notam-row { padding:10px 12px; background:var(--popup-section-body-bg); border-left:3px solid var(--popup-rule-color); }
-    .notam-row.is-critical { border-left-color: var(--danger); }
-    .notam-row.is-significant { border-left-color: #f1cc7c; }
-    .notam-row.is-advisory { border-left-color: var(--accent); }
-    .notam-row-meta { display:flex; gap:8px; align-items:baseline; font-family: var(--falken-mono, Menlo, Consolas, monospace); }
-    .notam-row-sev { font-size:10px; font-weight:700; letter-spacing:0.06em; }
-    .notam-row.is-critical .notam-row-sev { color: var(--danger); }
-    .notam-row.is-significant .notam-row-sev { color: #f1cc7c; }
-    .notam-row.is-advisory .notam-row-sev { color: var(--accent); }
-    .notam-row-time { color: var(--popup-empty-color); font-size: 10px; }
-    .notam-row-override { color: var(--popup-empty-color); font-size: 10px; }
-    .notam-row-summary { margin-top: 4px; color: var(--popup-value-color); font-size: 14px; line-height: 1.35; }
+
+  <!-- DESIGN: visual-refresh additions specific to the NOTAM tab.
+       The shell/tabs/head rules duplicated here are identical to airport-v2 —
+       they apply in this scene because the production builder will share the
+       weather-popup shell. Port back into index-dialogs.css alongside airport-v2. -->
+  <style id="notam-v2">
+    /* =========================================================
+       0 · SHARED SHELL — copied from airport-v2 (canon).
+       ========================================================= */
+    /* DESIGN (Steve r3): real-app disclosures take ~31% of viewport width.
+       Bumped --popup-shell-width here so the sandbox reflects production geometry.
+       Token override is scoped to this scene — port-back will update the global token. */
+    #weather-popup.content-panel--left{
+      width:31vw;
+      min-width:340px;
+      max-width:520px;
+    }
+    .weather-popup-shell{
+      border-radius:var(--popup-shell-radius,10px);
+      border:var(--popup-shell-border);
+      box-shadow:var(--popup-shell-shadow);
+      font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",system-ui,sans-serif;
+      position:relative;
+      display:flex;flex-direction:column;max-height:100%;
+    }
+    .weather-popup-shell::before{
+      content:"";position:absolute;left:0;right:0;top:0;height:1px;
+      background:linear-gradient(90deg,transparent,var(--popup-edge-highlight),transparent);
+      pointer-events:none;
+      border-radius:var(--popup-shell-radius,10px) var(--popup-shell-radius,10px) 0 0;
+    }
+    .weather-popup-body{flex:1 1 auto;min-height:0;display:flex;flex-direction:column}
+    .weather-popup-panel{flex:1 1 auto;min-height:0;display:flex;flex-direction:column}
+
+    /* Head */
+    .weather-popup-head{padding:14px 14px 8px}
+    .weather-popup-ident-row{gap:10px}
+    .icao-badge{
+      display:inline-flex;align-items:center;justify-content:center;
+      min-width:64px;height:30px;padding:0 10px;
+      background:var(--icao-badge-bg);color:var(--icao-badge-fg);
+      border-radius:7px;
+      font:600 15px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+      letter-spacing:.04em;
+      box-shadow:inset 0 0 0 1px var(--icao-badge-border);
+    }
+    .weather-popup-title{
+      font:600 17px/1.15 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
+      color:var(--popup-title-color);letter-spacing:.005em;
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;
+    }
+    .weather-popup-subtitle{
+      font:500 12px/1.2 -apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+      color:var(--popup-subtitle-color);letter-spacing:.04em;
+      text-transform:uppercase;padding:0 14px 10px;
+    }
+    .weather-popup-close{
+      width:44px;height:44px;min-width:44px;border-radius:8px;
+      background:var(--popup-close-bg);
+      border:1px solid var(--popup-close-border);
+      color:var(--popup-close-fg);
+      font:400 18px/1 -apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+    }
+    .weather-popup-close:hover{background:var(--popup-close-bg-hover)}
+
+    /* Tabs */
+    .weather-popup-tabs{
+      background:var(--popup-tabbar-bg);
+      border-top:1px solid var(--popup-rule-color);
+      border-bottom:1px solid var(--popup-rule-color);
+    }
+    .weather-popup-tab{
+      font:600 13px/1 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
+      letter-spacing:.06em;text-transform:uppercase;text-align:center;
+      min-height:46px;padding:0 12px;
+      background:var(--popup-tab-idle-bg);color:var(--popup-tab-idle-color);
+      border:none;border-bottom:2px solid transparent;
+      transition:background .12s ease,color .12s ease,border-color .12s ease;
+    }
+    .weather-popup-tab+.weather-popup-tab{border-left:1px solid var(--popup-tab-divider)}
+    .weather-popup-tab.is-active{
+      background:var(--popup-tab-active-bg);color:var(--popup-tab-active-color);
+      border-bottom-color:var(--popup-tab-active-rule);
+    }
+    .popup-tab-badge{
+      display:inline-flex;align-items:center;justify-content:center;
+      min-width:18px;height:18px;padding:0 6px;margin-left:6px;
+      border-radius:9px;font:700 10px/1 -apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+      letter-spacing:.04em;
+      background:var(--sev-critical);color:#fff;
+      box-shadow:0 0 0 1px rgba(0,0,0,.25);
+      vertical-align:1px;
+    }
+
+    /* Accordion shell — Mode A (multi-open) ===================== */
+    .popup-section{border-bottom:1px solid var(--popup-rule-color)}
+    .popup-accordion-list{
+      flex:1 1 auto;min-height:0;
+      overflow-y:auto;
+      -webkit-overflow-scrolling:touch;
+    }
+    .popup-section-title-row{
+      background:var(--popup-section-header-bg);
+      color:var(--popup-section-header-color);
+      padding:12px 14px;min-height:46px;
+      transition:background .12s ease;
+    }
+    .popup-section-title-row:hover{background:var(--popup-section-header-bg-hover)}
+    .popup-section-title{
+      font:600 13px/1.05 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
+      letter-spacing:.07em;text-transform:uppercase;color:inherit;
+    }
+    /* Single ›-chevron, override legacy corner-chevron from index-dialogs.css */
+    .popup-accordion-icon{
+      width:14px;height:14px;
+      border:0 !important;
+      transform:none !important;
+      display:inline-flex;align-items:center;justify-content:center;
+      color:inherit;opacity:.7;flex:0 0 14px;
+      transition:opacity .12s ease;
+    }
+    .popup-accordion-icon::before{
+      content:"\203A";
+      font:600 16px/1 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",sans-serif;
+      color:currentColor;display:block;
+      transform:rotate(0deg);transform-origin:50% 50%;
+      transition:transform .18s cubic-bezier(.4,0,.2,1);
+    }
+    .popup-accordion-item.is-open .popup-accordion-icon{opacity:1}
+    .popup-accordion-item.is-open .popup-accordion-icon::before{transform:rotate(90deg)}
+    .popup-section-body{padding:0;background:var(--popup-section-body-bg)}
+    .popup-section-meta{
+      font:500 11px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+      letter-spacing:.06em;color:var(--popup-section-meta-color);
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+      max-width:170px;
+    }
+
+    /* =========================================================
+       1 · TIER HEADER — count chip carries the severity tint.
+       Reads as "this many criticals" without needing to expand.
+       ========================================================= */
+    .notam-tier .popup-section-title-row{
+      /* Slightly stronger header background per tier — color is a tinted
+         left wedge, not a wash, so the row still reads as a header. */
+      box-shadow:inset 4px 0 0 var(--tier-accent, transparent);
+    }
+    .notam-tier[data-sev="critical"]    { --tier-accent: var(--sev-critical); }
+    .notam-tier[data-sev="significant"] { --tier-accent: var(--sev-significant); }
+    .notam-tier[data-sev="advisory"]    { --tier-accent: var(--sev-advisory); }
+    .notam-tier[data-sev="info"]        { --tier-accent: var(--sev-info); }
+
+    .notam-tier-count{
+      display:inline-flex;align-items:center;justify-content:center;
+      min-width:22px;height:20px;padding:0 7px;
+      border-radius:10px;
+      font:700 11px/1 -apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+      letter-spacing:.03em;
+      background:var(--tier-accent);
+      color:#fff;
+      box-shadow:0 0 0 1px rgba(0,0,0,.25);
+    }
+    /* Info tier reads as muted neutral — no all-caps emphasis on the count. */
+    .notam-tier[data-sev="info"] .notam-tier-count{
+      background:transparent;color:var(--popup-section-meta-color);
+      box-shadow:inset 0 0 0 1px var(--popup-rule-color);
+    }
+    .popup-section-trailing{display:inline-flex;align-items:center;gap:10px}
+
+    /* =========================================================
+       2 · NOTAM ROW — list item, tap-to-expand.
+       Severity-tinted left bar (matches FAA category convention),
+       row bg is a faint sev-tint so a stack of criticals reads as a block.
+       ========================================================= */
+    .notam-list{
+      list-style:none;margin:0;padding:0;
+      display:flex;flex-direction:column;
+      /* hairline between rows */
+      gap:0;
+    }
+    .notam-row{
+      position:relative;
+      padding:11px 14px 12px 18px;            /* extra left pad for the 4px tint bar */
+      background:var(--notam-row-bg, transparent);
+      border-bottom:1px solid var(--popup-rule-color);
+      cursor:pointer;
+      transition:background .12s ease;
+    }
+    .notam-row:last-child{border-bottom:0}
+    .notam-row:hover{background:var(--notam-row-bg-hover, rgba(255,255,255,.03))}
+    .notam-row::before{
+      content:"";position:absolute;left:0;top:0;bottom:0;width:4px;
+      background:var(--row-accent, transparent);
+    }
+    .notam-row[data-sev="critical"]   { --row-accent:var(--sev-critical);    --notam-row-bg:var(--sev-critical-bg);    --notam-row-bg-hover:rgba(255,87,87,.22) }
+    .notam-row[data-sev="significant"]{ --row-accent:var(--sev-significant); --notam-row-bg:var(--sev-significant-bg); --notam-row-bg-hover:rgba(245,166,35,.22) }
+    .notam-row[data-sev="advisory"]   { --row-accent:var(--sev-advisory);    --notam-row-bg:var(--sev-advisory-bg);    --notam-row-bg-hover:rgba(74,168,232,.22) }
+    .notam-row[data-sev="info"]       { --row-accent:var(--sev-info);        --notam-row-bg:transparent;                --notam-row-bg-hover:rgba(255,255,255,.04) }
+
+    /* Head row: keyword chip · time · override · chevron */
+    .notam-row-head{
+      display:flex;align-items:center;gap:8px;
+      min-height:22px;
+    }
+    .notam-row-keyword{
+      display:inline-flex;align-items:center;justify-content:center;
+      height:20px;padding:0 8px;border-radius:4px;
+      font:700 10.5px/1 -apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+      letter-spacing:.08em;
+      color:var(--row-accent);
+      box-shadow:inset 0 0 0 1px var(--row-accent);
+      background:transparent;
+      flex:0 0 auto;
+    }
+    .notam-row-time{
+      font:500 11.5px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+      letter-spacing:.04em;color:var(--popup-empty-color);
+      flex:1 1 auto;min-width:0;
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    }
+    .notam-row-override{
+      display:inline-flex;align-items:center;gap:4px;
+      height:18px;padding:0 6px;border-radius:9px;
+      font:600 9.5px/1 -apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+      letter-spacing:.08em;text-transform:uppercase;
+      color:var(--popup-section-meta-color);
+      background:rgba(255,255,255,.04);
+      box-shadow:inset 0 0 0 1px var(--popup-rule-color);
+      flex:0 0 auto;
+    }
+    .notam-row-override::before{
+      content:"\270E";  /* ✎ pencil */
+      font-size:11px;line-height:1;opacity:.85;
+    }
+    .notam-row-icon{
+      width:14px;height:14px;flex:0 0 14px;
+      display:inline-flex;align-items:center;justify-content:center;
+      color:var(--popup-section-meta-color);opacity:.6;
+    }
+    .notam-row-icon::before{
+      content:"\203A";font:600 16px/1 -apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+      transform:rotate(0deg);transition:transform .18s cubic-bezier(.4,0,.2,1);
+    }
+    .notam-row.is-expanded .notam-row-icon{opacity:1}
+    .notam-row.is-expanded .notam-row-icon::before{transform:rotate(90deg)}
+
+    /* Summary — the one-line plain-English line. Stays visible at all times. */
+    .notam-row-summary{
+      margin-top:6px;
+      font:500 14px/1.4 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
+      color:var(--popup-value-color);
+      letter-spacing:.005em;
+    }
+
+    /* Detail block — revealed when .is-expanded. Holds structured affected
+       data + raw prose + provenance footer. */
+    .notam-row-detail{
+      display:none;
+      margin-top:10px;padding-top:10px;
+      border-top:1px solid var(--popup-rule-color);
+    }
+    .notam-row.is-expanded .notam-row-detail{display:block}
+    .notam-row-affected{
+      display:flex;flex-wrap:wrap;gap:6px 8px;
+      margin-bottom:8px;
+    }
+    .notam-affected-chip{
+      display:inline-flex;align-items:center;gap:5px;
+      height:22px;padding:0 8px;border-radius:4px;
+      background:rgba(255,255,255,.04);
+      box-shadow:inset 0 0 0 1px var(--popup-rule-color);
+      font:600 11.5px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+      color:var(--popup-value-color);
+      letter-spacing:.02em;
+    }
+    .notam-affected-chip-label{
+      font:600 9.5px/1 -apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+      letter-spacing:.08em;text-transform:uppercase;
+      color:var(--popup-section-meta-color);
+    }
+    .notam-row-prose{
+      margin:0 0 8px;
+      font:400 13px/1.5 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
+      color:var(--popup-raw-color);
+    }
+    /* =========================================================
+       3 · FILTER ROW — sits above the accordion list.
+       Pilots can scope to "Critical" instantly; addresses KORD volume.
+       ========================================================= */
+    .notam-filter-row{
+      display:flex;align-items:center;gap:6px;
+      padding:10px 14px 10px;
+      background:var(--popup-tabbar-bg);
+      border-bottom:1px solid var(--popup-rule-color);
+      overflow-x:auto;
+      -webkit-overflow-scrolling:touch;
+      scrollbar-width:none;
+    }
+    .notam-filter-row::-webkit-scrollbar{display:none}
+    .notam-filter-chip{
+      display:inline-flex;align-items:center;gap:6px;
+      height:30px;padding:0 11px;border-radius:15px;
+      background:transparent;
+      box-shadow:inset 0 0 0 1px var(--popup-rule-color);
+      color:var(--popup-section-meta-color);
+      font:600 11.5px/1 -apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+      letter-spacing:.05em;text-transform:uppercase;
+      cursor:pointer;flex:0 0 auto;
+      transition:background .12s ease, color .12s ease, box-shadow .12s ease;
+    }
+    .notam-filter-chip:hover{background:rgba(255,255,255,.04);color:var(--popup-value-color)}
+    .notam-filter-chip.is-active{
+      background:var(--popup-tab-active-bg);
+      color:var(--popup-title-color);
+      box-shadow:inset 0 0 0 1px var(--popup-action-divider);
+    }
+    .notam-filter-chip-count{
+      display:inline-flex;align-items:center;justify-content:center;
+      min-width:20px;height:18px;padding:0 6px;border-radius:9px;
+      font:700 10px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+      letter-spacing:.02em;
+      background:rgba(255,255,255,.06);color:var(--popup-empty-color);
+    }
+    .notam-filter-chip[data-filter="critical"] .notam-filter-chip-count{background:var(--sev-critical);color:#fff}
+    .notam-filter-chip[data-filter="significant"] .notam-filter-chip-count{background:var(--sev-significant);color:#1a1408}
+    .notam-filter-chip[data-filter="advisory"] .notam-filter-chip-count{background:var(--sev-advisory);color:#fff}
+
+    /* =========================================================
+       4 · ACTION ROW — same as airport-v2.
+       ========================================================= */
+    .popup-action-row{
+      background:var(--popup-action-bg);
+      border-top:1px solid var(--popup-action-divider);
+    }
+    .popup-action-btn{
+      font:600 14px/1 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
+      letter-spacing:.01em;text-transform:none;
+      color:var(--popup-action-color);min-height:50px;padding:14px 12px;
+      border-right:1px solid var(--popup-action-divider);
+      transition:background .1s ease;
+    }
+    .popup-action-btn:hover{background:var(--popup-action-bg-hover)}
+    .popup-action-btn:active{background:var(--popup-action-bg-press)}
+
+    /* =========================================================
+       5 · GLOW POLICY — Steve's rule.
+       Night: glow ONLY on functional alerts. Critical-tier header gets a
+       subtle critical-edge glow so a fresh new critical NOTAM is unmissable
+       on a cockpit-dark display. Other tiers stay flat.
+       Day: glows allowed (sun washes them anyway).
+       ========================================================= */
+    html[data-appearance="night"] .notam-tier[data-sev="critical"] .notam-tier-count{
+      box-shadow:0 0 0 1px rgba(0,0,0,.25), 0 0 10px var(--sev-critical-glow);
+    }
+    html[data-appearance="night"] .notam-row[data-sev="critical"]::before{
+      box-shadow:0 0 8px var(--sev-critical-glow);
+    }
+
+    /* =========================================================
+       6 · EMPTY STATE — clean. "No active NOTAMs." Pilots want a
+       confidence signal, not just an absence of rows.
+       ========================================================= */
+    .notam-empty{
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      gap:10px;padding:40px 20px;
+      color:var(--popup-empty-color);
+    }
+    .notam-empty-glyph{
+      width:32px;height:32px;border-radius:50%;
+      display:inline-flex;align-items:center;justify-content:center;
+      font:700 18px/1 -apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+      color:var(--ok);
+      box-shadow:inset 0 0 0 1.5px var(--ok);
+    }
+    .notam-empty-glyph::before{content:"\2713"} /* ✓ */
+    .notam-empty-text{
+      font:500 14px/1.3 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
+      color:var(--popup-value-color);
+    }
+    .notam-empty-sub{
+      font:500 11px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+      letter-spacing:.06em;text-transform:uppercase;
+      color:var(--popup-empty-color);
+    }
   </style>
 </head>
 <body>
   <div id="app-frame">
     <div id="health-status-bar" class="health-status-bar">
-      <div class="health-status-cell is-green">FlightBox</div><div class="health-status-cell is-green">ADS-B</div><div class="health-status-cell is-green">GPS</div><div class="health-status-cell is-green">AHRS</div><div class="health-status-cell is-green">ALT</div><div class="health-status-cell is-green">CO</div>
+      <div class="health-status-cell is-green">FlightBox</div>
+      <div class="health-status-cell is-green">ADS-B</div>
+      <div class="health-status-cell is-green">GPS</div>
+      <div class="health-status-cell is-green">AHRS</div>
+      <div class="health-status-cell is-green">ALT</div>
+      <div class="health-status-cell is-green">CO</div>
     </div>
     <div id="content-area">
       <div id="map-surface" class="map-surface">
         <div class="scene-map-bg"></div>
         <img class="scene-map-bg-image" src="../assets/map-placeholder.png" alt="" data-loaded="false">
 
+        <!-- DESIGN: Same shell as airport.html. NOTAMs is the active tab.
+             ICAO badge mirrors the canon — KMDW chosen for high-volume realism. -->
         <div id="weather-popup" class="content-panel content-panel--left">
-          <div class="weather-popup-shell" role="dialog">
+          <div class="weather-popup-shell" role="dialog" aria-modal="false" aria-labelledby="notam-popup-title">
             <div class="weather-popup-head">
               <div class="weather-popup-ident-row">
-                <span class="weather-flight-dot" aria-hidden="true" style="background-color:#ff6b6b;"></span>
-                <div class="weather-popup-title">KMDW</div>
+                <span class="icao-badge" aria-label="ICAO KMDW">KMDW</span>
+                <div class="weather-popup-title" id="notam-popup-title">Chicago Midway</div>
               </div>
-              <button class="weather-popup-close" type="button" aria-label="Close">X</button>
+              <button class="weather-popup-close" type="button" data-popup-close aria-label="Dismiss NOTAM dialog">×</button>
             </div>
-            <div class="weather-popup-subtitle">12 NOTAMs · 2 critical · 4 significant</div>
-            <div class="weather-popup-tabs" role="tablist">
-              <button class="weather-popup-tab" data-popup-tab="airport" role="tab" aria-selected="false">Info</button>
-              <button class="weather-popup-tab" data-popup-tab="weather" role="tab" aria-selected="false">Weather</button>
-              <button class="weather-popup-tab is-active" data-popup-tab="notams" role="tab" aria-selected="true">NOTAMs</button>
+            <!-- DESIGN (Steve r3): subtitle holds the airport-identity line, same as airport.html.
+                 The red "2" badge on the NOTAMs tab is the volume signal. The subtitle stays the
+                 location/elevation/distance line so the cap reads identical across all three tabs. -->
+            <div class="weather-popup-subtitle" title="CHICAGO, IL · 620' · 24.3 NM">CHICAGO, IL · 620' · 24.3 NM</div>
+
+            <div class="weather-popup-tabs" role="tablist" aria-label="Airport information tabs">
+              <button type="button" class="weather-popup-tab" data-popup-tab="airport" role="tab" aria-selected="false">Info</button>
+              <button type="button" class="weather-popup-tab" data-popup-tab="weather" role="tab" aria-selected="false">Weather</button>
+              <button type="button" class="weather-popup-tab is-active" data-popup-tab="notams" role="tab" aria-selected="true">NOTAMs <span class="popup-tab-badge">2</span></button>
             </div>
+
             <div class="weather-popup-body">
+              <!-- Info / Weather panels — empty mounts so tab switching reads correctly in the sandbox. -->
+              <section class="weather-popup-panel" data-popup-panel="airport" hidden></section>
+              <section class="weather-popup-panel" data-popup-panel="weather" hidden></section>
+
               <section class="weather-popup-panel" data-popup-panel="notams">
-                <div class="notam-list">
-                  <div class="notam-row is-critical"><div class="notam-row-meta"><span class="notam-row-sev">CRITICAL · RWY</span><span class="notam-row-time">May 7 · 12-14Z</span></div><div class="notam-row-summary">Runway 13C/31C closed.</div></div>
-                  <div class="notam-row is-critical"><div class="notam-row-meta"><span class="notam-row-sev">CRITICAL · TWY</span><span class="notam-row-time">Apr 30 - May 14</span></div><div class="notam-row-summary">Taxiway A closed between K and Y.</div></div>
-                  <div class="notam-row is-significant"><div class="notam-row-meta"><span class="notam-row-sev">SIG · OBST</span><span class="notam-row-time">May 6 - May 15</span><span class="notam-row-override" title="Manual override">*</span></div><div class="notam-row-summary">Crane 200' AGL 0.4 NM E of ORD (lighted).</div></div>
-                  <div class="notam-row is-significant"><div class="notam-row-meta"><span class="notam-row-sev">SIG · NAV</span><span class="notam-row-time">Continuous</span></div><div class="notam-row-summary">PMM VOR/DME UNUSABLE BEYOND 25NM BELOW 5000FT MSL.</div></div>
-                  <div class="notam-row is-advisory"><div class="notam-row-meta"><span class="notam-row-sev">ADV · COM</span><span class="notam-row-time">May 7 · 09-15Z</span></div><div class="notam-row-summary">Tower frequency 118.7 may experience intermittent outages during scheduled maintenance.</div></div>
-                  <div class="notam-row is-advisory"><div class="notam-row-meta"><span class="notam-row-sev">ADV · LIGHT</span><span class="notam-row-time">Continuous</span></div><div class="notam-row-summary">PAPI runway 22L out of service.</div></div>
+                <!-- DESIGN (Steve r3): filter row lives INSIDE the NOTAMs panel so it
+                     does not appear when Info or Weather is the active tab. -->
+                <div class="notam-filter-row" role="tablist" aria-label="NOTAM severity filter">
+                  <button type="button" class="notam-filter-chip is-active" data-filter="all" aria-pressed="true">All <span class="notam-filter-chip-count">12</span></button>
+                  <button type="button" class="notam-filter-chip" data-filter="critical" aria-pressed="false">Critical <span class="notam-filter-chip-count">2</span></button>
+                  <button type="button" class="notam-filter-chip" data-filter="significant" aria-pressed="false">Significant <span class="notam-filter-chip-count">4</span></button>
+                  <button type="button" class="notam-filter-chip" data-filter="advisory" aria-pressed="false">Advisory <span class="notam-filter-chip-count">4</span></button>
+                  <button type="button" class="notam-filter-chip" data-filter="info" aria-pressed="false">Info <span class="notam-filter-chip-count">2</span></button>
+                </div>
+                <!-- DESIGN (Steve r3): EXCLUSIVE accordion. Sections must never overlap.
+                     One tier open at a time, body fills remaining vertical space, scrolls
+                     internally if its rows exceed the height. Same data-accordion-mode pattern
+                     as maplayers.html. Critical opens by default. -->
+                <div class="popup-accordion-list popup-notam-accordion-list" data-accordion-mode="exclusive">
+
+                  <!-- ============================================================
+                       TIER · CRITICAL (sev-critical, glow allowed at night)
+                       ============================================================ -->
+                  <section class="popup-section popup-accordion-item notam-tier is-open" data-sev="critical" data-weather-section="notam-critical">
+                    <button class="popup-section-title-row popup-accordion-trigger" type="button" data-popup-accordion-tab="notams" data-popup-accordion-section="notam-critical" aria-expanded="true">
+                      <span class="popup-section-title">Critical</span>
+                      <span class="popup-section-trailing">
+                        <span class="popup-section-meta">RWY 13C/31C · TWY A</span>
+                        <span class="notam-tier-count" aria-label="2 critical NOTAMs">2</span>
+                        <span class="popup-accordion-icon" aria-hidden="true"></span>
+                      </span>
+                    </button>
+                    <div class="popup-section-body popup-accordion-body">
+                      <ul class="notam-list">
+                        <li class="notam-row" data-sev="critical" data-fns="12345/26" tabindex="0" role="button" aria-expanded="false">
+                          <div class="notam-row-head">
+                            <span class="notam-row-keyword">RWY</span>
+                            <span class="notam-row-time">07 MAY · 12:00–14:00Z</span>
+                            <span class="notam-row-icon" aria-hidden="true"></span>
+                          </div>
+                          <div class="notam-row-summary">Runway 13C/31C closed for maintenance.</div>
+                          <div class="notam-row-detail">
+                            <div class="notam-row-affected">
+                              <span class="notam-affected-chip"><span class="notam-affected-chip-label">RWY</span> 13C/31C</span>
+                              <span class="notam-affected-chip"><span class="notam-affected-chip-label">EFFECTIVE</span> 07 MAY 12:00Z</span>
+                              <span class="notam-affected-chip"><span class="notam-affected-chip-label">EXPIRES</span> 07 MAY 14:00Z</span>
+                            </div>
+                            <p class="notam-row-prose">Runway 13C/31C closed for surface inspection and pavement marking refresh. Departures and arrivals diverted to 04R/22L. Expect delays during the closure window. Contact ATC on 124.55 for updates.</p>
+                          </div>
+                        </li>
+                        <li class="notam-row" data-sev="critical" data-fns="12309/26" tabindex="0" role="button" aria-expanded="false">
+                          <div class="notam-row-head">
+                            <span class="notam-row-keyword">TWY</span>
+                            <span class="notam-row-time">30 APR – 14 MAY</span>
+                            <span class="notam-row-icon" aria-hidden="true"></span>
+                          </div>
+                          <div class="notam-row-summary">Taxiway A closed between K and Y.</div>
+                          <div class="notam-row-detail">
+                            <div class="notam-row-affected">
+                              <span class="notam-affected-chip"><span class="notam-affected-chip-label">TWY</span> A (K → Y)</span>
+                              <span class="notam-affected-chip"><span class="notam-affected-chip-label">EFFECTIVE</span> 30 APR 00:00Z</span>
+                              <span class="notam-affected-chip"><span class="notam-affected-chip-label">EXPIRES</span> 14 MAY 23:59Z</span>
+                            </div>
+                            <p class="notam-row-prose">Taxiway A closed between intersections K and Y for pavement reconstruction. Use TWY B as alternate. Marshallers staged at K and Y. Expect tow-only access to gate concourse C.</p>
+                          </div>
+                        </li>
+                      </ul>
+                    </div>
+                  </section>
+
+                  <!-- ============================================================
+                       TIER · SIGNIFICANT (sev-significant)
+                       ============================================================ -->
+                  <section class="popup-section popup-accordion-item notam-tier" data-sev="significant" data-weather-section="notam-significant">
+                    <button class="popup-section-title-row popup-accordion-trigger" type="button" data-popup-accordion-tab="notams" data-popup-accordion-section="notam-significant" aria-expanded="false">
+                      <span class="popup-section-title">Significant</span>
+                      <span class="popup-section-trailing">
+                        <span class="popup-section-meta">OBST · NAV · 2 MORE</span>
+                        <span class="notam-tier-count" aria-label="4 significant NOTAMs">4</span>
+                        <span class="popup-accordion-icon" aria-hidden="true"></span>
+                      </span>
+                    </button>
+                    <div class="popup-section-body popup-accordion-body" hidden>
+                      <ul class="notam-list">
+                        <li class="notam-row" data-sev="significant" data-fns="12278/26" tabindex="0" role="button" aria-expanded="false">
+                          <div class="notam-row-head">
+                            <span class="notam-row-keyword">OBST</span>
+                            <span class="notam-row-time">06 MAY – 15 MAY</span>
+                            <span class="notam-row-override" title="Manually edited by Wally controller">Edited</span>
+                            <span class="notam-row-icon" aria-hidden="true"></span>
+                          </div>
+                          <div class="notam-row-summary">Crane 200' AGL, 0.4 NM east of MDW (lighted).</div>
+                          <div class="notam-row-detail">
+                            <div class="notam-row-affected">
+                              <span class="notam-affected-chip"><span class="notam-affected-chip-label">OBST</span> Crane 200' AGL</span>
+                              <span class="notam-affected-chip"><span class="notam-affected-chip-label">LOC</span> 0.4 NM E</span>
+                              <span class="notam-affected-chip"><span class="notam-affected-chip-label">LIGHTED</span> Yes</span>
+                            </div>
+                            <p class="notam-row-prose">Construction crane 200 ft AGL located 0.4 NM east of airport reference point. Red obstruction lighting active 24h. Pilots departing 13C should expect a wider-than-standard climb gradient on the early-out segment.</p>
+                          </div>
+                        </li>
+                        <li class="notam-row" data-sev="significant" data-fns="12266/26" tabindex="0" role="button" aria-expanded="false">
+                          <div class="notam-row-head">
+                            <span class="notam-row-keyword">NAV</span>
+                            <span class="notam-row-time">CONTINUOUS</span>
+                            <span class="notam-row-icon" aria-hidden="true"></span>
+                          </div>
+                          <div class="notam-row-summary">PMM VOR/DME unusable beyond 25 NM below 5,000 ft MSL.</div>
+                          <div class="notam-row-detail">
+                            <div class="notam-row-affected">
+                              <span class="notam-affected-chip"><span class="notam-affected-chip-label">NAVAID</span> PMM VOR/DME</span>
+                              <span class="notam-affected-chip"><span class="notam-affected-chip-label">RANGE</span> &gt; 25 NM</span>
+                              <span class="notam-affected-chip"><span class="notam-affected-chip-label">ALT</span> &lt; 5000 MSL</span>
+                            </div>
+                            <p class="notam-row-prose">Pullman VOR/DME flight-checked unusable beyond 25 NM at altitudes below 5,000 ft MSL. Cross-check with adjacent navaids when conducting low-altitude operations in the affected sector.</p>
+                          </div>
+                        </li>
+                        <li class="notam-row" data-sev="significant" data-fns="12251/26" tabindex="0" role="button" aria-expanded="false">
+                          <div class="notam-row-head">
+                            <span class="notam-row-keyword">AIRSPACE</span>
+                            <span class="notam-row-time">10 MAY · 14:00–18:00Z</span>
+                            <span class="notam-row-icon" aria-hidden="true"></span>
+                          </div>
+                          <div class="notam-row-summary">VIP TFR active 5 NM radius surface to 17,999 ft.</div>
+                          <div class="notam-row-detail">
+                            <div class="notam-row-affected">
+                              <span class="notam-affected-chip"><span class="notam-affected-chip-label">TFR</span> VIP</span>
+                              <span class="notam-affected-chip"><span class="notam-affected-chip-label">RADIUS</span> 5 NM</span>
+                              <span class="notam-affected-chip"><span class="notam-affected-chip-label">SFC – FL180</span></span>
+                            </div>
+                            <p class="notam-row-prose">VIP movement temporary flight restriction active. No GA traffic permitted in the inner ring. Outer ring requires active flight plan and continuous two-way communication. Refer to NOTAM detail.</p>
+                          </div>
+                        </li>
+                        <li class="notam-row" data-sev="significant" data-fns="12244/26" tabindex="0" role="button" aria-expanded="false">
+                          <div class="notam-row-head">
+                            <span class="notam-row-keyword">SVC</span>
+                            <span class="notam-row-time">07 MAY · 06:00–10:00Z</span>
+                            <span class="notam-row-icon" aria-hidden="true"></span>
+                          </div>
+                          <div class="notam-row-summary">ARFF index reduced to B during scheduled drill.</div>
+                          <div class="notam-row-detail">
+                            <div class="notam-row-affected">
+                              <span class="notam-affected-chip"><span class="notam-affected-chip-label">ARFF</span> Idx B</span>
+                              <span class="notam-affected-chip"><span class="notam-affected-chip-label">EFFECTIVE</span> 07 MAY 06:00Z</span>
+                            </div>
+                            <p class="notam-row-prose">Aircraft Rescue and Fire Fighting capability reduced to Index B during scheduled training drill. Operators of larger transport-category aircraft should consult dispatch for go/no-go.</p>
+                          </div>
+                        </li>
+                      </ul>
+                    </div>
+                  </section>
+
+                  <!-- ============================================================
+                       TIER · ADVISORY (sev-advisory) — collapsed by default
+                       ============================================================ -->
+                  <section class="popup-section popup-accordion-item notam-tier" data-sev="advisory" data-weather-section="notam-advisory">
+                    <button class="popup-section-title-row popup-accordion-trigger" type="button" data-popup-accordion-tab="notams" data-popup-accordion-section="notam-advisory" aria-expanded="false">
+                      <span class="popup-section-title">Advisory</span>
+                      <span class="popup-section-trailing">
+                        <span class="popup-section-meta">COM · LIGHT · 2 MORE</span>
+                        <span class="notam-tier-count" aria-label="4 advisory NOTAMs">4</span>
+                        <span class="popup-accordion-icon" aria-hidden="true"></span>
+                      </span>
+                    </button>
+                    <div class="popup-section-body popup-accordion-body" hidden>
+                      <ul class="notam-list">
+                        <li class="notam-row" data-sev="advisory" tabindex="0" role="button" aria-expanded="false">
+                          <div class="notam-row-head">
+                            <span class="notam-row-keyword">COM</span>
+                            <span class="notam-row-time">07 MAY · 09:00–15:00Z</span>
+                            <span class="notam-row-icon" aria-hidden="true"></span>
+                          </div>
+                          <div class="notam-row-summary">Tower 118.7 may experience intermittent outages.</div>
+                          <div class="notam-row-detail">
+                            <p class="notam-row-prose">Scheduled radio maintenance may cause brief intermittent dropouts on tower frequency 118.7. Backup frequency 121.65 available throughout.</p>
+                          </div>
+                        </li>
+                        <li class="notam-row" data-sev="advisory" tabindex="0" role="button" aria-expanded="false">
+                          <div class="notam-row-head">
+                            <span class="notam-row-keyword">LIGHT</span>
+                            <span class="notam-row-time">CONTINUOUS</span>
+                            <span class="notam-row-icon" aria-hidden="true"></span>
+                          </div>
+                          <div class="notam-row-summary">PAPI Runway 22L out of service.</div>
+                          <div class="notam-row-detail">
+                            <p class="notam-row-prose">Precision Approach Path Indicator on Rwy 22L unserviceable. VASI inoperative. Standard 3° glide path applies.</p>
+                          </div>
+                        </li>
+                        <li class="notam-row" data-sev="advisory" tabindex="0" role="button" aria-expanded="false">
+                          <div class="notam-row-head">
+                            <span class="notam-row-keyword">SVC</span>
+                            <span class="notam-row-time">06 MAY – 13 MAY</span>
+                            <span class="notam-row-icon" aria-hidden="true"></span>
+                          </div>
+                          <div class="notam-row-summary">100LL fuel unavailable; Jet-A operations normal.</div>
+                          <div class="notam-row-detail">
+                            <p class="notam-row-prose">FBO reports 100LL avgas truck under repair. Self-serve and full-service Jet-A unaffected. Nearest 100LL: KCGX (6 NM N).</p>
+                          </div>
+                        </li>
+                        <li class="notam-row" data-sev="advisory" tabindex="0" role="button" aria-expanded="false">
+                          <div class="notam-row-head">
+                            <span class="notam-row-keyword">APRON</span>
+                            <span class="notam-row-time">CONTINUOUS</span>
+                            <span class="notam-row-icon" aria-hidden="true"></span>
+                          </div>
+                          <div class="notam-row-summary">Ramp 4 marshallers required after 22:00Z.</div>
+                          <div class="notam-row-detail">
+                            <p class="notam-row-prose">Ramp 4 night operations require marshaller assistance after 22:00Z due to reduced apron lighting. Coordinate via ground control.</p>
+                          </div>
+                        </li>
+                      </ul>
+                    </div>
+                  </section>
+
+                  <!-- ============================================================
+                       TIER · INFO (sev-info) — collapsed by default
+                       ============================================================ -->
+                  <section class="popup-section popup-accordion-item notam-tier" data-sev="info" data-weather-section="notam-info">
+                    <button class="popup-section-title-row popup-accordion-trigger" type="button" data-popup-accordion-tab="notams" data-popup-accordion-section="notam-info" aria-expanded="false">
+                      <span class="popup-section-title">Info</span>
+                      <span class="popup-section-trailing">
+                        <span class="popup-section-meta">CHART REVISION</span>
+                        <span class="notam-tier-count" aria-label="2 informational NOTAMs">2</span>
+                        <span class="popup-accordion-icon" aria-hidden="true"></span>
+                      </span>
+                    </button>
+                    <div class="popup-section-body popup-accordion-body" hidden>
+                      <ul class="notam-list">
+                        <li class="notam-row" data-sev="info" tabindex="0" role="button" aria-expanded="false">
+                          <div class="notam-row-head">
+                            <span class="notam-row-keyword">CHART</span>
+                            <span class="notam-row-time">CYCLE 26-05</span>
+                            <span class="notam-row-icon" aria-hidden="true"></span>
+                          </div>
+                          <div class="notam-row-summary">Approach plate KMDW ILS 31C amended.</div>
+                          <div class="notam-row-detail">
+                            <p class="notam-row-prose">ILS Rwy 31C approach chart revised, cycle 26-05. Minor procedural note added regarding circling minima east sector. Verify currency before use.</p>
+                          </div>
+                        </li>
+                        <li class="notam-row" data-sev="info" tabindex="0" role="button" aria-expanded="false">
+                          <div class="notam-row-head">
+                            <span class="notam-row-keyword">ADMIN</span>
+                            <span class="notam-row-time">CONTINUOUS</span>
+                            <span class="notam-row-icon" aria-hidden="true"></span>
+                          </div>
+                          <div class="notam-row-summary">Airport noise abatement procedures in effect 22:00–06:00 local.</div>
+                          <div class="notam-row-detail">
+                            <p class="notam-row-prose">Voluntary noise abatement procedure active nightly. Pilots requested to use 13C/31C departures and limit run-up power. Refer to AFD entry for full procedure.</p>
+                          </div>
+                        </li>
+                      </ul>
+                    </div>
+                  </section>
+
                 </div>
               </section>
             </div>
+
             <div class="popup-action-row">
               <button class="popup-action-btn" type="button">Direct To</button>
-              <button class="popup-action-btn" type="button">Add To Plan</button>
+              <button class="popup-action-btn" type="button">Add to Plan</button>
             </div>
           </div>
         </div>
@@ -109,7 +776,94 @@
       <button type="button" class="soft-button soft-button--hybrid" style="--soft-button-icon-height:24px;"><span class="soft-button-inner"><img class="soft-button-icon" alt="" src="../assets/more_icon.png"><span class="soft-button-label">More</span></span></button>
     </div>
   </div>
-  <div class="scene-watermark">SANDBOX · notam (proposed new)</div>
+  <div class="scene-watermark">SANDBOX · notam (v2)</div>
   <script src="scene.js"></script>
+
+  <!-- DESIGN: Sandbox-only — wires the row-expand + filter-chip behavior so the
+       scene reads. The row-expand listener is the JS contract for the production
+       NOTAM panel builder; port together with the markup. The filter is sandbox
+       presentation only (real implementation lives in the panel builder). -->
+  <script>
+    (function () {
+      // Row tap-to-expand. MUTUALLY EXCLUSIVE within a tier (Steve r4):
+      // Opening a row collapses any other open row in the same .notam-list.
+      // Prevents row-detail from spilling under the next tier's header.
+      function setRowOpen(row, open) {
+        row.classList.toggle('is-expanded', open);
+        row.setAttribute('aria-expanded', open ? 'true' : 'false');
+      }
+      function openExclusive(row) {
+        const list = row.closest('.notam-list');
+        if (list) {
+          list.querySelectorAll('.notam-row.is-expanded').forEach(function (r) {
+            if (r !== row) setRowOpen(r, false);
+          });
+        }
+        setRowOpen(row, true);
+      }
+      document.addEventListener('click', function (ev) {
+        const row = ev.target.closest('.notam-row');
+        if (!row) return;
+        if (ev.target.closest('a, button')) return;
+        if (row.classList.contains('is-expanded')) setRowOpen(row, false);
+        else openExclusive(row);
+      });
+      document.addEventListener('keydown', function (ev) {
+        if (ev.key !== 'Enter' && ev.key !== ' ') return;
+        const row = ev.target.closest('.notam-row');
+        if (!row || ev.target !== row) return;
+        ev.preventDefault();
+        if (row.classList.contains('is-expanded')) setRowOpen(row, false);
+        else openExclusive(row);
+      });
+
+      // Filter chips. Toggle .is-active and apply a [data-filter-active] on the
+      // accordion list; CSS hides non-matching tiers + rows.
+      const chips = document.querySelectorAll('.notam-filter-chip');
+      const list = document.querySelector('.popup-notam-accordion-list');
+      function applyFilter(value) {
+        if (!list) return;
+        list.dataset.filterActive = value;
+        list.querySelectorAll('.notam-tier').forEach(function (tier) {
+          const sev = tier.dataset.sev;
+          tier.style.display = (value === 'all' || value === sev) ? '' : 'none';
+        });
+      }
+      chips.forEach(function (chip) {
+        chip.addEventListener('click', function () {
+          chips.forEach(function (c) { c.classList.remove('is-active'); c.setAttribute('aria-pressed', 'false'); });
+          chip.classList.add('is-active');
+          chip.setAttribute('aria-pressed', 'true');
+          applyFilter(chip.dataset.filter);
+        });
+      });
+    })();
+  </script>
+
+  <!-- OPEN QUESTIONS for Steve:
+       1. Tier-as-accordion-section vs flat-stream: I went with severity-as-section so
+          the pilot can collapse Advisory/Info entirely at high-volume airports
+          (KORD ~150 NOTAMs). Alternative is one flat list with sev-tinted bars and
+          the filter chips doing all the work. Want to A/B with a flat variant?
+       2. Manual-override marker: I replaced "*" with a small "EDITED" pill (✎ glyph
+          + uppercase label). Reads as provenance, not a footnote. If you'd rather a
+          quieter star/dot, easy swap. Tooltip text currently "Manually edited by
+          Wally controller" — needs your final wording.
+       3. NEW TOKEN proposal: --sev-significant-glow (parallel to --sev-critical-glow).
+          Not added to index-tokens.css yet; only --sev-critical-glow currently
+          carries glow per the canon's "glow only on functional alerts" rule. If you
+          want significant to glow at night too (e.g. fresh new TFR), I'll add it.
+       4. Filter-chip persistence: filter survives panel re-open? Per-airport, or
+          last-used globally? I default to "All" on every open — safest for
+          information-completeness.
+       5. Empty-state surface: I scaffolded a .notam-empty block (✓ glyph + "No
+          active NOTAMs at KMDW") but did not include it in the demo since 12
+          NOTAMs are loaded. Show it standalone on a different scene, or include
+          a toggle here?
+       6. Subtitle copy: "12 NOTAMS · 2 CRITICAL · 4 SIGNIFICANT" reads like a
+          stat line. Alternative: "12 ACTIVE · 2 CRIT" (terser) or
+          "12 NOTAMS — REVIEW REQUIRED" (call-to-action). Preference?
+       7. Row tap-target: full row is the tap zone (good for turbulence). The
+          chevron is decorative. Fine? -->
 </body>
 </html>

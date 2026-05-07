@@ -1,8 +1,28 @@
 <!DOCTYPE html>
-<!-- Scene: Advisory / TFR Popup (severity-tinted head; same shell) -->
+<!--
+  Scene: Advisory Disclosure — VISUAL REFRESH v2 (new file)
+
+  ONE SHELL, FIVE FAMILIES.
+  Hit-test in weather-render.js attaches the entire advisory record to the popup
+  context. This refresh replaces the visual treatment of overlay_popup.js's
+  kind === 'advisory' / 'tfr' branches. Same DOM, polymorphic by data attributes.
+
+  FAMILIES (drives header label + severity tint):
+    sigmet     — Significant Meteorological  (convective → critical, others → caution)
+    airmet     — Airmen's Meteorological     → advisory
+    gAirmet    — Graphical AIRMET (forecast) → advisory  (Sierra/Tango/Zulu)
+    cwa        — Center Weather Advisory     → caution
+    tfr-active — operational TFR             (SECURITY/HAZARDS/VIP → critical, else caution)
+    tfr-perm   — permanent TFR               → info  (uses pre-formatted statusLabel/altitudeLabel)
+
+  ANCHOR: top-left popup, 31vw shell.
+  This page renders FIVE instances stacked so you can compare side-by-side.
+  Production builder will emit one at a time per tap.
+-->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Advisory · Sandbox</title>
   <link rel="stylesheet" href="../styles/index-tokens.css">
   <link rel="stylesheet" href="../styles/index-base.css">
@@ -15,66 +35,553 @@
   <link rel="stylesheet" href="../styles/index-aircraft-profile.css">
   <link rel="stylesheet" href="../styles/index-responsive.css">
   <link rel="stylesheet" href="scene.css">
-  <style>
-    /* Severity tint — webfs sets this inline via JS; recreate via class. */
-    .weather-popup-head[data-severity="critical"] {
-      background: linear-gradient(180deg, rgba(255, 107, 107, 0.18), rgba(255, 107, 107, 0.04));
-      border-bottom: 1px solid rgba(255, 107, 107, 0.4);
+
+  <style id="advisory-v2">
+    /* ============================================================
+       SANDBOX-ONLY: stack the five mocks vertically so they compare.
+       Production renders one popup at a time — strip this block on port.
+       ============================================================ */
+    .advisory-mock-wrap{
+      position:absolute;top:12px;left:12px;
+      display:flex;flex-direction:column;gap:14px;
+      max-height:calc(100% - 24px);overflow-y:auto;padding-right:6px;
+      width:calc(31vw + 8px);min-width:360px;max-width:528px;
     }
+    .advisory-mock-wrap .content-panel--left{position:static;width:100%;max-width:none;min-width:0}
+
+    /* ============================================================
+       0 · SHELL — same canon as airport-v2 / navaid-v2.
+       ============================================================ */
+    .advisory-popup-shell{
+      position:relative;
+      border-radius:var(--popup-shell-radius,10px);
+      border:var(--popup-shell-border);
+      box-shadow:var(--popup-shell-shadow);
+      background:var(--popup-shell-bg,#181c22);
+      font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",system-ui,sans-serif;
+      display:flex;flex-direction:column;overflow:hidden;
+    }
+    .advisory-popup-shell::before{
+      content:"";position:absolute;left:0;right:0;top:0;height:1px;
+      background:linear-gradient(90deg,transparent,var(--popup-edge-highlight),transparent);
+      pointer-events:none;
+    }
+
+    /* ============================================================
+       1 · SEVERITY ACCENT — 4px left bar, family-tinted.
+       Replaces the old colored dot. Same data → richer surface.
+       data-sev drives the bar color.
+       ============================================================ */
+    .advisory-popup-shell{
+      --adv-tint:var(--sev-advisory);
+      --adv-tint-bg:var(--sev-advisory-bg, rgba(95,160,220,.14));
+      --adv-tint-fg:var(--sev-advisory-fg, #b3d6ff);
+      --adv-tint-border:var(--sev-advisory-border, rgba(95,160,220,.34));
+    }
+    .advisory-popup-shell[data-sev="critical"]{
+      --adv-tint:var(--sev-critical);
+      --adv-tint-bg:var(--sev-critical-bg, rgba(220,80,80,.16));
+      --adv-tint-fg:var(--sev-critical-fg, #ffb8b8);
+      --adv-tint-border:var(--sev-critical-border, rgba(220,80,80,.42));
+    }
+    .advisory-popup-shell[data-sev="caution"]{
+      --adv-tint:var(--sev-caution, #d9a64a);
+      --adv-tint-bg:rgba(220,165,75,.14);
+      --adv-tint-fg:#f4cf90;
+      --adv-tint-border:rgba(220,165,75,.36);
+    }
+    .advisory-popup-shell[data-sev="info"]{
+      --adv-tint:var(--sev-info, #8aa0b8);
+      --adv-tint-bg:rgba(140,160,180,.14);
+      --adv-tint-fg:#cfdae6;
+      --adv-tint-border:rgba(140,160,180,.32);
+    }
+    .advisory-popup-shell::after{
+      content:"";position:absolute;left:0;top:0;bottom:0;width:4px;
+      background:var(--adv-tint);
+      border-top-left-radius:var(--popup-shell-radius,10px);
+      border-bottom-left-radius:var(--popup-shell-radius,10px);
+      pointer-events:none;
+    }
+    /* Critical-only night glow per the canon glow policy */
+    html[data-appearance="night"] .advisory-popup-shell[data-sev="critical"]::after{
+      box-shadow:0 0 14px var(--sev-critical-glow, rgba(220,80,80,.55));
+    }
+
+    /* ============================================================
+       2 · HEAD — family badge + title + close.
+       Family badge is mono, severity-tinted; carries "SIGMET" / "TFR · HAZARDS".
+       ============================================================ */
+    .advisory-popup-head{
+      display:flex;align-items:flex-start;justify-content:space-between;
+      gap:12px;padding:14px 14px 6px 18px;
+    }
+    .advisory-popup-ident-row{
+      display:flex;align-items:center;gap:10px;min-width:0;flex:1 1 auto;
+      flex-wrap:wrap;
+    }
+    .advisory-family-badge{
+      display:inline-flex;align-items:center;gap:7px;
+      height:26px;padding:0 10px;border-radius:6px;
+      font:700 11px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+      letter-spacing:.1em;text-transform:uppercase;
+      background:var(--adv-tint-bg);color:var(--adv-tint-fg);
+      box-shadow:inset 0 0 0 1px var(--adv-tint-border);
+      white-space:nowrap;
+    }
+    .advisory-family-badge .glyph{
+      display:inline-flex;align-items:center;justify-content:center;
+      width:14px;height:14px;border-radius:50%;
+      background:var(--adv-tint);color:#fff;
+      font:700 10px/1 -apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+    }
+    .advisory-popup-title{
+      font:600 17px/1.2 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
+      color:var(--popup-title-color);letter-spacing:.005em;
+      flex:1 1 100%;min-width:0;
+    }
+    .advisory-popup-subtitle{
+      font:500 12px/1.2 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+      color:var(--popup-subtitle-color);letter-spacing:.04em;
+      padding:0 14px 12px 18px;
+    }
+    .advisory-popup-close{
+      width:44px;height:44px;min-width:44px;border-radius:8px;
+      background:var(--popup-close-bg);
+      border:1px solid var(--popup-close-border);
+      color:var(--popup-close-fg);
+      font:400 18px/1 -apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+      flex:0 0 44px;cursor:pointer;
+    }
+
+    /* ============================================================
+       3 · SEVERITY STRIP — sev-tinted, 1-line plain-English summary.
+       This is the glanceable layer. If the pilot reads nothing else,
+       they read this.
+       ============================================================ */
+    .advisory-sev-strip{
+      display:flex;align-items:center;gap:10px;
+      padding:10px 14px 10px 18px;
+      background:var(--adv-tint-bg);
+      color:var(--adv-tint-fg);
+      border-top:1px solid var(--popup-rule-color);
+      border-bottom:1px solid var(--popup-rule-color);
+      font:600 13px/1.35 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
+      letter-spacing:.01em;
+    }
+    .advisory-sev-strip .sev-glyph{
+      flex:0 0 18px;width:18px;height:18px;border-radius:50%;
+      display:inline-flex;align-items:center;justify-content:center;
+      background:var(--adv-tint);color:#fff;
+      font:700 11px/1 -apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+    }
+
+    /* ============================================================
+       4 · BODY — time/altitude/movement blocks + prose.
+       ============================================================ */
+    .advisory-popup-body{
+      padding:14px 14px 14px 18px;
+      background:var(--popup-section-body-bg);
+      display:flex;flex-direction:column;gap:14px;
+    }
+
+    /* Time window — three cells: Effective / Until / Issued */
+    .advisory-time-block,.advisory-alt-block{
+      display:grid;grid-template-columns:repeat(3,1fr);gap:12px;
+      padding:8px 0;
+      border-top:1px solid var(--popup-rule-color);
+      border-bottom:1px solid var(--popup-rule-color);
+    }
+    .advisory-alt-block{grid-template-columns:repeat(2,1fr)}
+    .advisory-alt-block[data-cells="3"]{grid-template-columns:repeat(3,1fr)}
+    .adv-cell{display:flex;flex-direction:column;gap:4px}
+    .adv-cell-label{
+      font:500 10.5px/1 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
+      color:var(--popup-label-color);letter-spacing:.08em;text-transform:uppercase;
+    }
+    .adv-cell-value{
+      font:600 16px/1.1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+      color:var(--popup-value-color);font-variant-numeric:tabular-nums;
+      letter-spacing:.01em;
+    }
+    .adv-cell-value.is-muted{color:var(--popup-section-meta-color);font-weight:500}
+
+    /* Movement row — single line when present, hidden when absent */
+    .advisory-movement{
+      display:flex;align-items:baseline;gap:10px;
+      font:500 13px/1.2 -apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+      color:var(--popup-section-meta-color);
+      letter-spacing:.04em;text-transform:uppercase;
+    }
+    .advisory-movement .mv-value{
+      font:600 16px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+      color:var(--popup-value-color);
+      font-variant-numeric:tabular-nums;letter-spacing:.02em;
+      text-transform:none;
+    }
+
+    /* Prose section — the bulk. */
+    .advisory-prose-section{
+      border-top:1px solid var(--popup-rule-color);
+      padding-top:12px;
+      display:flex;flex-direction:column;gap:6px;
+    }
+    .advisory-prose-head{
+      display:flex;align-items:center;justify-content:space-between;gap:10px;
+    }
+    .advisory-prose-title{
+      font:600 11px/1 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
+      letter-spacing:.1em;text-transform:uppercase;
+      color:var(--popup-label-color);
+    }
+    .advisory-prose-meta{
+      font:500 10.5px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+      letter-spacing:.06em;color:var(--popup-section-meta-color);
+    }
+    .advisory-prose-body{
+      max-height:180px;overflow-y:auto;padding-right:6px;
+      font:500 13px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+      color:var(--popup-raw-color, var(--popup-value-color));
+      letter-spacing:.015em;white-space:pre-wrap;
+    }
+    /* Permanent-TFR prose is conversational — render as system, not mono. */
+    .advisory-prose-body.is-prose{
+      font:400 13.5px/1.5 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
+      letter-spacing:0;
+    }
+
+    /* Authority pill row — for permanent TFRs */
+    .advisory-authority-row{
+      display:flex;gap:8px;flex-wrap:wrap;padding-top:4px;
+    }
+    .advisory-authority-pill{
+      display:inline-flex;align-items:center;height:22px;padding:0 9px;border-radius:11px;
+      font:700 10.5px/1 -apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+      letter-spacing:.08em;text-transform:uppercase;
+      background:rgba(255,255,255,.04);color:var(--popup-section-meta-color);
+      box-shadow:inset 0 0 0 1px var(--popup-rule-color);
+    }
+
+    /* ============================================================
+       5 · ACTION ROW — Show on Map + Dismiss. No Direct-To.
+       Advisories aren't waypoints. Show-on-map centers + flashes geometry.
+       ============================================================ */
+    .popup-action-row{
+      display:flex;
+      background:var(--popup-action-bg);
+      border-top:1px solid var(--popup-action-divider);
+    }
+    .popup-action-btn{
+      flex:1 1 0;
+      font:600 14px/1 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
+      letter-spacing:.01em;color:var(--popup-action-color);
+      min-height:50px;padding:14px 12px;
+      border:none;border-right:1px solid var(--popup-action-divider);
+      background:transparent;cursor:pointer;
+      transition:background .1s ease;
+    }
+    .popup-action-btn:last-child{border-right:0}
+    .popup-action-btn:hover{background:var(--popup-action-bg-hover)}
+
+    /* Sandbox label above each mock */
+    .advisory-mock-label{
+      font:600 10.5px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+      letter-spacing:.1em;text-transform:uppercase;
+      color:rgba(255,255,255,.5);
+      padding:0 4px 4px;
+    }
+    .advisory-mock{display:flex;flex-direction:column;gap:4px}
   </style>
 </head>
 <body>
   <div id="app-frame">
     <div id="health-status-bar" class="health-status-bar">
-      <div class="health-status-cell is-green">FlightBox</div><div class="health-status-cell is-green">ADS-B</div><div class="health-status-cell is-green">GPS</div><div class="health-status-cell is-green">AHRS</div><div class="health-status-cell is-green">ALT</div><div class="health-status-cell is-green">CO</div>
+      <div class="health-status-cell is-green">FlightBox</div>
+      <div class="health-status-cell is-green">ADS-B</div>
+      <div class="health-status-cell is-green">GPS</div>
+      <div class="health-status-cell is-green">AHRS</div>
+      <div class="health-status-cell is-green">ALT</div>
+      <div class="health-status-cell is-green">CO</div>
     </div>
     <div id="content-area">
       <div id="map-surface" class="map-surface">
         <div class="scene-map-bg"></div>
         <img class="scene-map-bg-image" src="../assets/map-placeholder.png" alt="" data-loaded="false">
 
-        <div id="weather-popup" class="content-panel content-panel--left">
-          <div class="weather-popup-shell" role="dialog">
-            <div class="weather-popup-head" data-severity="critical">
-              <div class="weather-popup-ident-row">
-                <span class="weather-flight-dot" aria-hidden="true" style="background-color:#ff6b6b;"></span>
-                <div class="weather-popup-title">TFR · VIP Movement</div>
-              </div>
-              <button class="weather-popup-close" type="button" aria-label="Close">X</button>
-            </div>
-            <div class="weather-popup-subtitle">9/2143 · CRITICAL</div>
-            <div class="weather-popup-body">
-              <div class="popup-accordion-list">
-                <section class="popup-section popup-accordion-item is-open">
-                  <button class="popup-section-title-row popup-accordion-trigger" type="button" aria-expanded="true">
-                    <span class="popup-section-title">Effective</span>
-                    <span class="popup-section-trailing">
-                      <span class="popup-accordion-icon" aria-hidden="true"></span>
-                    </span>
-                  </button>
-                  <div class="popup-section-body popup-accordion-body">
-                    <div class="popup-kv-grid">
-                      <div class="popup-kv-label">Start</div><div class="popup-kv-value">2026-05-07 14:00 Z</div>
-                      <div class="popup-kv-label">End</div><div class="popup-kv-value">2026-05-07 22:00 Z</div>
-                      <div class="popup-kv-label">Vertical</div><div class="popup-kv-value">SFC – 17,999 MSL</div>
-                      <div class="popup-kv-label">Authority</div><div class="popup-kv-value">USSS / FAA</div>
+        <!-- SANDBOX-ONLY wrap: stack 5 polymorphic mocks. Production: 1 popup at a time. -->
+        <div class="advisory-mock-wrap">
+
+          <!-- ========================================================
+               MOCK 1 · CONVECTIVE SIGMET — sev-critical
+               ======================================================== -->
+          <div class="advisory-mock">
+            <div class="advisory-mock-label">1 · SIGMET (convective) — sev-critical</div>
+            <div id="advisory-popup-1" class="content-panel content-panel--left">
+              <div class="advisory-popup-shell" data-family="sigmet" data-sev="critical" role="dialog">
+                <div class="advisory-popup-head">
+                  <div class="advisory-popup-ident-row">
+                    <span class="advisory-family-badge"><span class="glyph">!</span>SIGMET · CONVECTIVE</span>
+                    <div class="advisory-popup-title">Severe thunderstorms, tops FL420</div>
+                  </div>
+                  <button class="advisory-popup-close" type="button" aria-label="Dismiss">×</button>
+                </div>
+                <div class="advisory-popup-subtitle">INET-SIGMET-72E · KMKC FA</div>
+
+                <div class="advisory-sev-strip">
+                  <span class="sev-glyph">!</span>
+                  <span>Severe convective activity SFC–FL420 until 22:30Z. Avoid.</span>
+                </div>
+
+                <div class="advisory-popup-body">
+                  <div class="advisory-time-block">
+                    <div class="adv-cell"><span class="adv-cell-label">Effective</span><span class="adv-cell-value">19:00Z</span></div>
+                    <div class="adv-cell"><span class="adv-cell-label">Until</span><span class="adv-cell-value">22:30Z</span></div>
+                    <div class="adv-cell"><span class="adv-cell-label">Issued</span><span class="adv-cell-value is-muted">18:42Z</span></div>
+                  </div>
+
+                  <div class="advisory-alt-block">
+                    <div class="adv-cell"><span class="adv-cell-label">Floor</span><span class="adv-cell-value">SFC</span></div>
+                    <div class="adv-cell"><span class="adv-cell-label">Tops</span><span class="adv-cell-value">FL420</span></div>
+                  </div>
+
+                  <div class="advisory-movement">
+                    <span>Movement</span>
+                    <span class="mv-value">240° / 35 kt</span>
+                  </div>
+
+                  <div class="advisory-prose-section">
+                    <div class="advisory-prose-head">
+                      <span class="advisory-prose-title">Raw Text</span>
+                      <span class="advisory-prose-meta">FIS-B · 6 MIN</span>
                     </div>
+                    <div class="advisory-prose-body">SIGMET CONVECTIVE 72E VALID UNTIL 2230Z
+FROM 30NNW MCI-40E STL-50SE TBN-20W BUM-30NNW MCI
+INTSF LN SEV TS MOV FROM 24035KT. TOPS TO FL420.
+HAIL TO 1.5 IN. WIND GUSTS TO 60KT POSS.</div>
                   </div>
-                </section>
-                <section class="popup-section popup-accordion-item is-open">
-                  <button class="popup-section-title-row popup-accordion-trigger" type="button" aria-expanded="true">
-                    <span class="popup-section-title">Description</span>
-                    <span class="popup-section-trailing">
-                      <span class="popup-accordion-icon" aria-hidden="true"></span>
-                    </span>
-                  </button>
-                  <div class="popup-section-body popup-accordion-body">
-                    <div class="weather-popup-raw">Temporary flight restrictions in effect within a 10NM radius of N41°58.0', W87°54.0', surface to but not including 18,000 feet MSL, for VIP movement. Aircraft operations not authorized except as specified.</div>
-                  </div>
-                </section>
+                </div>
+
+                <div class="popup-action-row">
+                  <button class="popup-action-btn" type="button">Show on Map</button>
+                  <button class="popup-action-btn" type="button">Dismiss</button>
+                </div>
               </div>
             </div>
           </div>
+
+          <!-- ========================================================
+               MOCK 2 · AIRMET TANGO (turbulence) — sev-advisory
+               ======================================================== -->
+          <div class="advisory-mock">
+            <div class="advisory-mock-label">2 · AIRMET Tango (turbulence) — sev-advisory</div>
+            <div id="advisory-popup-2" class="content-panel content-panel--left">
+              <div class="advisory-popup-shell" data-family="airmet" data-sev="advisory" role="dialog">
+                <div class="advisory-popup-head">
+                  <div class="advisory-popup-ident-row">
+                    <span class="advisory-family-badge"><span class="glyph">T</span>AIRMET · TURB</span>
+                    <div class="advisory-popup-title">Moderate turbulence below FL180</div>
+                  </div>
+                  <button class="advisory-popup-close" type="button" aria-label="Dismiss">×</button>
+                </div>
+                <div class="advisory-popup-subtitle">INET-AIRMET-1024 · KSLC FA</div>
+
+                <div class="advisory-sev-strip">
+                  <span class="sev-glyph">i</span>
+                  <span>Moderate turbulence 8,000–18,000 ft over WY/CO/UT. Through 03Z.</span>
+                </div>
+
+                <div class="advisory-popup-body">
+                  <div class="advisory-time-block">
+                    <div class="adv-cell"><span class="adv-cell-label">Effective</span><span class="adv-cell-value">21:00Z</span></div>
+                    <div class="adv-cell"><span class="adv-cell-label">Until</span><span class="adv-cell-value">03:00Z</span></div>
+                    <div class="adv-cell"><span class="adv-cell-label">Issued</span><span class="adv-cell-value is-muted">20:45Z</span></div>
+                  </div>
+
+                  <div class="advisory-alt-block">
+                    <div class="adv-cell"><span class="adv-cell-label">Floor</span><span class="adv-cell-value">8,000 ft</span></div>
+                    <div class="adv-cell"><span class="adv-cell-label">Tops</span><span class="adv-cell-value">FL180</span></div>
+                  </div>
+
+                  <div class="advisory-prose-section">
+                    <div class="advisory-prose-head">
+                      <span class="advisory-prose-title">Raw Text</span>
+                      <span class="advisory-prose-meta">INET · 18 MIN</span>
+                    </div>
+                    <div class="advisory-prose-body">AIRMET TURB...WY CO UT
+FROM 60SW BFF TO 30SE DVC TO 40NW HVE TO 60SW BFF
+MOD TURB BTN 080 AND 180. CONDS CONTG BYD 03Z.</div>
+                  </div>
+                </div>
+
+                <div class="popup-action-row">
+                  <button class="popup-action-btn" type="button">Show on Map</button>
+                  <button class="popup-action-btn" type="button">Dismiss</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ========================================================
+               MOCK 3 · G-AIRMET ZULU (icing) — sev-advisory + FZL block
+               ======================================================== -->
+          <div class="advisory-mock">
+            <div class="advisory-mock-label">3 · G-AIRMET Zulu (icing) — adds FZL cell</div>
+            <div id="advisory-popup-3" class="content-panel content-panel--left">
+              <div class="advisory-popup-shell" data-family="gAirmet" data-sev="advisory" role="dialog">
+                <div class="advisory-popup-head">
+                  <div class="advisory-popup-ident-row">
+                    <span class="advisory-family-badge"><span class="glyph">Z</span>G-AIRMET · ZULU</span>
+                    <div class="advisory-popup-title">Moderate icing forecast, F+06</div>
+                  </div>
+                  <button class="advisory-popup-close" type="button" aria-label="Dismiss">×</button>
+                </div>
+                <div class="advisory-popup-subtitle">INET-GAIRMET-ZULU-F06 · 2026-05-07</div>
+
+                <div class="advisory-sev-strip">
+                  <span class="sev-glyph">i</span>
+                  <span>Mod icing 6,000–18,000 ft. FZL 4,500–9,000 ft. Forecast hour +06.</span>
+                </div>
+
+                <div class="advisory-popup-body">
+                  <div class="advisory-time-block">
+                    <div class="adv-cell"><span class="adv-cell-label">Forecast</span><span class="adv-cell-value">F+06</span></div>
+                    <div class="adv-cell"><span class="adv-cell-label">Valid</span><span class="adv-cell-value">06Z</span></div>
+                    <div class="adv-cell"><span class="adv-cell-label">Through</span><span class="adv-cell-value is-muted">12Z</span></div>
+                  </div>
+
+                  <div class="advisory-alt-block" data-cells="3">
+                    <div class="adv-cell"><span class="adv-cell-label">Base</span><span class="adv-cell-value">6,000 ft</span></div>
+                    <div class="adv-cell"><span class="adv-cell-label">Top</span><span class="adv-cell-value">FL180</span></div>
+                    <div class="adv-cell"><span class="adv-cell-label">FZL</span><span class="adv-cell-value">4,500–9,000</span></div>
+                  </div>
+
+                  <div class="advisory-prose-section">
+                    <div class="advisory-prose-head">
+                      <span class="advisory-prose-title">Due To</span>
+                      <span class="advisory-prose-meta">PRODUCT ZULU</span>
+                    </div>
+                    <div class="advisory-prose-body is-prose">Moisture trapped beneath subsidence inversion advecting east over upslope flow. Confidence moderate.</div>
+                  </div>
+                </div>
+
+                <div class="popup-action-row">
+                  <button class="popup-action-btn" type="button">Show on Map</button>
+                  <button class="popup-action-btn" type="button">Dismiss</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ========================================================
+               MOCK 4 · TFR ACTIVE · HAZARDS — sev-critical, NOTAM ID emphasized
+               ======================================================== -->
+          <div class="advisory-mock">
+            <div class="advisory-mock-label">4 · TFR active · HAZARDS — sev-critical</div>
+            <div id="advisory-popup-4" class="content-panel content-panel--left">
+              <div class="advisory-popup-shell" data-family="tfr-active" data-sev="critical" role="dialog">
+                <div class="advisory-popup-head">
+                  <div class="advisory-popup-ident-row">
+                    <span class="advisory-family-badge"><span class="glyph">!</span>TFR · HAZARDS</span>
+                    <div class="advisory-popup-title">10 NM RADIUS PHILADELPHIA</div>
+                  </div>
+                  <button class="advisory-popup-close" type="button" aria-label="Dismiss">×</button>
+                </div>
+                <div class="advisory-popup-subtitle">NOTAM 4/3634 · PA · ZNY ARTCC</div>
+
+                <div class="advisory-sev-strip">
+                  <span class="sev-glyph">!</span>
+                  <span>Active hazards TFR · SFC–5,000 ft MSL until 23:59Z.</span>
+                </div>
+
+                <div class="advisory-popup-body">
+                  <div class="advisory-time-block">
+                    <div class="adv-cell"><span class="adv-cell-label">Effective</span><span class="adv-cell-value">14:00Z</span></div>
+                    <div class="adv-cell"><span class="adv-cell-label">Until</span><span class="adv-cell-value">23:59Z</span></div>
+                    <div class="adv-cell"><span class="adv-cell-label">Issued</span><span class="adv-cell-value is-muted">13:12Z</span></div>
+                  </div>
+
+                  <div class="advisory-alt-block">
+                    <div class="adv-cell"><span class="adv-cell-label">Floor</span><span class="adv-cell-value">SFC</span></div>
+                    <div class="adv-cell"><span class="adv-cell-label">Ceiling</span><span class="adv-cell-value">5,000 MSL</span></div>
+                  </div>
+
+                  <div class="advisory-prose-section">
+                    <div class="advisory-prose-head">
+                      <span class="advisory-prose-title">NOTAM Text</span>
+                      <span class="advisory-prose-meta">FAA · 4/3634</span>
+                    </div>
+                    <div class="advisory-prose-body">!FDC 4/3634 ZNY PART 1 OF 2 PHILADELPHIA, PA..
+TEMPORARY FLIGHT RESTRICTIONS WITHIN AN AREA
+DEFINED AS 10NM RADIUS OF 395658N/0751046W (PHL081025.5)
+SFC-5000FT MSL EFFECTIVE 2605071400 UNTIL 2605072359 UTC.
+PURSUANT TO 14 CFR SECTION 91.137(A)(1) TEMPORARY FLIGHT
+RESTRICTIONS ARE IN EFFECT FOR HAZARDS.</div>
+                  </div>
+                </div>
+
+                <div class="popup-action-row">
+                  <button class="popup-action-btn" type="button">Show on Map</button>
+                  <button class="popup-action-btn" type="button">Dismiss</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ========================================================
+               MOCK 5 · TFR PERMANENT · STADIUM — sev-info, pre-formatted strings
+               ======================================================== -->
+          <div class="advisory-mock">
+            <div class="advisory-mock-label">5 · TFR permanent · stadium — sev-info</div>
+            <div id="advisory-popup-5" class="content-panel content-panel--left">
+              <div class="advisory-popup-shell" data-family="tfr-perm" data-sev="info" role="dialog">
+                <div class="advisory-popup-head">
+                  <div class="advisory-popup-ident-row">
+                    <span class="advisory-family-badge"><span class="glyph">i</span>TFR · STADIUM</span>
+                    <div class="advisory-popup-title">MetLife Stadium</div>
+                  </div>
+                  <button class="advisory-popup-close" type="button" aria-label="Dismiss">×</button>
+                </div>
+                <div class="advisory-popup-subtitle">EAST RUTHERFORD, NJ</div>
+
+                <div class="advisory-sev-strip">
+                  <span class="sev-glyph">i</span>
+                  <span>Active when game scheduled · SFC–3,000 AGL within 3 NM.</span>
+                </div>
+
+                <div class="advisory-popup-body">
+                  <div class="advisory-time-block">
+                    <div class="adv-cell"><span class="adv-cell-label">Status</span><span class="adv-cell-value">SCHEDULED</span></div>
+                    <div class="adv-cell"><span class="adv-cell-label">Applies</span><span class="adv-cell-value is-muted">EVENT DAYS</span></div>
+                    <div class="adv-cell"><span class="adv-cell-label">Authority</span><span class="adv-cell-value is-muted">FAA / USSS</span></div>
+                  </div>
+
+                  <div class="advisory-alt-block">
+                    <div class="adv-cell"><span class="adv-cell-label">Altitude</span><span class="adv-cell-value">SFC – 3,000 AGL</span></div>
+                    <div class="adv-cell"><span class="adv-cell-label">Radius</span><span class="adv-cell-value">3 NM</span></div>
+                  </div>
+
+                  <div class="advisory-prose-section">
+                    <div class="advisory-prose-head">
+                      <span class="advisory-prose-title">Notes</span>
+                      <span class="advisory-prose-meta">PERMANENT</span>
+                    </div>
+                    <div class="advisory-prose-body is-prose">Standing FDC NOTAM. Active within 3 NM of the stadium SFC–3,000 ft AGL during scheduled major events. Check active NOTAMs before departure on event days.</div>
+                    <div class="advisory-authority-row">
+                      <span class="advisory-authority-pill">FAA</span>
+                      <span class="advisory-authority-pill">USSS</span>
+                      <span class="advisory-authority-pill">14 CFR 99.7</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="popup-action-row">
+                  <button class="popup-action-btn" type="button">Show on Map</button>
+                  <button class="popup-action-btn" type="button">Dismiss</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
         </div>
 
         <div class="map-nav-controls">
@@ -95,7 +602,25 @@
       <button type="button" class="soft-button soft-button--hybrid" style="--soft-button-icon-height:24px;"><span class="soft-button-inner"><img class="soft-button-icon" alt="" src="../assets/more_icon.png"><span class="soft-button-label">More</span></span></button>
     </div>
   </div>
-  <div class="scene-watermark">SANDBOX · advisory</div>
+  <div class="scene-watermark">SANDBOX · advisory (v2)</div>
   <script src="scene.js"></script>
+
+  <!-- OPEN QUESTIONS for Steve:
+       1. Severity tinting strategy — I went with a 4px left bar + tinted family
+          badge + tinted severity strip. Did NOT tint the entire shell background;
+          felt overdetermined. Push back if you wanted a stronger signal.
+       2. Family-badge glyph — using letters (!, T, Z, i). Considered icon glyphs
+          (lightning for convective, snowflake for icing) — feels too cute for
+          avionics. OK to stay textual?
+       3. Time-block columns — Effective/Until/Issued for active; Status/Applies/
+          Authority for permanent. Fine, or should permanent drop the third cell
+          and use a 2-up grid like altitudes?
+       4. Prose section: max-height 180px with internal scroll. Most TFR text
+          runs longer than that. Right tradeoff vs. letting the popup grow?
+       5. No Direct-To/Add-to-Plan in the action row — replaced with Show on Map +
+          Dismiss. If pilots ever want to "navigate around" an advisory, that's a
+          different action ("Avoid"/route-around). Out of scope for this disclosure?
+       6. The five mocks are stacked for compare. Production renders one at a
+          time. Strip the .advisory-mock-wrap shell on port. -->
 </body>
 </html>
