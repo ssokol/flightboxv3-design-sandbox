@@ -1,0 +1,820 @@
+/* ─────────────────────────────────────────────────────────────────────────
+   SURFACE SYSTEM — Round 2 (r171)
+
+   Every container in the app is exactly one of five classes. Class is read
+   from POSITION and BEHAVIOUR, never from bespoke styling — the geometry is
+   shared, so a card and a dialog differ in where they sit and what they
+   displace, not in how they are painted.
+
+     S1  docked card      peer of the map card; MAP STAYS LIVE beside it
+     S2  workspace        fills the content zone; no map; Done in bar slot 6
+     S3  centred dialog   max 720; chart sharp behind it
+     S4  anchored popover attached to its trigger; max 420; outside-tap closes
+     S5  transient banner top-anchored, unbidden, never blocks the chart
+
+   This file builds S1 and the vocabulary all five share (header, dismiss,
+   bands, rows, planes). S2–S5 land with the screens that need them.
+
+   THE CONTRACT IS ~/shared/glowup_round2_plan.md. CD's bundle contradicts
+   itself in seven places — the numbers here are the resolved ones, and the
+   plan records which frame lost and why. Do not "fix" a value here by
+   reading it back off the design canvas.
+
+   NO CLASS SCRIMS THE MAP. The chart is an instrument and we may be flying
+   past the thing being read about, so it is never dimmed or blurred — not
+   even behind the one true modal (S3). Separation comes from --shadow-dialog
+   and a border. There is deliberately no --scrim token.
+   ──────────────────────────────────────────────────────────────────────── */
+
+/* ═══════════════════════════════════════════════════════════════════════
+   S1 · DOCKED CARD
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* An S1 is a .content-panel first — it inherits the Phase 2 docking
+   mechanism wholesale (flex child of #content-row, width-collapse on hide,
+   200ms transition, the overflow clip during the collapse). What this class
+   changes is only the SIZE and the axis it docks on.
+
+   Landscape: 50% of the row's content box. Not a pixel width — the same
+   reasoning as the airport card. A fixed width is right on exactly one
+   device.
+
+   Note the basis resolves against #content-row's CONTENT box, which is the
+   viewport less 2x --gutter-edge, so this is 50% of the space cards can
+   actually occupy rather than 50% of the glass. That is the number we want:
+   it makes the card and the map exactly equal. */
+.content-panel--s1 {
+  /* Half the row MINUS half the gutter, so the card and the map end up the
+     same width. A flat 50% gives the card exactly half and makes the map pay
+     for the whole 6pt gap out of its half — 602 against 596 on an 11" iPad,
+     which is visible as a lopsided split once you know to look. */
+  flex: 0 0 calc(50% - var(--gutter-gap) / 2);
+  width: calc(50% - var(--gutter-gap) / 2);
+  max-width: calc(50% - var(--gutter-gap) / 2);
+  /* Docks LEFT, map stays right (Steve, 2026-07-26). Matches the convention
+     every other panel already follows — the airport disclosure and the
+     rubber-band insert panel are both .content-panel--left — so the chart
+     never jumps sides depending on which surface you opened.
+
+     -1, not 0. .content-panel--left gets away with `order: 0` only because
+     those panels sit BEFORE #content-stage in the markup: the stage is also
+     order 0, so with a tie the DOM decides. An S1 is appended by JS and lands
+     after the stage, so it needs an order that actually beats it. */
+  order: -1;
+}
+
+/* #content-row gives the inter-card gutter to "every visible child that has a
+   visible child before it" as a margin-LEFT — and that rule reads DOM order,
+   which `order: -1` has just divorced from visual order. Left as-is the card
+   carries 6pt on its outboard edge and butts straight against the map.
+
+   Specificity note: the row's rule is (1,2,0) thanks to its two :not([hidden])
+   compounds, so matching (1,2,0) here and winning on source order is the
+   whole reason for the :not([hidden]) on this selector. It is load-bearing,
+   not decoration — drop it and the margin silently comes back. */
+#content-row > .content-panel--s1:not([hidden]) {
+  margin-left: 0;
+  margin-right: var(--gutter-gap);
+
+  /* DEFENSIVE, and it has already earned it. Every screen being migrated onto
+     S1 was a full-page overlay, and several carry `position: absolute; inset:
+     0` from that life — FlightBox's was scoped to its ID (1,0,0), so it
+     survived removing the class that was supposed to carry it.
+
+     An absolutely-positioned card is out of flex flow: the map card never
+     shrinks, the card ignores the row's gutters and fills the whole row, and
+     the symptom reads as "the map furniture escaped its container" rather than
+     as a positioning bug. This selector is (1,2,0) so it outranks a bare ID
+     rule and the failure cannot recur for the screens still to come.
+
+     `static` rather than `relative` on purpose: .content-panel is already the
+     positioning context these panels' own absolute children expect. */
+  position: static;
+}
+
+/* Map Layers is the one narrower card: every row is a label plus a short
+   value, so 50% would be half a screen of chart spent on whitespace. */
+.content-panel--s1-narrow {
+  flex-basis: calc(38% - var(--gutter-gap) / 2);
+  width: calc(38% - var(--gutter-gap) / 2);
+  max-width: calc(38% - var(--gutter-gap) / 2);
+}
+
+/* .content-panel pins its inner shell to min-width:380 so text doesn't
+   reflow during the collapse animation. At 380 that is the panel's own
+   width; at 50% of an iPad it is a floor well BELOW the card, which would
+   let the shell refuse to shrink on a narrow device and punch out of the
+   clip. S1 cards size their own shell, so the floor comes off. */
+.content-panel--s1 > * {
+  min-width: 0;
+}
+
+/* The card frame. Matches the map card exactly — same radius, same hairline,
+   same edge inset — because that is what makes it read as a PEER of the map
+   rather than something on top of it. */
+.surface-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  /* One surface for the whole card — header, tab strip and scroll all sit on
+     it — so the card reads as a single object rather than three stacked
+     slabs. The differentiation happens INSIDE, between page and group. */
+  background: var(--card-page);
+  border-radius: var(--radius-card);
+  border: var(--card-border-width) solid var(--card-border-color);
+}
+
+/* ── Portrait: bottom half, full width ───────────────────────────────────
+   Steve, 2026-07-26: a 50/50 vertical split, NOT the 66/34 CD drew. The map
+   keeps the top half.
+
+   #content-row is a row-flex; with an S1 docked in portrait it turns column
+   and the card orders last, so the map card sits above it. The class goes on
+   the ROW (not the card) because the axis change is a property of the
+   layout, not of the panel — and because #content-stage has to be told to
+   yield height rather than width.
+
+   Why a class plus a media query rather than JS orientation tracking: the
+   iPad rotates faster than any resize handler we would write, and a media
+   query is already correct at the first paint after the rotation. JS only
+   has to say WHETHER a surface is docked; CSS decides what that means at
+   this orientation. */
+@media (orientation: portrait) {
+  #content-row.has-surface-s1 {
+    flex-direction: column;
+  }
+
+  /* The gutter is a horizontal margin in row mode. In column mode it has to
+     become a top margin, or the map and the card touch — and the landscape
+     rule's margin-right has to be cleared, or the card sits 6pt short of the
+     right edge while the map above it runs full width. */
+  #content-row.has-surface-s1 > *:not([hidden]) ~ *:not([hidden]) {
+    margin-left: 0;
+  }
+
+  #content-row.has-surface-s1 > .content-panel--s1:not([hidden]) {
+    margin-right: 0;
+    margin-top: var(--gutter-gap);
+  }
+
+  #content-row.has-surface-s1 .content-panel--s1,
+  #content-row.has-surface-s1 .content-panel--s1-narrow {
+    /* Same half-a-gutter correction as landscape, on the other axis: a flat
+       50% would make the map pay the whole gap and the split would not be the
+       50/50 Steve asked for. The narrow (38%) variant does NOT apply in
+       portrait — a 38%-tall card is not a useful card, and horizontal width
+       was the reason that variant exists. */
+    flex: 0 0 calc(50% - var(--gutter-gap) / 2);
+    width: auto;
+    max-width: none;
+    height: calc(50% - var(--gutter-gap) / 2);
+    /* Ordered LAST here, unlike landscape: the card docks LOW so the controls
+       are under the thumbs and the chart is at eye level. */
+    order: 99;
+  }
+
+  /* The hidden-panel collapse is a WIDTH collapse (see .content-panel[hidden]
+     in index-layout.css). On the column axis that leaves a full-height panel
+     sitting in the flow. Collapse height instead. */
+  #content-row.has-surface-s1 .content-panel[hidden] {
+    height: 0;
+    flex-basis: 0;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   SHARED VOCABULARY — header, dismiss, bands, rows, planes
+   Used by S1 today and by S2/S3 when they land.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── Header ──────────────────────────────────────────────────────────────
+   One height, one title treatment, one dismiss. Text "Close", pill "Close"
+   and bar "Exit" are RETIRED: two dismissals in two places is what produced
+   the two-exit problem in FlightBox and Procedures. One card, one ×. */
+.surface-head {
+  flex: 0 0 auto;
+  height: var(--sheet-header);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 8px 0 14px;
+  background: var(--card-page);
+  border-bottom: 1px solid var(--hairline);
+}
+
+/* Surface titles are labels, not sentences. Entity names (idents, facility
+   names) stay as DATA — mixed case, mono, in a chip — and never adopt this. */
+.surface-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-family: var(--font-ui);
+  font-size: 15px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* The one dismiss affordance in the app. Boxed, not a bare glyph: a naked ×
+   over a busy chart has no hit target a gloved thumb can find. */
+.surface-close {
+  flex: 0 0 auto;
+  width: var(--tap-min);
+  height: var(--tap-min);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: var(--bg-well);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-tile);
+  color: var(--text-secondary);
+  font-size: 17px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.surface-close:active {
+  background: var(--bg-well-2);
+}
+
+/* ── Sub-navigation ──────────────────────────────────────────────────────
+   Inside a surface, sections are TABS. Pills and chips are reserved to
+   Flight Plan waypoints and to filter sets that are genuinely multi-select —
+   using them for navigation is what made the old dialogs read as three
+   different apps. */
+.surface-tabs {
+  flex: 0 0 auto;
+  height: var(--band-height-disclosure);
+  display: flex;
+  align-items: stretch;
+  overflow-x: auto;
+  overflow-y: hidden;
+  background: var(--card-page);
+  border-bottom: 1px solid var(--hairline);
+  scrollbar-width: none;
+}
+
+.surface-tabs::-webkit-scrollbar { display: none; }
+
+.surface-tab {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--text-dim);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.surface-tab.is-active {
+  color: var(--text-primary);
+  border-bottom-color: var(--accent);
+}
+
+/* ── The scroll and its three planes ─────────────────────────────────────
+   Bands recess, rows sit, values raise. Three planes so a long scroll reads
+   as BLOCKS rather than one grey field — which is the whole difference
+   between a settings page you can scan in turbulence and one you have to
+   read. */
+.surface-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  background: var(--card-page);
+  /* Air under the tab strip. Without it the first caption is crammed against
+     the strip and reads as part of it — the strip stops looking like chrome
+     and starts looking like the first section's heading. */
+  padding-top: 10px;
+  /* LOAD-BEARING, not cosmetic. Anything that scrolls a child into view by
+     `offsetTop` needs this scroller to be the offsetParent. Left static, the
+     offsetParent is .content-panel and every offsetTop carries the header and
+     tab strip with it — measured at 101 on the Settings card, so a tab jump
+     scrolled 101 past its target and hid the section's own band. */
+  position: relative;
+}
+
+/* ── Caption + group (D13) — CONTROL SURFACES ONLY ───────────────────────
+   Settings, FlightBox, Aircraft Profile, Downloads. NOT the disclosure family
+   (airport card, Map Point, Map Layers, TFR, Insert Waypoint, Nearest): those
+   carry the --popup-* palette, they were repaletted-but-not-restructured in
+   round 1, and they have had a lot of styling already. Do not wrap a
+   disclosure section in .surface-group. (plan §1.2a scope table)
+
+   The section separator here is SPACE and SHAPE, not a rule. CD's filled band
+   ruled top and bottom was the right intent, but at our palette's 6-9 RGB
+   steps near black it read as one more row — which is the whole reason for
+   this treatment. */
+.surface-section-group {
+  margin-bottom: var(--group-gap);
+}
+
+.surface-section-group:last-child {
+  /* The last group still needs air beneath it or it collides with the card's
+     bottom edge mid-scroll. */
+  margin-bottom: var(--gutter-gap);
+}
+
+/* Floats on the page, OUTSIDE the group. No fill, no rules. */
+.surface-caption {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 calc(var(--group-inset) + 4px) 6px;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--text-dim);
+}
+
+/* A caption following a group is a SUB-section inside the same section (the
+   two Alerts lists). It needs the same air a new section gets, or the count
+   crowds the group above it. */
+.surface-group + .surface-caption,
+.surface-group + * > .surface-caption:first-child {
+  margin-top: var(--group-gap);
+}
+
+/* Count in the caption, so a bounded list says how much is in it without
+   being scrolled. */
+.surface-caption-count {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--text-dimmest);
+}
+
+/* The group is the object the rows live on. overflow:hidden so the first and
+   last rows clip to the radius — without it a row's own background paints
+   square corners over the group's rounded ones. */
+.surface-group {
+  margin: 0 var(--group-inset);
+  background: var(--card-group);
+  border-radius: var(--radius-group);
+  overflow: hidden;
+}
+
+/* Bounded: the list scrolls inside ITSELF rather than growing the card, so a
+   long list cannot push the sections after it out of reach.
+
+   MUST come after .surface-group. Both selectors are (0,1,0), and the base
+   rule's `overflow: hidden` shorthand sets overflow-y too — declared later it
+   silently reset this to hidden, which clipped five of the ten alert
+   categories with no way to reach them. The shorthand is still wanted there
+   for the radius clip on x, so the fix is order, not removing it.
+
+   Max height is deliberately not a round number of rows: the list should look
+   CUT, so it reads as scrollable rather than complete. */
+.surface-group--bounded {
+  max-height: 210px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Rows inside a group are TRANSPARENT — the group supplies the fill. A row
+   that paints its own background defeats the radius clip and reintroduces the
+   flat slab this treatment exists to remove. */
+.surface-group .surface-row {
+  background: transparent;
+  border-bottom: 1px solid var(--card-separator);
+}
+
+/* Separator inset to the label's left edge, iOS-style: a rule that runs the
+   full width cuts the group into slabs, one that starts at the text reads as
+   joining them. */
+.surface-group .surface-row {
+  margin-left: var(--group-inset);
+  padding-left: 0;
+  padding-right: var(--group-inset);
+}
+
+.surface-group .surface-row:last-child {
+  border-bottom: 0;
+}
+
+/* A row that actually does something gets a pressed state. Rows that are just
+   a label and a control do not — the control has its own feedback, and a whole
+   row flashing when you tap a checkbox is noise. */
+.surface-group .surface-row.is-tappable:active {
+  background: var(--card-group-press);
+}
+
+/* Second line under a row's title — "Opens outside the app", "Through 7/1/27".
+   Turns a row into a two-line row without a new height token: the row grows
+   from its 55 minimum. */
+.surface-row-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 8px 0;
+}
+
+.surface-row-sub {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+/* Plane 1 — recessed. Retained for surfaces outside D13's scope; the control
+   surfaces now use .surface-caption + .surface-group above. */
+.surface-band {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: var(--band-height);
+  padding: 0 14px;
+  background: var(--bg-deep);
+  border-top: 1px solid var(--line-strong);
+  border-bottom: 1px solid var(--line-strong);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--text-secondary);
+}
+
+/* A band that is also a tap target grows to the floor and takes a chevron.
+   ONE chevron vocabulary across the whole app: the old cards mixed ⌄ on two
+   sections with › on three, at three different heights. */
+.surface-band--disclosure {
+  height: var(--band-height-disclosure);
+  cursor: pointer;
+}
+
+.surface-band-chevron {
+  margin-left: auto;
+  color: var(--text-dim);
+  transition: transform 150ms ease;
+}
+
+.surface-band--disclosure.is-open .surface-band-chevron {
+  transform: rotate(180deg);
+}
+
+/* Plane 2 — rows. Separator is --line, NOT --hairline: the hairline is for
+   chrome subdivisions, and data rows need to read as separated at a glance. */
+.surface-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: var(--row-list);
+  padding: 0 14px;
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--line);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+/* Read-only data row — the ONE height below the 44 tap floor. Nothing in
+   these rows is tappable, and the density is exactly what makes the block
+   scannable in one look. Do not reuse this height for anything you can hit. */
+.surface-row--data {
+  min-height: var(--row-data);
+}
+
+.surface-row--module {
+  min-height: var(--row-module);
+}
+
+/* Label left, value right, on ONE axis. Every card in Round 2 aligns its
+   values to a single right edge — that is what lets the eye scan one column
+   instead of tracking a ragged one. */
+.surface-row-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--text-secondary);
+}
+
+.surface-row-value {
+  flex: 0 0 auto;
+  margin-left: auto;
+  text-align: right;
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+}
+
+/* Absent data renders DISTINCTLY from a reading. Never invent a value: "—"
+   for absent, "Not set" for unset, "UNAVAILABLE" visibly disabled for a
+   product we don't have. */
+.surface-row-value.is-empty {
+  color: var(--text-disabled);
+}
+
+/* An inapplicable control stays visible and legible but reads as inert.
+   Cheaper to trust than a row that vanishes — a control that disappears
+   makes the pilot wonder what else moved. */
+.surface-row.is-inert {
+  opacity: .45;
+  pointer-events: none;
+}
+
+/* Plane 3 — raised. Values live in wells; so do bounded sub-lists, which is
+   how a dynamic list of twenty stops swamping the section below it. */
+.surface-well {
+  background: var(--bg-well-2);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-tile);
+}
+
+/* A bounded well that scrolls internally. The height is a max, not a fixed
+   size: a list of two and a list of twenty both have to read as ONE section
+   or the sections beneath them become unreachable. */
+.surface-well--bounded {
+  max-height: 220px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* ── Controls ────────────────────────────────────────────────────────────
+   --accent is reserved for THE action in a group. Two accent-filled controls
+   side by side is a bug; the pair is filled + outlined. */
+.surface-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--row-module);
+  padding: 0 16px;
+  border-radius: var(--radius-tile);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.surface-btn--primary {
+  min-height: var(--row-list);
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  /* Not white: against the lighter accents white label text loses contrast.
+     This is what --accent-ink exists for. */
+  color: var(--accent-ink);
+}
+
+.surface-btn--secondary {
+  background: transparent;
+  border: 1px solid var(--line-strong);
+  color: var(--text-primary);
+}
+
+/* Destructive actions are outlined, never filled, and they NAME what they
+   destroy. Filled red beside a filled accent is one mis-tap in turbulence. */
+.surface-btn--destructive {
+  background: transparent;
+  border: 1px solid var(--destructive);
+  color: var(--destructive);
+}
+
+/* ── State chips ─────────────────────────────────────────────────────────
+   Always a dot PLUS a tint PLUS a text colour — never saturation alone. A
+   pilot in sunlight through polarised lenses loses hue before shape.
+
+   RED MEANS BROKEN. Not "trial expiring", not "restricted airspace type" —
+   those are --caution. */
+.surface-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: var(--radius-pill);
+  font-family: var(--font-ui);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+
+.surface-chip::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.surface-chip--ok      { color: var(--ok);        background: rgba(63, 185, 132, .14); }
+.surface-chip--caution { color: var(--caution);   background: rgba(232, 179, 74, .14); }
+.surface-chip--danger  { color: var(--destructive); background: rgba(229, 83, 61, .14); }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   APP SETTINGS (r173) — the first screen on the S1 shell.
+
+   Anything here that turns out to be general moves up into the shared
+   vocabulary above when the second screen needs it. Resist generalising on
+   the first instance: two of these will look reusable and only one will be.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* Scroll-margin so a tab jump lands the band at the top of the viewport
+   rather than under the sticky tab strip. */
+.settings-section {
+  scroll-margin-top: 0;
+}
+
+/* Controls right-align on ONE axis. That single column is what the eye scans;
+   a ragged right edge means reading every row to find the one you want.
+
+   PROMOTED at P6 (Aircraft Profile), per this block's own instruction: the
+   second screen to need one of these is when it stops being a Settings
+   private and becomes shared vocabulary. The `.settings-*` names stay as
+   co-selectors so not one shipped Settings call site had to change — they
+   retire when Settings is next opened for other reasons, not on speculation.
+   New code writes the `.surface-*` name. */
+.surface-field,
+.settings-field {
+  flex: 0 0 auto;
+  margin-left: auto;
+  min-height: var(--tap-min);
+  padding: 0 10px;
+  background: var(--bg-well-2);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-tile);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  text-align: right;
+}
+
+.surface-field:focus,
+.settings-field:focus {
+  outline: 1px solid var(--accent);
+  border-color: var(--accent);
+}
+
+/* 96 minimum so a digit change cannot shift the row. A field that resizes as
+   you type drags the whole column with it.
+
+   --code is the same box for an IDENT rather than a number (registration,
+   ICAO hex, an airport): same metrics on purpose, because they share the
+   column with the numbers and a second width would break the axis. */
+.surface-field--num,
+.surface-field--code,
+.settings-field--num {
+  min-width: 96px;
+  max-width: 96px;
+}
+
+/* Free prose — a make/model, not a measurement. The BOX still lands on the
+   shared right edge; the text inside it does not right-align, because
+   "Van's Aircraft RV-6A" set in mono and ragged-left is unreadable. This is
+   the one place the single-axis rule applies to the container and not to its
+   contents. */
+.surface-field--text {
+  min-width: 140px;
+  max-width: 220px;
+  font-family: var(--font-ui);
+  text-align: left;
+}
+
+/* An input that cannot be edited stays legible — it is still data the pilot
+   needs to read. It just must not look like somewhere to type. */
+.surface-field[readonly] {
+  background: transparent;
+  border-color: transparent;
+  color: var(--text-secondary);
+}
+
+/* The unit belongs to the LABEL's vocabulary, not inside the value: "ft" in
+   the field competes with the number for the same right edge. */
+.surface-unit,
+.settings-unit {
+  flex: 0 0 auto;
+  margin-left: auto;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--text-dim);
+}
+
+/* A unit sitting next to a field must not ALSO claim margin-left:auto, or the
+   two fight and the field stops aligning with the fields above it. */
+.surface-unit + .surface-field,
+.settings-unit + .settings-field {
+  margin-left: 8px;
+}
+
+.surface-check,
+.settings-check {
+  flex: 0 0 auto;
+  margin-left: auto;
+  width: 22px;
+  height: 22px;
+  accent-color: var(--accent);
+}
+
+.settings-inline-btn {
+  min-height: var(--tap-min);
+  margin-left: auto;
+  font-size: 13px;
+}
+
+/* An action pair sits on one row and shares the space rather than each
+   claiming margin-left:auto — two auto margins would push them apart to
+   opposite edges and break the single-axis rule for everything below. */
+.settings-row--actions {
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.settings-row--actions .settings-inline-btn {
+  margin-left: 0;
+}
+
+.settings-hint {
+  padding: 8px 14px;
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--line);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+/* ── The two dynamic Alerts lists ────────────────────────────────────────
+   Bounded, with a count in the head, so a list of two and a list of twenty
+   both read as ONE section. Unbounded, twenty suppressions push everything
+   after them off the bottom of a half-width column. */
+/* Rows inside a BOUNDED group are the documented exception to the 55 floor
+   (plan [R5]): a sub-selection within a section the pilot has already
+   navigated to, not a primary target. */
+.surface-group--bounded .surface-row {
+  min-height: var(--tap-min);
+}
+
+.settings-sublist-empty {
+  padding: 10px var(--group-inset);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  color: var(--text-disabled);
+}
+
+/* Destructive text inside the well it affects, not a loose button below it. */
+.settings-sublist-clear {
+  display: block;
+  width: calc(100% - 2 * var(--group-inset));
+  margin: 8px var(--group-inset) 0;
+  padding: 8px;
+  background: transparent;
+  border: 1px solid var(--destructive);
+  border-radius: var(--radius-tile);
+  color: var(--destructive);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+
+/* ── Aircraft profile: Filing tab (Flights phase B, v3web#264) ─────────── */
+.surface-field--select {
+  min-width: 0;
+  max-width: 52%;
+  font-size: 0.86rem;
+  color: var(--text-primary);
+  background: var(--bg-well);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 6px 8px;
+}
+.ap-filing-codes {
+  margin: 4px 0 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--bg-well-2);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.ap-filing-code-line {
+  font: 600 13px/1.5 var(--font-mono-alt);
+  color: var(--text-primary);
+  letter-spacing: 0.02em;
+}
+.ap-filing-code-warning {
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: #ffd65b;
+}

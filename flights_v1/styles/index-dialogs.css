@@ -1,0 +1,3742 @@
+/* Dialog and modal overlay styles. */
+
+    /* ── Procedures button ── */
+    .procedures-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .procedures-btn[hidden] {
+      display: none;
+    }
+    .procedures-btn-label {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-secondary);
+      line-height: 1;
+    }
+
+    /* ── Procedures overlay ── */
+    .procedures-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: var(--z-workspace);
+      display: flex;
+      align-items: stretch;
+      justify-content: stretch;
+      padding: 0;
+      background: var(--bg-panel);
+    }
+    .procedures-overlay[hidden] { display: none; }
+
+    .procedures-modal {
+      width: 100%;
+      height: 100%;
+      border-radius: 0;
+      border: 0;
+      background: transparent;
+      display: grid;
+      grid-template-rows: auto auto 1fr;
+      overflow: hidden;
+    }
+    .procedures-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 14px;
+      border-bottom: 1px solid var(--line);
+    }
+    .procedures-title {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .procedures-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--line);
+    }
+    .procedures-tab {
+      flex: 1;
+      padding: 8px 4px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-dim);
+      background: transparent;
+      border: 0;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      text-align: center;
+    }
+    .procedures-tab.is-active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+    .procedures-tab:disabled {
+      opacity: 0.3;
+      cursor: default;
+    }
+    .procedures-body {
+      display: grid;
+      grid-template-columns: minmax(180px, auto) 1fr;
+      min-height: 0;
+      overflow: hidden;
+    }
+    .procedures-list-pane {
+      overflow-y: auto;
+      border-right: 1px solid var(--line);
+    }
+    .procedures-list-section {
+      padding: 6px 12px 4px;
+      font-size: 0.68rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      background: var(--bg-well);
+      border-bottom: 1px solid var(--line);
+      font-family: var(--font-mono, Menlo, Consolas, monospace);
+    }
+    .procedures-list-item {
+      /* Generous vertical padding: rows are tapped in a bumpy cockpit. */
+      padding: 13px 12px;
+      border-bottom: 1px solid var(--line);
+      cursor: pointer;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      font-family: var(--font-mono, Menlo, Consolas, monospace);
+    }
+    .procedures-warn {
+      color: var(--danger);
+      font-size: 1.3em;
+      font-weight: 700;
+      margin-left: 6px;
+      line-height: 1;
+      vertical-align: -0.1em;
+    }
+    .procedures-list-item:hover { background: rgba(var(--accent-rgb), 0.1); }
+    .procedures-list-item.is-selected { background: rgba(var(--accent-rgb), 0.2); border-left: 3px solid var(--accent); }
+    .procedures-list-item.is-on-map { color: var(--ok); }
+    .procedures-list-empty {
+      padding: 20px 12px;
+      font-size: 0.8rem;
+      color: var(--text-dim);
+      text-align: center;
+    }
+    .procedures-preview-pane {
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      overflow: hidden;
+    }
+    .procedures-preview-pane[hidden] { display: none; }
+    .procedures-preview-main {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      gap: 8px;
+    }
+    .procedures-preview-canvas-wrap {
+      flex: 1;
+      min-width: 0;
+      min-height: 100px;
+      overflow: hidden;
+      position: relative;
+      border-radius: 4px;
+      background: #111;
+      touch-action: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .procedures-side-stack {
+      flex: 0 0 170px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      overflow-y: auto;
+      min-height: 0;
+    }
+    .procedures-side-btn {
+      width: 100%;
+      min-height: 44px;
+      flex-shrink: 0;
+    }
+    .procedures-transition-stack {
+      display: flex;
+      flex-direction: column;
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .procedures-transition-stack[hidden] { display: none; }
+    .procedures-side-header {
+      padding: 8px 10px;
+      font-size: 0.68rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      background: var(--bg-well);
+      border-bottom: 1px solid var(--line);
+      font-family: var(--font-mono, Menlo, Consolas, monospace);
+    }
+    .procedures-transition-item {
+      padding: 12px 10px;
+      border-bottom: 1px solid var(--line);
+      cursor: pointer;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      font-family: var(--font-mono, Menlo, Consolas, monospace);
+    }
+    .procedures-transition-item:last-child { border-bottom: 0; }
+    .procedures-transition-item:hover { background: rgba(var(--accent-rgb), 0.1); }
+    .procedures-transition-item.is-selected {
+      background: rgba(var(--accent-rgb), 0.2);
+      border-left: 3px solid var(--accent);
+      padding-left: 7px;
+    }
+    .procedures-no-plate {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #111;
+    }
+
+    .procedures-no-plate[hidden] {
+      display: none;
+    }
+
+    .procedures-no-plate-text {
+      color: var(--text-dim);
+      font-size: 1.1rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    #procedures-preview-canvas {
+      display: block;
+      flex-shrink: 0;
+    }
+    .procedures-preview-info {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    /* ── PDF viewer overlay ── */
+    .pdf-viewer-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: var(--z-pdf-viewer); /* quick fix: above content-area chrome (max 20) — see z-layering plan */
+      background: #000;
+      display: flex;
+      flex-direction: column;
+    }
+    .pdf-viewer-overlay[hidden] { display: none; }
+    .pdf-viewer-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px;
+      background: var(--bg-panel);
+      border-bottom: 1px solid var(--line);
+      flex-shrink: 0;
+    }
+    .pdf-viewer-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .pdf-viewer-page-indicator {
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      margin: 0 12px;
+    }
+    .pdf-viewer-canvas-wrap {
+      flex: 1;
+      overflow: hidden;
+      touch-action: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #pdf-viewer-canvas {
+      display: block;
+      transform-origin: 0 0;
+    }
+    .pdf-viewer-nav {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      padding: 8px;
+      background: var(--bg-panel);
+      border-top: 1px solid var(--line);
+      flex-shrink: 0;
+    }
+
+    @media (max-width: 520px) {
+      .procedures-body { grid-template-columns: 1fr; }
+      .procedures-list-pane { border-right: 0; border-bottom: 1px solid var(--line); max-height: 30vh; }
+    }
+
+    .soft-button-bar {
+      flex: 0 0 auto;
+      height: calc(var(--soft-button-bar-height) + var(--safe-area-bottom));
+      display: flex;
+      align-items: stretch;
+      justify-content: stretch;
+      background: var(--button-bar-bg);
+      pointer-events: auto;
+      /* FlightBar alignment squeeze (Steve, Phase 3 precursor). Default 0.
+         Raising it pulls the six soft buttons inward so they line up with the
+         FlightBar's physical keys; the correct value depends on iPad model
+         geometry. Deliberately just the knob — no per-model lookup table yet.
+         Settable live: __flightbox_setButtonBarPad('24px'). */
+      padding-left: var(--button-bar-pad);
+      padding-right: var(--button-bar-pad);
+    }
+
+    .soft-button {
+      flex: 1 1 calc(100% / 6);
+      min-width: 0;
+      height: auto;
+      border: 0;
+      border-top: 1px solid var(--button-bar-rule-strong);
+      border-right: 1px solid var(--button-bar-rule);
+      border-radius: 0;
+      margin: 0;
+      padding: 0;
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      padding-bottom: var(--safe-area-bottom);
+      background: var(--soft-button-bg, var(--soft-button-background));
+      color: var(--soft-button-fg, var(--soft-button-color));
+    }
+
+    .soft-button:last-child {
+      border-right: 0;
+    }
+
+    /* ═══ Phase 3 — button bar ════════════════════════════════════════════
+       Contents and behavior untouched, per Steve — paint only. The bar has
+       FOUR states (page 1, page 2, alert takeover, dialog takeover) and the
+       PFD toggle; all of them inherit from here except alert/dialog, which
+       pass explicit colors and so keep their own identity by design. */
+    /* CD drops the separators: the bar is ONE continuous surface edge to edge,
+       so the end-pad fills with the same colour as the buttons rather than
+       showing a darker gutter behind them. Keep only the top rule that
+       divides the bar from the content above. */
+    .soft-button {
+      border-top: 0;
+      border-right: 0;
+    }
+    .soft-button-bar {
+      background: var(--soft-button-background);
+      border-top: 1px solid var(--button-bar-rule-strong);
+    }
+
+    .soft-button:disabled {
+      cursor: default;
+      opacity: 0.58;
+    }
+
+    .soft-button-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    html.is-ios .soft-button--hybrid .soft-button-icon {
+      top: 14px;
+    }
+
+    html.is-ios .soft-button--hybrid .soft-button-label {
+      top: 40px;
+    }
+
+    .soft-button-label {
+      color: inherit;
+      font-size: 12px;
+      letter-spacing: 0.01em;
+      /* 16, not 14. The line box also clips vertically because of the
+         overflow:hidden below (which is there for the horizontal ellipsis),
+         and IBM Plex Sans has a deeper descender than SF Pro did — at 14px
+         the tail of a lower-case "g" in "Flight Plan" was being cut off.
+         The hybrid `top` offsets are pulled up 1px to cancel the extra
+         half-leading so the glyphs stay optically where they were. */
+      line-height: 16px;
+      font-weight: 500;
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      width: calc(100% - 8px);
+    }
+
+    .soft-button-icon {
+      display: block;
+      width: auto;
+      max-width: calc(100% - 8px);
+      height: var(--soft-button-icon-height, 24px);
+      max-height: 25px;
+      min-height: 20px;
+      object-fit: contain;
+      pointer-events: none;
+      filter: brightness(0) saturate(100%) invert(100%);
+    }
+
+    .soft-button--text .soft-button-icon,
+    .soft-button--blank .soft-button-icon {
+      display: none;
+    }
+
+    .soft-button--icon .soft-button-label,
+    .soft-button--blank .soft-button-label {
+      display: none;
+    }
+
+    .soft-button--hybrid .soft-button-inner {
+      display: block;
+    }
+
+    .soft-button--hybrid .soft-button-icon {
+      position: absolute;
+      top: 4px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .soft-button--hybrid .soft-button-label {
+      position: absolute;
+      top: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .soft-button.is-toggled {
+      background: var(--soft-button-fg, var(--soft-button-color));
+      color: var(--soft-button-bg-solid, #262e45);
+    }
+
+    .soft-button.is-toggled .soft-button-icon {
+      filter: brightness(0) saturate(100%);
+    }
+
+    .soft-button.is-flash {
+      box-shadow: inset 0 0 0 1px rgba(190, 219, 255, 0.72);
+      background: rgba(64, 87, 126, 0.96);
+    }
+
+    /* Downloads dialog */
+    .downloads-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: var(--z-downloads);
+      background: rgba(0, 0, 0, 0.65);
+      align-items: center;
+      justify-content: center;
+      display: none;
+    }
+
+    .downloads-overlay.is-open {
+      display: flex;
+    }
+
+    .downloads-dialog {
+      background: var(--bg-panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      width: min(520px, 90vw);
+      max-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .downloads-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--line);
+      flex-shrink: 0;
+    }
+
+    .downloads-title {
+      font-size: 16px;
+      font-weight: 500;
+      color: #e0e8f0;
+    }
+
+    .downloads-cycle-bar {
+      padding: 6px 16px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      border-bottom: 1px solid var(--line);
+      flex-shrink: 0;
+    }
+
+    .downloads-cycle-bar[hidden] {
+      display: none;
+    }
+
+    .downloads-cycle-bar.current {
+      color: var(--ok);
+    }
+
+    .downloads-cycle-bar.expiring {
+      color: var(--caution);
+    }
+
+    .downloads-cycle-bar.expired {
+      color: var(--danger);
+    }
+
+    .downloads-update-btn {
+      background: var(--accent) !important;
+      color: #fff !important;
+    }
+
+    .downloads-body {
+      overflow-y: auto;
+      padding: 12px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .downloads-section-title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-dim);
+      margin-bottom: 6px;
+    }
+
+    .downloads-toggles {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .downloads-toggles label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: #c0d0e0;
+      cursor: pointer;
+    }
+
+    .downloads-toggles input[type="checkbox"] {
+      accent-color: var(--accent);
+    }
+
+    .downloads-select {
+      width: 100%;
+      padding: 6px 8px;
+      background: rgba(20, 35, 50, 0.9);
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      color: #c0d0e0;
+      font-size: 13px;
+    }
+
+    .downloads-state-list {
+      max-height: 40vh;
+      overflow-y: auto;
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      background: rgba(10, 22, 35, 0.6);
+    }
+
+    .downloads-state-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--line);
+      font-size: 13px;
+      color: #c0d0e0;
+    }
+
+    .downloads-state-row:last-child {
+      border-bottom: 0;
+    }
+
+    .downloads-state-toggle {
+      flex-shrink: 0;
+      accent-color: var(--accent);
+    }
+
+    .downloads-state-name {
+      flex: 1;
+      min-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .downloads-state-pills {
+      display: flex;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
+    .downloads-pill {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: rgba(80, 100, 120, 0.5);
+    }
+
+    .downloads-pill--downloaded { background: var(--ok); }
+    .downloads-pill--downloading { background: var(--accent); animation: downloads-pulse 1.2s ease-in-out infinite; }
+    .downloads-pill--extracting { background: var(--caution); animation: downloads-pulse 0.8s ease-in-out infinite; }
+    .downloads-pill--queued { background: #7a8ea0; }
+    .downloads-pill--failed { background: var(--danger); }
+
+    @keyframes downloads-pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    .downloads-state-progress {
+      width: 100%;
+      height: 3px;
+      background: var(--line);
+      border-radius: 2px;
+      overflow: hidden;
+      margin-top: 2px;
+    }
+
+    .downloads-state-progress-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 2px;
+      transition: width 0.3s ease;
+    }
+
+    .downloads-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 16px;
+      border-top: 1px solid var(--line);
+      flex-shrink: 0;
+    }
+
+    .downloads-storage-summary {
+      font-size: 12px;
+      color: var(--text-dim);
+    }
+
+    .downloads-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .downloads-reset-btn {
+      background: rgba(200, 60, 60, 0.25) !important;
+      border-color: rgba(200, 60, 60, 0.5) !important;
+      color: #e88 !important;
+      margin-right: auto;
+    }
+
+    .downloads-apply-btn:not(:disabled) {
+      background: rgba(var(--accent-rgb), 0.25);
+      border-color: rgba(var(--accent-rgb), 0.6);
+      color: #8ac4ff;
+    }
+
+    .downloads-confirm {
+      padding: 10px 0;
+      font-size: 13px;
+      color: #e0e8f0;
+      text-align: center;
+    }
+
+    .downloads-confirm-actions {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-top: 8px;
+    }
+
+    .replay-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 0.66rem;
+      color: var(--muted);
+    }
+
+    .replay-main {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .replay-play-btn {
+      width: 22px;
+      height: 22px;
+      min-width: 22px;
+      padding: 0;
+      border-radius: 4px;
+      background: rgba(14, 44, 62, 0.75);
+      border: 1px solid rgba(96, 139, 166, 0.5);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .replay-play-btn:hover {
+      border-color: rgba(125, 180, 214, 0.8);
+      background: rgba(18, 55, 77, 0.8);
+    }
+
+    .replay-play-btn:disabled {
+      opacity: 0.45;
+      cursor: default;
+    }
+
+    .replay-play-btn svg {
+      width: 13px;
+      height: 13px;
+      fill: #d5ecfb;
+    }
+
+    .replay-timeline {
+      position: relative;
+      flex: 1 1 auto;
+      height: 18px;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+
+    .replay-line {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 9px;
+      height: 2px;
+      border-radius: 2px;
+      background: rgba(166, 199, 220, 0.42);
+    }
+
+    .replay-detents {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 4px;
+      bottom: 3px;
+      pointer-events: none;
+    }
+
+    .replay-detent {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 1px;
+      background: rgba(180, 213, 231, 0.5);
+      transform: translateX(-50%);
+    }
+
+    .replay-indicator {
+      position: absolute;
+      top: 6px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #e4f5ff;
+      border: 1px solid rgba(7, 28, 42, 0.9);
+      transform: translateX(-50%);
+      box-shadow: 0 0 0 1px rgba(181, 220, 244, 0.35);
+    }
+
+    .replay-source-ages {
+      font-size: 0.62rem;
+      color: var(--muted);
+    }
+
+    .weather-popup-shell {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      background: var(--popup-shell-bg);
+      border: var(--popup-shell-border);
+      border-radius: 0;
+      box-shadow: var(--popup-shell-shadow);
+      overflow: hidden;
+      pointer-events: auto;
+      font-family: var(--font-mono);
+    }
+
+    .weather-popup-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 10px 8px;
+    }
+
+    .weather-popup-ident-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .weather-flight-dot {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      flex: 0 0 20px;
+      box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.45);
+    }
+
+    .weather-popup-title {
+      font-size: var(--popup-title-size);
+      line-height: 1;
+      font-weight: 700;
+      color: var(--popup-title-color);
+      margin: 0;
+      letter-spacing: 0.02em;
+      white-space: nowrap;
+    }
+
+    .weather-popup-close {
+      border: 1px solid var(--popup-close-border);
+      background: var(--popup-close-bg);
+      color: #edf5fb;
+      border-radius: 8px;
+      min-width: 42px;
+      height: 42px;
+      line-height: 1;
+      padding: 0;
+      font-size: 18px;
+      cursor: pointer;
+      flex: 0 0 auto;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      touch-action: manipulation;
+    }
+
+    .weather-popup-close:hover {
+      background: var(--popup-close-bg-hover);
+    }
+
+    .weather-popup-subtitle {
+      font-size: var(--popup-subtitle-size);
+      color: var(--popup-subtitle-color);
+      padding: 0 10px 8px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .weather-popup-tabs {
+      display: flex;
+      align-items: stretch;
+      border-top: 1px solid var(--popup-rule-color);
+      border-bottom: 1px solid var(--popup-rule-color);
+      background: var(--popup-tab-idle-bg);
+    }
+
+    .weather-popup-tab {
+      flex: 1 1 0;
+      border: none;
+      border-radius: 0;
+      min-height: var(--popup-tab-height);
+      padding: 0 12px;
+      font-family: inherit;
+      font-size: var(--popup-tab-size);
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      text-align: left;
+      background: var(--popup-tab-idle-bg);
+      color: var(--popup-tab-idle-color);
+      cursor: pointer;
+    }
+
+    .weather-popup-tab + .weather-popup-tab {
+      border-left: 1px solid var(--popup-tab-divider);
+    }
+
+    .weather-popup-tab.is-active {
+      background: var(--popup-tab-active-bg);
+      color: var(--popup-tab-active-color);
+    }
+
+    .weather-popup-body {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      padding: 0;
+      background: var(--popup-panel-bg);
+    }
+
+    .weather-popup-body-overlay {
+      display: block;
+      overflow: auto;
+      padding: 10px;
+    }
+
+    .weather-popup-panel {
+      min-height: 0;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: var(--popup-panel-bg);
+    }
+
+    .weather-popup-panel[hidden] {
+      display: none !important;
+    }
+
+    .weather-popup-panel-airport,
+    .weather-popup-panel-weather {
+      flex: 1 1 auto;
+    }
+
+    .popup-airport-layout {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      height: 100%;
+    }
+
+    .popup-accordion-list {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .popup-section {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      border-bottom: 1px solid var(--popup-rule-color);
+    }
+
+    .popup-section:last-child {
+      border-bottom: none;
+    }
+
+    .popup-section-title-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      background: var(--popup-section-header-bg);
+      padding: 8px 8px;
+      min-height: var(--popup-section-header-height);
+      border: none;
+      width: 100%;
+      margin: 0;
+      color: var(--popup-section-header-color);
+      border-radius: 0;
+    }
+
+    .popup-accordion-trigger {
+      appearance: none;
+      cursor: pointer;
+      text-align: left;
+      font: inherit;
+      touch-action: manipulation;
+      border-radius: 0;
+    }
+
+    .popup-section-title {
+      font-size: var(--popup-section-size);
+      line-height: 1.1;
+      font-weight: 700;
+      color: inherit;
+    }
+
+    .popup-section-trailing {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin-left: auto;
+      min-width: 0;
+    }
+
+    .popup-section-status {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: #dde7ef;
+      white-space: nowrap;
+    }
+
+    /* Legacy corner-chevron rule retired 2026-05-07 in favor of the v2
+       chevron at the bottom of this file. (was: 4 lines of border-style
+       L-shape + 2 transform rotations.) Wrapper sizing/transition is now
+       owned entirely by the v2 .popup-accordion-icon block. */
+
+    .popup-accordion-body[hidden] {
+      display: none !important;
+    }
+
+    .popup-section-body {
+      padding: 12px 8px;
+      min-height: 0;
+      background: var(--popup-section-body-bg);
+    }
+
+    .popup-kv-grid,
+    .weather-kv-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: baseline;
+      gap: 14px 26px;
+      font-size: var(--popup-data-size);
+      line-height: 1.3;
+    }
+
+    .popup-kv-label,
+    .weather-kv-label {
+      color: var(--popup-label-color);
+      white-space: nowrap;
+    }
+
+    .popup-kv-value,
+    .weather-kv-value {
+      color: var(--popup-value-color);
+      text-align: right;
+      min-width: 0;
+      word-break: break-word;
+      font-weight: 700;
+    }
+
+    .popup-empty {
+      color: var(--popup-empty-color);
+      font-size: var(--popup-data-size);
+      line-height: 1.3;
+      padding: 6px 0;
+    }
+
+    .popup-autohide-bar {
+      position: relative;
+      height: 3px;
+      background: rgba(255, 255, 255, 0.08);
+      overflow: hidden;
+      flex: 0 0 auto;
+    }
+
+    .popup-autohide-fill {
+      position: absolute;
+      inset: 0;
+      background: var(--popup-action-bg, rgba(222, 227, 232, 0.99));
+      transform-origin: left center;
+      transform: scaleX(1);
+      will-change: transform;
+    }
+
+    .popup-airspace-list,
+    .popup-nearby-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      font-size: var(--popup-data-size);
+      line-height: 1.3;
+    }
+
+    .popup-airspace-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+    }
+
+    .popup-airspace-label {
+      color: var(--popup-value-color);
+      font-weight: 700;
+    }
+
+    .popup-airspace-vert {
+      color: var(--popup-value-color);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    .popup-nearby-entry {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .popup-nearby-row {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      align-items: baseline;
+      gap: 10px;
+      width: 100%;
+      padding: 4px 6px;
+      background: transparent;
+      border: none;
+      border-radius: 4px;
+      color: inherit;
+      font: inherit;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .popup-nearby-row:hover,
+    .popup-nearby-row:focus-visible {
+      background: var(--popup-section-body-bg, rgba(255, 255, 255, 0.05));
+      outline: none;
+    }
+
+    .popup-nearby-entry.is-expanded .popup-nearby-row {
+      background: var(--popup-section-body-bg, rgba(255, 255, 255, 0.08));
+    }
+
+    .popup-nearby-ident {
+      color: var(--popup-value-color);
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .popup-nearby-meta {
+      color: var(--popup-label-color);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .popup-nearby-dist {
+      color: var(--popup-label-color);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    .popup-runway-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .popup-runway-entry {
+      border-bottom: 1px solid var(--popup-rule-color);
+      padding-bottom: 12px;
+    }
+
+    .popup-runway-entry:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .popup-runway-title {
+      color: var(--popup-value-color);
+      font-size: calc(var(--popup-data-size) + 2px);
+      font-weight: 700;
+      line-height: 1.15;
+      letter-spacing: 0.04em;
+      text-transform: none;
+    }
+
+    .popup-runway-summary {
+      color: var(--popup-value-color);
+      font-size: var(--popup-data-size);
+      font-weight: 700;
+      margin-top: 4px;
+      line-height: 1.25;
+    }
+
+    .popup-runway-end {
+      color: var(--popup-value-color);
+      font-size: var(--popup-data-size);
+      margin-top: 4px;
+      line-height: 1.25;
+    }
+
+    /* Rich frequency list — fed from /api/freqs/airport/{id}. Falls
+       back to popup-kv-grid when the freqs DB isn't available.
+
+       Big Class B fields (KDFW: 211 rows) overflow the accordion's
+       intrinsic height, so the list itself owns a scroll viewport.
+       The clamp keeps it usable on phones (240 px floor), reasonable
+       on tablets (50 vh), and not absurd on desktops (520 px ceiling).
+       This is a scoped fix; the broader accordion-overflow story is
+       deferred to the design-sandbox refresh. */
+    .popup-freq-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      max-height: clamp(240px, 50vh, 520px);
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
+
+    .popup-freq-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .popup-freq-group + .popup-freq-group {
+      border-top: 1px solid var(--popup-rule-color);
+      padding-top: 10px;
+    }
+
+    .popup-freq-group-title {
+      color: var(--popup-label-color);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .popup-freq-row {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .popup-freq-headline {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .popup-freq-mhz {
+      color: var(--popup-value-color);
+      font-size: calc(var(--popup-data-size) + 1px);
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0.02em;
+    }
+
+    .popup-freq-rx {
+      color: var(--popup-label-color);
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding: 1px 5px;
+      border: 1px solid var(--popup-rule-color);
+      border-radius: 3px;
+    }
+
+    .popup-freq-sector {
+      color: var(--popup-label-color);
+      font-size: var(--popup-data-size);
+      line-height: 1.25;
+    }
+
+    .popup-freq-runways {
+      display: inline-flex;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+
+    .popup-freq-runway-chip {
+      color: var(--popup-value-color);
+      font-size: 11px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      padding: 1px 6px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--popup-rule-color);
+      border-radius: 3px;
+    }
+
+    .popup-freq-call {
+      color: var(--popup-label-color);
+      font-size: var(--popup-data-size);
+      line-height: 1.25;
+    }
+
+    /* Single remark line — content (canonical or expanded) is picked
+       by the "Translate aviation abbreviations" setting in
+       airport_popup.js. Sized to match the original NASR-text scale. */
+    .popup-freq-remark {
+      color: var(--popup-label-color);
+      font-size: 11px;
+      line-height: 1.3;
+      font-style: italic;
+    }
+
+    /* Disclosure action rows (Direct To / Add To Plan / More…) moved to
+       the button bar (Phase B). */
+
+    .weather-popup-raw {
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px dashed rgba(229, 238, 246, 0.36);
+      color: var(--popup-value-color);
+      font-size: var(--popup-data-size);
+      line-height: 1.3;
+      white-space: normal;
+      word-break: break-word;
+    }
+
+    .taf-wrap {
+      border: 1px solid rgba(216, 230, 241, 0.4);
+      border-radius: 0;
+      background: rgba(0, 0, 0, 0.14);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      flex: 1 1 auto;
+    }
+
+    .taf-header {
+      padding: 9px 10px;
+      border-bottom: 1px solid rgba(214, 228, 240, 0.32);
+      color: #9cd5ff;
+      font-size: var(--popup-data-size);
+      line-height: 1.2;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+    }
+
+    .taf-scroll {
+      overflow: auto;
+      padding: 9px;
+      display: grid;
+      gap: 8px;
+      min-height: 0;
+      flex: 1 1 auto;
+    }
+
+    .taf-segment {
+      border: 1px solid rgba(167, 191, 210, 0.45);
+      border-radius: 0;
+      background: rgba(255, 255, 255, 0.02);
+      padding: 9px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .taf-segment-title {
+      font-size: var(--popup-data-size);
+      line-height: 1.2;
+      font-weight: 700;
+      color: #d6e8f8;
+      border-bottom: 1px solid rgba(175, 198, 216, 0.34);
+      padding-bottom: 6px;
+      margin-bottom: 2px;
+    }
+
+    .taf-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px 20px;
+      align-items: baseline;
+      font-size: var(--popup-data-size);
+      line-height: 1.25;
+    }
+
+    .taf-row-label {
+      color: var(--popup-label-color);
+      font-weight: 500;
+    }
+
+    .taf-row-value {
+      color: var(--popup-value-color);
+      min-width: 0;
+      word-break: break-word;
+      text-align: right;
+    }
+
+    .taf-segment-raw {
+      margin-top: 4px;
+      border-top: 1px dashed rgba(200, 218, 232, 0.34);
+      padding-top: 8px;
+      color: #d5e5f2;
+      font-size: 13.5px;
+      line-height: 1.3;
+      white-space: normal;
+      word-break: break-word;
+    }
+
+    .taf-empty {
+      color: var(--popup-empty-color);
+      font-size: var(--popup-data-size);
+      line-height: 1.3;
+      padding: 8px 0;
+    }
+
+    /* ----- Winds Aloft accordion section ----- */
+    .winds-aloft-meta {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 8px;
+      font-size: var(--popup-subtitle-size);
+      line-height: 1.25;
+    }
+
+    .winds-aloft-station {
+      color: var(--popup-label-color);
+      font-weight: 600;
+    }
+
+    .winds-aloft-valid {
+      color: var(--popup-empty-color);
+      font-family: var(--font-mono-alt);
+      font-size: 0.85em;
+      letter-spacing: 0.05em;
+      white-space: nowrap;
+    }
+
+    .winds-aloft-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: var(--popup-data-size);
+      line-height: 1.25;
+      table-layout: fixed;
+    }
+
+    .winds-aloft-table thead th {
+      text-align: left;
+      font-weight: 500;
+      font-size: 0.78em;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--popup-empty-color);
+      padding: 4px 0 6px;
+      border-bottom: 1px solid var(--popup-rule-color);
+    }
+
+    .winds-aloft-table thead th:nth-child(2),
+    .winds-aloft-table thead th:nth-child(3) {
+      text-align: right;
+    }
+
+    .winds-aloft-table tbody td {
+      padding: 5px 0;
+      font-family: var(--font-mono-alt);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .winds-aloft-table tbody tr + tr td {
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .winds-aloft-table .winds-level {
+      color: var(--popup-label-color);
+      font-weight: 600;
+      width: 28%;
+    }
+
+    .winds-aloft-table .winds-wind {
+      color: var(--popup-value-color);
+      text-align: right;
+      width: 42%;
+    }
+
+    .winds-aloft-table .winds-temp {
+      color: var(--popup-value-color);
+      text-align: right;
+      width: 30%;
+    }
+
+    .stack {
+      display: grid;
+      gap: 10px;
+      min-height: 0;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 4px;
+      min-width: 0;
+      flex-wrap: nowrap;
+    }
+
+    .section-head strong {
+      min-width: 0;
+      flex: 1 1 auto;
+    }
+
+    .mini-btn {
+      font: inherit;
+      font-size: 0.72rem;
+      color: #d7ebf8;
+      background: #16344b;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 4px 8px;
+      cursor: pointer;
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 auto;
+    }
+
+    .mini-btn[hidden] {
+      display: none;
+    }
+    .mini-btn:hover {
+      border-color: #3c81a9;
+      background: #1a405a;
+    }
+
+    .mini-btn.is-active {
+      background: rgba(40, 120, 80, 0.85);
+      border-color: rgba(80, 220, 140, 0.6);
+      color: rgba(220, 255, 240, 0.95);
+    }
+
+    .muted-note {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 0.7rem;
+    }
+
+    pre {
+      margin: 0;
+      background: #0b2030;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px;
+      max-height: 180px;
+      overflow: auto;
+      color: #d5e9f5;
+      font-size: 0.73rem;
+      white-space: pre-wrap;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+      min-width: 0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.72rem;
+    }
+
+    th,
+    td {
+      text-align: left;
+      padding: 5px 4px;
+      border-bottom: 1px solid rgba(66, 107, 130, 0.45);
+      vertical-align: top;
+      word-break: break-word;
+    }
+
+    th {
+      color: #9dc7de;
+      position: sticky;
+      top: 0;
+      background: #102737;
+    }
+
+    .table-wrap {
+      max-height: 200px;
+      overflow: auto;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: #0d2231;
+      min-width: 0;
+    }
+
+    /* ── Aircraft Profile dialog — REMOVED at P6 ──
+       This was the static mockup's styling: .aircraft-profile-overlay plus
+       -dialog / -head / -title / -body / -section / -field / -label / -value.
+       The JS editor (aircraft_profile_editor.js) replaced that markup long
+       ago and builds .ap-* / .surface-* instead — all eight of those classes
+       were defined here and referenced nowhere in src/. Checked by name
+       before deleting.
+
+       The overlay rule was still live and still doing harm: it carried
+       `backdrop-filter: blur(2px)` at (0,1,0), which the ID rule in
+       index-aircraft-profile.css did not declare and therefore did not
+       override. That was the blur behind the chart that D8 forbids. The
+       element no longer carries the class either (see index.html) — same
+       move P3 and P5 made for Settings and FlightBox. */
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(4, 16, 24, 0.7);
+      backdrop-filter: blur(2px);
+      display: grid;
+      place-items: center;
+      padding: 16px;
+      z-index: var(--z-modal);
+    }
+
+    /* Modals inside content-area use absolute positioning */
+    #content-area > .modal {
+      position: absolute;
+      z-index: var(--z-content-modal);
+    }
+
+    .modal[hidden] {
+      display: none;
+    }
+
+    .modal-card {
+      width: min(1020px, 96vw);
+      max-height: 88vh;
+      overflow: auto;
+      background: linear-gradient(180deg, #0f2534, #163047);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .health-issue-modal-card {
+      width: min(480px, calc(100vw - 24px));
+      max-height: min(65vh, 420px);
+    }
+
+    .health-issue-summary {
+      margin-top: 2px;
+      color: #d7ecf9;
+      font-size: 0.83rem;
+      line-height: 1.4;
+      letter-spacing: 0.01em;
+    }
+
+    .health-issue-details {
+      color: #9fc2d7;
+      font-size: 0.72rem;
+      line-height: 1.35;
+      white-space: pre-wrap;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+      background: #0d2231;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px;
+      min-height: 0;
+    }
+
+    .health-issue-details:empty {
+      display: none;
+    }
+
+    .modal-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .modal-grid pre {
+      max-height: 48vh;
+    }
+
+    .ownship-sim-card {
+      width: min(460px, calc(100vw - 24px));
+    }
+
+    .ownship-sim-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .ownship-sim-grid label {
+      font-size: 0.72rem;
+      color: var(--muted);
+      display: grid;
+      gap: 4px;
+    }
+
+    /* The explicit display rules above defeat the HTML hidden attribute
+       (UA-level display:none loses the cascade), which made the native-sim
+       airport/runway rows show while Position was still "plan" — restore
+       hidden's meaning for everything in this dialog. */
+    .ownship-sim-card [hidden] {
+      display: none !important;
+    }
+
+    .ownship-sim-grid .ownship-sim-option {
+      grid-column: 1 / -1;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--text);
+    }
+
+    .layer-controls {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 6px 10px;
+      margin-top: 2px;
+    }
+
+    .layer-controls label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.75rem;
+      color: var(--text);
+    }
+
+    .layer-controls .placeholder {
+      color: var(--muted);
+    }
+
+    .graphical-weather-controls {
+      margin-top: 2px;
+    }
+
+    .graphical-weather-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px 10px;
+    }
+
+    .graphical-weather-options {
+      display: grid;
+      gap: 6px;
+      padding-left: 14px;
+    }
+
+    .graphical-weather-toggles {
+      padding-top: 2px;
+    }
+
+    .graphical-weather-toggles label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.75rem;
+      color: var(--text);
+    }
+
+    .graphical-weather-options label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.75rem;
+      color: var(--text);
+    }
+
+    .graphical-weather-options input:disabled {
+      opacity: 0.55;
+      cursor: default;
+    }
+
+    .graphical-weather-fields {
+      display: grid;
+      gap: 7px;
+      margin-top: 8px;
+    }
+
+    .graphical-weather-picker-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(170px, 250px);
+      gap: 10px;
+      align-items: center;
+    }
+
+    .graphical-weather-picker-label {
+      font-size: 0.75rem;
+      color: var(--text);
+      line-height: 1.05;
+      white-space: normal;
+    }
+
+    .graphical-weather-picker-trigger {
+      width: 100%;
+      justify-self: end;
+      text-align: left;
+      font-size: 1.06rem;
+      letter-spacing: 0.01em;
+      line-height: 1.2;
+      min-height: 34px;
+      padding: 6px 10px;
+      border: 1px solid rgba(96, 139, 166, 0.7);
+      border-radius: 7px;
+      background: rgba(8, 40, 61, 0.95);
+      color: #f2fbff;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .graphical-weather-picker-trigger::after {
+      content: '⌄';
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-52%);
+      font-size: 0.95rem;
+      color: #d8f1ff;
+      pointer-events: none;
+    }
+
+    .graphical-weather-picker-trigger:hover {
+      border-color: rgba(125, 180, 214, 0.9);
+      background: rgba(12, 49, 73, 0.98);
+    }
+
+    .graphical-weather-picker-source {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+      pointer-events: none;
+      inset: auto auto 0 0;
+    }
+
+    .graphical-weather-fields label,
+    .graphical-weather-picker-label {
+      display: grid;
+      gap: 4px;
+      font-size: 0.75rem;
+      color: var(--text);
+    }
+
+    .graphical-weather-fields select {
+      width: 100%;
+      font-size: 16px;
+      line-height: 1.25;
+      min-height: 34px;
+    }
+
+    .map-layers-dialog select,
+    .app-settings-dialog select {
+      font-size: 16px;
+    }
+
+    .map-layers-picker-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: var(--z-workspace-sheet);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px;
+      background: rgba(5, 18, 28, 0.48);
+    }
+
+    .map-layers-picker-overlay[hidden] {
+      display: none;
+    }
+
+    .map-layers-picker-dialog {
+      width: min(320px, calc(100% - 24px));
+      max-height: min(70vh, 520px);
+      overflow: hidden;
+      border-radius: 10px;
+      border: 1px solid rgba(151, 190, 214, 0.58);
+      background: var(--bg-panel);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.42);
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+      gap: 10px;
+      padding: 10px;
+    }
+
+    .map-layers-picker-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .map-layers-picker-title {
+      font-size: 0.84rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      font-weight: 700;
+      color: #d7ecfa;
+    }
+
+    .map-layers-picker-options {
+      min-height: 0;
+      overflow: auto;
+      display: grid;
+      gap: 6px;
+      padding-right: 1px;
+    }
+
+    .map-layers-picker-option {
+      width: 100%;
+      text-align: left;
+      font: inherit;
+      color: #f2fbff;
+      background: rgba(8, 40, 61, 0.9);
+      border: 1px solid rgba(96, 139, 166, 0.55);
+      border-radius: 7px;
+      padding: 8px 10px;
+      cursor: pointer;
+    }
+
+    .map-layers-picker-option:hover {
+      border-color: rgba(125, 180, 214, 0.85);
+      background: rgba(12, 49, 73, 0.95);
+    }
+
+    .map-layers-picker-option.is-selected {
+      border-color: rgba(170, 206, 228, 0.9);
+      background: rgba(18, 68, 98, 0.95);
+      box-shadow: inset 0 0 0 1px rgba(190, 225, 245, 0.28);
+    }
+
+    .map-filter-controls {
+      display: grid;
+      gap: 7px;
+      margin-top: 2px;
+      padding: 8px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: rgba(6, 23, 34, 0.45);
+    }
+
+    .map-filter-title {
+      font-size: 0.7rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .map-filter-controls label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.75rem;
+      color: var(--text);
+    }
+
+    /* ============================================================
+     * AIRPORT POPUP — visual refresh v2 (ported from design-sandbox).
+     * Lifted verbatim from scenes/airport.html <style id="airport-v2">.
+     * Companion: index-tokens.css carries the matching token palette.
+     * Notes:
+     *   - These rules INTENTIONALLY override pre-v2 popup styles earlier
+     *     in this file (popup-section-trailing, popup-accordion-icon,
+     *     popup-section-title-row, etc). Cascade order matters — keep
+     *     this block last.
+     *   - !important on .popup-accordion-icon's border/transform is
+     *     required to override the legacy corner-chevron rule.
+     * ============================================================ */
+
+    /* 1 · SHELL — sheet-like, not wallpaper-cut. */
+    .weather-popup-shell{
+      /* Phase 2 card treatment is applied by retuning --popup-shell-radius in
+         the Precision token block, NOT by swapping the token referenced here —
+         --radius-card is 0 in legacy and would flatten the sheet. Card
+         treatment only, per Steve's walk-back: the disclosure's internal
+         structure, rows, tabs, sections and density stay untouched. */
+      border-radius:var(--popup-shell-radius,10px);
+      border:var(--popup-shell-border);
+      box-shadow:var(--popup-shell-shadow);
+      font-family: var(--font-ui);
+    }
+    .weather-popup-shell::before{
+      content:"";position:absolute;left:0;right:0;top:0;height:1px;
+      background:linear-gradient(90deg,transparent,var(--popup-edge-highlight),transparent);
+      pointer-events:none;border-radius:var(--popup-shell-radius,10px) var(--popup-shell-radius,10px) 0 0;
+    }
+    .weather-popup-shell{position:relative}
+
+    /* 2a · PAGER — present only when the click hit-test returned >1
+       overlapping records. Sits above the head as the first thing the
+       pilot sees so the count is unmissable. Buttons are 44pt minimum
+       (Apple HIG) — generous touch targets given iPad bumps in turbulence. */
+    .weather-popup-pager{
+      display:flex;align-items:center;justify-content:space-between;
+      gap:8px;padding:8px 10px;
+      border-bottom:1px solid rgba(180,205,222,.10);
+      background:rgba(255,255,255,.02);
+    }
+    .weather-popup-pager-btn{
+      flex:0 0 auto;
+      min-width:44px;min-height:44px;
+      display:inline-flex;align-items:center;justify-content:center;
+      background:rgba(255,255,255,.06);
+      color:rgba(232,242,248,.95);
+      border:1px solid rgba(180,205,222,.18);
+      border-radius:8px;
+      font-size:18px;line-height:1;
+      cursor:pointer;
+      -webkit-tap-highlight-color:transparent;
+    }
+    .weather-popup-pager-btn:hover{background:rgba(255,255,255,.10)}
+    .weather-popup-pager-btn:active{background:rgba(255,255,255,.14)}
+    .weather-popup-pager-indicator{
+      flex:1 1 auto;text-align:center;
+      font-size:13px;font-weight:600;letter-spacing:.4px;
+      color:rgba(232,242,248,.85);
+      text-transform:uppercase;
+    }
+
+    /* 2 · HEAD — ICAO badge (was a colored dot), full title space. */
+    .weather-popup-head{padding:14px 14px 8px}
+    .weather-popup-ident-row{gap:10px}
+    .icao-badge{
+      display:inline-flex;align-items:center;justify-content:center;
+      min-width:64px;height:30px;padding:0 10px;
+      background:var(--icao-badge-bg);color:var(--icao-badge-fg);
+      border-radius:7px;
+      font:600 15px/1 var(--font-mono-alt);
+      letter-spacing:.04em;
+      box-shadow:inset 0 0 0 1px var(--icao-badge-border);
+    }
+    /* #42 — Airspace-class tints on the ICAO badge. Same color family as
+       the chart strokes (constants.js B=#2878B6, C=#8D3F60, D=#16487B)
+       and the map-point disclosure airspace chips. Tints run at solid
+       color rather than the alpha-on-dark mix used by the smaller
+       map-point chip — at the larger badge size + bolder header
+       context, the alpha mix read as "barely tinted" per Steve's
+       2026-05-10 review. Untowered airports fall through to the
+       default --icao-badge-* tokens above. */
+    .icao-badge[data-airspace-class="B"]{
+      --icao-badge-bg:#2878B6;
+      --icao-badge-fg:#ffffff;
+      --icao-badge-border:#5aa3d9;
+    }
+    .icao-badge[data-airspace-class="C"]{
+      --icao-badge-bg:#8D3F60;
+      --icao-badge-fg:#ffffff;
+      --icao-badge-border:#c47791;
+    }
+    .icao-badge[data-airspace-class="D"]{
+      --icao-badge-bg:#16487B;
+      --icao-badge-fg:#ffffff;
+      --icao-badge-border:#3d77b0;
+    }
+    .weather-popup-title{
+      font:600 15px/1.15 var(--font-ui);
+      color:var(--popup-title-color);letter-spacing:.005em;
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;
+    }
+    .weather-popup-subtitle{
+      font:500 14px/1.2 var(--font-ui);
+      color:var(--popup-subtitle-color);letter-spacing:.04em;
+      text-transform:uppercase;padding:0 14px 10px;
+    }
+    .weather-popup-close{
+      width:44px;height:44px;min-width:44px;border-radius:8px;
+      background:var(--popup-close-bg);
+      border:1px solid var(--popup-close-border);
+      color:var(--popup-close-fg);
+      font:400 18px/1 var(--font-ui);
+    }
+    .weather-popup-close:hover{background:var(--popup-close-bg-hover)}
+
+    /* 3 · TABS — flatter, system font, full-bleed bottom rule. */
+    .weather-popup-tabs{
+      background:var(--popup-tabbar-bg);
+      border-top:1px solid var(--popup-rule-color);
+      border-bottom:1px solid var(--popup-rule-color);
+    }
+    .weather-popup-tab{
+      font:600 13px/1 var(--font-ui);
+      letter-spacing:.06em;text-transform:uppercase;text-align:center;
+      min-height:46px;padding:0 12px;
+      background:var(--popup-tab-idle-bg);color:var(--popup-tab-idle-color);
+      border:none;border-bottom:2px solid transparent;
+      transition:background .12s ease,color .12s ease,border-color .12s ease;
+    }
+    .weather-popup-tab+.weather-popup-tab{border-left:1px solid var(--popup-tab-divider)}
+    .weather-popup-tab.is-active{
+      background:var(--popup-tab-active-bg);color:var(--popup-tab-active-color);
+      border-bottom-color:var(--popup-tab-active-rule);
+    }
+
+    /* 4 · ACCORDION — multi-open, soft headers, severity meta on header.
+       Steve's call: no force-collapse-others. Pilots can hold Base + Wx + Apt. */
+    .popup-section{border-bottom:1px solid var(--popup-rule-color)}
+    .weather-popup-shell{display:flex;flex-direction:column;max-height:100%}
+    .weather-popup-body{flex:1 1 auto;min-height:0;display:flex;flex-direction:column}
+    .weather-popup-panel{flex:1 1 auto;min-height:0;display:flex;flex-direction:column}
+    /* Single-open mutex (V3): the list itself never scrolls — all section
+       headers stay visible at all times. The single open section grows to
+       fill remaining vertical space and its body becomes the scroll
+       surface. Closed sections sit at their natural header height. */
+    .popup-accordion-list{
+      flex:1 1 auto;min-height:0;
+      overflow:hidden;
+      display:flex;flex-direction:column;
+    }
+    .popup-accordion-list > .popup-accordion-item{
+      flex:0 0 auto;
+    }
+    .popup-accordion-list > .popup-accordion-item.is-open{
+      flex:1 1 auto;
+      min-height:0;
+      display:flex;flex-direction:column;
+    }
+    .popup-accordion-list > .popup-accordion-item.is-open > .popup-section-title-row{
+      flex:0 0 auto;
+    }
+    .popup-accordion-list > .popup-accordion-item.is-open > .popup-accordion-body{
+      flex:1 1 auto;
+      min-height:0;
+      overflow-y:auto;
+      -webkit-overflow-scrolling:touch;
+    }
+
+    /* Budget-engine accordion (v3web#79). The legacy mutex rules above
+       grow the open item to fill remaining flex space — that breaks when
+       more than one section is open. Budget mode replaces that with
+       JS-assigned inline body heights, sets flex:0 0 auto on items so
+       they sit at their computed size, and animates height changes. */
+    .popup-accordion-list-budget > .popup-accordion-item{
+      flex:0 0 auto;
+      display:flex;flex-direction:column;
+      overflow:hidden;
+    }
+    .popup-accordion-list-budget > .popup-accordion-item.is-open{
+      flex:0 0 auto;
+    }
+    .popup-accordion-list-budget > .popup-accordion-item > .popup-section-title-row{
+      flex:0 0 auto;
+    }
+    .popup-accordion-list-budget > .popup-accordion-item > .popup-accordion-body{
+      flex:0 0 auto;
+      min-height:0;
+      overflow:hidden;
+      transition:height .15s cubic-bezier(.4,0,.2,1);
+    }
+    .popup-accordion-list-budget > .popup-accordion-item > .popup-accordion-body[data-budget-scroll="true"]{
+      overflow-y:auto;
+      -webkit-overflow-scrolling:touch;
+    }
+    @media (prefers-reduced-motion: reduce){
+      .popup-accordion-list-budget > .popup-accordion-item > .popup-accordion-body{
+        transition:none;
+      }
+    }
+
+    /* 4c · INFO tab — scrollable layout + icon nav strip (v3web#258 second
+       half). The airport tab retired the single-open mutex: all sections
+       render open in one scroller; the strip under the tab band is a jump
+       table with scroll-spy (popup/info_nav.js). WEATHER / NOTAMs keep the
+       accordion rules above. */
+    .popup-info-layout{
+      flex:1 1 auto;min-height:0;
+      display:flex;flex-direction:column;
+    }
+    .popup-info-nav{
+      flex:0 0 auto;
+      display:flex;align-items:stretch;
+      border-bottom:1px solid var(--popup-rule-color);
+      /* --popup-tab-idle-bg is TRANSPARENT, and during fractional touch
+         scrolling WebKit rounds the scroller's clip a native pixel
+         generous — content bled through the strip's unpainted underline
+         row (Steve, 2026-08-08 bench screenshot). Paint the strip
+         opaque-on-panel and stack it above the scroller so the bleed has
+         nothing to show through. */
+      background:var(--popup-panel-bg);
+      position:relative;z-index:var(--z-popup-tabstrip);
+    }
+    .popup-info-nav-btn{
+      flex:1 1 0;
+      display:flex;align-items:center;justify-content:center;
+      min-height:40px;
+      margin:0;padding:6px 0 4px;
+      border:none;border-radius:0;
+      border-bottom:2px solid transparent;
+      background:transparent;
+      color:var(--popup-tab-idle-color);
+      cursor:pointer;
+      touch-action:manipulation;
+    }
+    .popup-info-nav-btn svg{width:22px;height:22px;display:block}
+    .popup-info-nav-btn.is-active{
+      color:var(--popup-tab-active-color);
+      border-bottom-color:currentColor;
+    }
+    .popup-info-scroll{
+      flex:1 1 auto;min-height:0;
+      overflow-y:auto;
+      -webkit-overflow-scrolling:touch;
+      overscroll-behavior:contain;
+      /* LOAD-BEARING: info_nav jumps and spies by section offsetTop; this
+         scroller must be the offsetParent or every jump overshoots by the
+         popup chrome above it (the Settings P3 101px lesson —
+         index-surfaces.css .surface-scroll carries the same note). */
+      position:relative;
+    }
+    /* Sticky section bands (Steve, 2026-08-08 bench): the header you're
+       reading stays pinned while its rows scroll, iOS-list style. The
+       token bg is 0.85 alpha — fine in the static flow, but a stuck
+       header has rows sliding UNDER it, so composite the tint over the
+       opaque panel bg (same reason .popup-freq-pivot-row uses panel bg). */
+    .popup-info-section > .popup-section-title-row{
+      /* top:-2px, not 0: the same fractional-scroll rounding that bled
+         through the strip can open a 1px seam between the scroller's top
+         edge and a stuck band. Pinning 2px high tucks the header's top
+         (12px padding — nothing readable) under the clip so the seam
+         shows header, never content. */
+      position:sticky;top:-2px;z-index:var(--z-popup-sticky-section);
+      background:
+        linear-gradient(var(--popup-section-header-bg), var(--popup-section-header-bg)),
+        var(--popup-panel-bg);
+    }
+    /* The freq pivot is itself sticky; inside the INFO scroller it rides
+       just below the stuck Frequencies band instead of fighting it for
+       top:0. Band height is 46 (min-height, single-line titles) but it
+       pins at -2, so its bottom edge is 44 — 43 tucks the pivot 1px
+       underneath (header z-index wins) so no seam opens between them. */
+    .popup-info-section .popup-freq-pivot-row{
+      top:43px;
+    }
+    /* Air between sections — they read as one run without it. The gap
+       shows the panel bg, so separation comes from space, not a heavier
+       rule. */
+    .popup-info-section + .popup-info-section{
+      margin-top:12px;
+    }
+    /* Run-out space: the last section is at least one viewport tall so
+       ANY section header can reach the top of the scroll zone (jump
+       targets land exactly at top even when the trailing sections are
+       nearly empty — Steve, 2026-08-08 bench). Percentage resolves
+       against the scroller's definite flex height. */
+    .popup-info-scroll > .popup-info-section:last-child{
+      min-height:100%;
+    }
+
+    /* 4d · FBO / fuel-price cards (v3web#260, Wally's wx-server#88 feed).
+       Live cards lead the FBO·Fuel·Services body; the NASR stack-list
+       renders below them. --popup-* vocabulary throughout (D13 scope). */
+    .popup-fbo-card{
+      padding:10px 12px;
+      border-bottom:1px solid var(--popup-rule-color);
+    }
+    .popup-fbo-card:last-of-type{border-bottom:none}
+    .popup-fbo-name{
+      font-size:13px;font-weight:700;
+      color:var(--popup-value-color);
+    }
+    .popup-fbo-contact{
+      margin-top:2px;
+      font-size:12px;
+      color:var(--popup-section-meta-color);
+    }
+    .popup-fbo-price-table{
+      margin-top:8px;
+      border-collapse:collapse;
+      font-variant-numeric:tabular-nums;
+    }
+    .popup-fbo-price-table th{
+      text-align:right;padding:2px 0 2px 18px;
+      font:600 10.5px/1 var(--font-ui);
+      letter-spacing:.06em;text-transform:uppercase;
+      color:var(--popup-section-meta-color);
+    }
+    .popup-fbo-price-table td{
+      text-align:right;padding:2px 0 2px 18px;
+      font-size:12.5px;
+      color:var(--popup-value-color);
+    }
+    .popup-fbo-price-table td.popup-fbo-grade,
+    .popup-fbo-price-table th:first-child{
+      text-align:left;padding-left:0;
+      color:var(--popup-section-meta-color);
+      font-weight:600;
+    }
+    .popup-fbo-asof{
+      margin-top:4px;
+      font-size:11px;
+      color:var(--popup-section-meta-color);
+    }
+    /* Past the staleness threshold (7 days — Steve 2026-08-08) the date
+       reads as a warning, same vocabulary as the METAR age treatment. */
+    .popup-fbo-asof.is-stale{
+      color:var(--sev-significant);
+      font-weight:600;
+    }
+    .popup-fbo-notes{
+      margin-top:6px;
+      font-size:11.5px;line-height:1.45;
+      color:var(--popup-section-meta-color);
+    }
+    .popup-fbo-notes-label{
+      display:block;
+      font:600 10.5px/1.6 var(--font-ui);
+      letter-spacing:.06em;text-transform:uppercase;
+      color:var(--popup-section-header-color);
+    }
+
+    .popup-section-title-row{
+      background:var(--popup-section-header-bg);
+      color:var(--popup-section-header-color);
+      padding:12px 14px;min-height:46px;
+      transition:background .12s ease;
+    }
+    /* Hover-tint only on devices with a real pointer — on touch the
+       :hover state sticks after tap and reads as "selected", which is
+       wrong for section headers (a header isn't selectable, it just
+       toggles open/closed). The :active rule gives the tap a brief
+       acknowledgement flash that releases as soon as the touch ends. */
+    @media (hover: hover){
+      .popup-section-title-row:hover{background:var(--popup-section-header-bg-hover)}
+    }
+    .popup-section-title-row:active{background:var(--popup-section-header-bg-hover)}
+    /* INFO scroll headers are plain bands, not toggles — no hover tint, no
+       tap-acknowledgement flash, or they read as buttons that don't work. */
+    .popup-info-section > .popup-section-title-row:active{
+      background:var(--popup-section-header-bg);
+    }
+    @media (hover: hover){
+      .popup-info-section > .popup-section-title-row:hover{
+        background:var(--popup-section-header-bg);
+      }
+    }
+    .popup-section-title-row:focus{outline:none}
+    .popup-section-title-row:focus-visible{outline:none}
+    .popup-section-title{
+      font:600 13px/1.05 var(--font-ui);
+      letter-spacing:.07em;text-transform:uppercase;color:inherit;
+    }
+    /* Override legacy corner-chevron — single right-chevron via ::before, rotates 90° when open. */
+    .popup-accordion-icon{
+      width:14px;height:14px;
+      border:0 !important;
+      transform:none !important;
+      display:inline-flex;align-items:center;justify-content:center;
+      color:inherit;opacity:.7;
+      transition:opacity .12s ease;
+      flex:0 0 14px;
+    }
+    .popup-accordion-icon::before{
+      content:"\203A";
+      font:600 16px/1 var(--font-ui);
+      color:currentColor;
+      display:block;
+      transform:rotate(0deg);
+      transform-origin:50% 50%;
+      transition:transform .18s cubic-bezier(.4,0,.2,1);
+    }
+    .popup-accordion-item.is-open .popup-accordion-icon{opacity:1}
+    .popup-accordion-item.is-open .popup-accordion-icon::before{transform:rotate(90deg)}
+    .popup-section-body{
+      padding:14px;background:var(--popup-section-body-bg);
+    }
+    /* Section headers always pinned at natural height — the open body is
+       the scroll surface (rule earlier in this file), so headers never
+       compress and never scroll out of view. Single-open mutex (V3). */
+    .popup-section-title-row {
+      flex-shrink: 0;
+    }
+
+    /* Right-aligned meta on accordion HEADER, glanceable while collapsed.
+       e.g. "MVFR · 29 MIN" or "5 RWYS". Builder addition. */
+    .popup-section-meta{
+      font:500 13px/1 var(--font-mono-alt);
+      letter-spacing:.06em;color:var(--popup-section-meta-color);
+      white-space:nowrap;
+    }
+    .popup-section-status{
+      font:500 11px/1 var(--font-ui);
+      letter-spacing:.06em;text-transform:uppercase;
+      color:var(--popup-section-meta-color);
+    }
+
+    /* 5 · KV GRID — system font for labels, Menlo for values.
+       Labels at 12px uppercase (chrome), values at 16px tabular Menlo (data). */
+    .popup-kv-grid,.weather-kv-grid{
+      gap:12px 20px;align-items:baseline;
+    }
+    .popup-kv-label,.weather-kv-label{
+      font:500 12px/1.2 var(--font-ui);
+      color:var(--popup-label-color);letter-spacing:.07em;
+      text-transform:uppercase;font-weight:500;
+    }
+    .popup-kv-value,.weather-kv-value{
+      font:600 16px/1.25 var(--font-mono-alt);
+      color:var(--popup-value-color);font-variant-numeric:tabular-nums;
+      letter-spacing:.01em;
+    }
+
+    /* 6 · METAR CATEGORY CHIP — promoted from kv row to header chip. */
+    .wx-cat-chip{
+      display:inline-flex;align-items:center;gap:6px;
+      height:22px;padding:0 9px;border-radius:11px;
+      font:700 11px/1 var(--font-ui);
+      letter-spacing:.08em;
+      background:var(--wx-cat-chip-bg);
+      color:var(--wx-cat-chip-fg);
+      box-shadow:inset 0 0 0 1px var(--wx-cat-chip-border);
+    }
+    .wx-cat-chip[data-cat="VFR"]{ --wx-cat-chip-bg:var(--wx-vfr-bg);   --wx-cat-chip-fg:var(--wx-vfr-fg);   --wx-cat-chip-border:var(--wx-vfr-border) }
+    .wx-cat-chip[data-cat="MVFR"]{--wx-cat-chip-bg:var(--wx-mvfr-bg);  --wx-cat-chip-fg:var(--wx-mvfr-fg);  --wx-cat-chip-border:var(--wx-mvfr-border)}
+    .wx-cat-chip[data-cat="IFR"]{ --wx-cat-chip-bg:var(--wx-ifr-bg);   --wx-cat-chip-fg:var(--wx-ifr-fg);   --wx-cat-chip-border:var(--wx-ifr-border) }
+    .wx-cat-chip[data-cat="LIFR"]{--wx-cat-chip-bg:var(--wx-lifr-bg);  --wx-cat-chip-fg:var(--wx-lifr-fg);  --wx-cat-chip-border:var(--wx-lifr-border)}
+    .wx-cat-chip::before{
+      content:"";width:6px;height:6px;border-radius:50%;background:currentColor;flex:0 0 6px;
+    }
+
+    /* 7 · RAW METAR — Menlo, generous line-height, clear separator. */
+    .weather-popup-raw{
+      margin-top:14px;padding-top:12px;
+      border-top:1px solid var(--popup-rule-color);
+      font:500 12.5px/1.5 var(--font-mono-alt);
+      color:var(--popup-raw-color);letter-spacing:.02em;
+    }
+
+    /* 8 · RUNWAY ENTRIES — title in chrome, dimensions in mono. */
+    .popup-runway-list{gap:14px}
+    .popup-runway-entry{padding-bottom:14px}
+    .popup-runway-title{
+      font:600 13px/1.1 var(--font-ui);
+      letter-spacing:.05em;color:var(--popup-value-color);
+    }
+    .popup-runway-summary{
+      font:600 16px/1.25 var(--font-mono-alt);
+      color:var(--popup-value-color);font-variant-numeric:tabular-nums;
+      margin-top:5px;letter-spacing:.01em;
+    }
+    .popup-runway-end{
+      font:500 14px/1.35 var(--font-ui);
+      color:var(--popup-value-color);margin-top:4px;
+      padding-left:10px;border-left:2px solid var(--popup-rule-color);
+    }
+    /* #47 — preferred-runway end. Same accent as the wx-vfr token (green
+       reads as "go") so the highlight is unambiguous in either day or
+       night appearance. */
+    .popup-runway-end.is-favored{
+      border-left-color:var(--wx-vfr-bg);
+      color:var(--popup-value-color);
+    }
+    .popup-runway-end-favored{
+      display:inline-block;margin-left:8px;
+      padding:1px 7px;border-radius:9px;
+      font:700 10px/1.4 var(--font-ui);
+      letter-spacing:.06em;
+      background:var(--wx-vfr-bg);color:var(--wx-vfr-fg);
+      box-shadow:inset 0 0 0 1px var(--wx-vfr-border);
+      vertical-align:1px;
+    }
+
+    /* Stack-layout list — for sections whose values are too long to
+       sit comfortably in a kv-grid value column (Services, Hours,
+       Contact). Label sits above value, system font on both. Used by
+       createServicesSection / createHoursSection / createContactSection
+       in airport_popup.js. */
+    .popup-stack-list{
+      display:flex;flex-direction:column;gap:14px;
+    }
+    .popup-stack-row{
+      display:flex;flex-direction:column;gap:4px;
+    }
+    .popup-stack-label{
+      font:500 12px/1.2 var(--font-ui);
+      color:var(--popup-label-color);
+      letter-spacing:.07em;
+      text-transform:uppercase;
+    }
+    .popup-stack-value{
+      font:500 14px/1.4 var(--font-ui);
+      color:var(--popup-value-color);
+      letter-spacing:.005em;
+    }
+
+    /* Remark list — used by the Remarks accordion section. Each remark
+       is one paragraph; bottom rule between them; system font to match
+       v2 typography. Section-body cap above already constrains overall
+       height; no separate cap needed here. */
+    .popup-remark-list{
+      display:flex;flex-direction:column;gap:0;
+    }
+    .popup-remark-item{
+      font:400 13px/1.4 var(--font-ui);
+      color:var(--popup-value-color);
+      padding:8px 0;
+      border-bottom:1px solid var(--popup-rule-color);
+    }
+    .popup-remark-item:first-child{padding-top:0}
+    .popup-remark-item:last-child{padding-bottom:0;border-bottom:none}
+
+    /* 9 · ACTION ROW — retired; disclosure actions live on the button bar
+       (Phase B). */
+
+    /* Tab badge — used for the NOTAM count on the Weather tab. Severity-tinted. */
+    .popup-tab-badge{
+      display:inline-flex;align-items:center;justify-content:center;
+      min-width:18px;height:18px;padding:0 6px;margin-left:6px;
+      border-radius:9px;font:700 10px/1 var(--font-ui);
+      letter-spacing:.04em;
+      background:var(--sev-critical);color:#fff;
+      box-shadow:0 0 0 1px rgba(0,0,0,.25);
+      vertical-align:1px;
+    }
+    /* #53 — Flight-category dot on the Weather tab. Smaller than the
+       NOTAMs count badge (no number to carry); colors share the same
+       --wx-{vfr,mvfr,ifr,lifr}-bg tokens used by the wx-cat-chip. */
+    .popup-tab-cat-dot{
+      display:inline-block;width:10px;height:10px;border-radius:50%;
+      margin-left:6px;vertical-align:1px;
+      background:var(--cat-dot-bg, var(--sev-info));
+      box-shadow:0 0 0 1px rgba(0,0,0,.25);
+    }
+    .popup-tab-cat-dot[data-cat="VFR"]{ --cat-dot-bg:var(--wx-vfr-bg) }
+    .popup-tab-cat-dot[data-cat="MVFR"]{--cat-dot-bg:var(--wx-mvfr-bg) }
+    .popup-tab-cat-dot[data-cat="IFR"]{ --cat-dot-bg:var(--wx-ifr-bg) }
+    .popup-tab-cat-dot[data-cat="LIFR"]{--cat-dot-bg:var(--wx-lifr-bg) }
+    .sev-critical-bg{background:var(--sev-critical);color:#fff}
+
+    /* 10 · GLOW POLICY — Steve's rule.
+       Night: strip decorative glows on chrome; keep ONLY on functional alerts (sev-critical, .is-flash).
+       Day: glow allowed everywhere (sun washes them anyway). */
+    html[data-appearance="night"] .weather-popup-shell{
+      box-shadow:var(--popup-shell-shadow);
+    }
+    html[data-appearance="night"] .sev-critical{
+      box-shadow:0 0 0 1px var(--sev-critical),0 0 14px var(--sev-critical-glow);
+    }
+    html[data-appearance="day"] .weather-popup-shell{
+      box-shadow:var(--popup-shell-shadow);
+    }
+
+    /* ============================================================
+     * MAP LAYERS — visual refresh v2 (ported from design-sandbox).
+     * Lifted from scenes/maplayers.html <style id="maplayers-v2">.
+     * Reuses the airport-v2 popup-shell/section/accordion chrome above;
+     * adds layer-toggle / runway-min / picker-row primitives unique to
+     * this dialog, plus a full-height left-rail positioning override.
+     * ============================================================ */
+
+    /* Position + shape: left-rail, full-height, no floating shell. */
+    #map-layers-dialog{
+      position:absolute;top:0;left:0;bottom:0;
+      width:min(380px, 100%);
+      max-height:none;
+      padding:0;
+      border:0;background:transparent;box-shadow:none;border-radius:0;
+      overflow:hidden;
+      display:flex;flex-direction:column;
+      z-index:var(--z-map-panel);
+    }
+    #map-layers-dialog[hidden]{display:none}
+    #map-layers-dialog .weather-popup-shell{
+      flex:1 1 auto;min-height:0;
+      border-radius:0;
+      border:0;
+      border-right:1px solid var(--popup-shell-border, rgba(180,205,222,.14));
+      box-shadow:none;
+      height:100%;
+      display:flex;flex-direction:column;
+      background:var(--popup-panel-bg);
+      position:relative;
+    }
+    /* Strip the airport-v2 hairline edge highlight — on a full-height rail
+       it floats in the middle of the screen instead of capping a card edge. */
+    #map-layers-dialog .weather-popup-shell::before{display:none}
+
+    #map-layers-dialog .weather-popup-head{
+      padding:14px 14px 10px;display:flex;align-items:center;gap:10px;
+    }
+    #map-layers-dialog .weather-popup-title{
+      flex:1;min-width:0;
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    }
+
+    /* ===== Body / panels — exclusive accordion fills remaining height ===== */
+    #map-layers-dialog .weather-popup-body{
+      flex:1 1 auto;min-height:0;display:flex;flex-direction:column;
+      border-top:1px solid var(--popup-rule-color);
+    }
+    #map-layers-dialog .popup-accordion-list{
+      display:flex;flex-direction:column;
+      flex:1 1 auto;min-height:0;overflow:hidden;
+    }
+    #map-layers-dialog .popup-section{
+      flex:0 0 auto;display:flex;flex-direction:column;min-height:0;
+      border-bottom:1px solid var(--popup-rule-color);
+    }
+    #map-layers-dialog .popup-section.popup-accordion-item.is-open{
+      flex:1 1 auto;min-height:0;
+    }
+    #map-layers-dialog .popup-section-body{
+      flex:1 1 auto;min-height:0;
+      overflow-y:auto;-webkit-overflow-scrolling:touch;
+      padding:8px 8px 12px;background:var(--popup-section-body-bg);
+    }
+    #map-layers-dialog .popup-section-body[hidden]{display:none !important}
+
+    /* ===== Layer toggle — atomic checkbox/radio row. =====
+       Big tap target (44px min), label on left, custom indicator on right.
+       The native input is hidden; we render our own check / radio dot. */
+    .layer-toggle-list{
+      display:flex;flex-direction:column;gap:2px;
+      margin:0;padding:0;list-style:none;
+    }
+    .layer-toggle{
+      display:flex;align-items:center;justify-content:space-between;gap:14px;
+      min-height:44px;padding:0 10px;border-radius:6px;
+      background:transparent;color:var(--popup-value-color);
+      cursor:pointer;user-select:none;
+      transition:background .1s ease;
+      position:relative;
+    }
+    .layer-toggle:hover{background:var(--layer-toggle-bg-hover)}
+    .layer-toggle:active{background:var(--layer-toggle-bg-press)}
+    .layer-toggle-label{
+      font:500 15px/1.2 var(--font-ui);
+      letter-spacing:.005em;flex:1;min-width:0;color:inherit;
+    }
+    .layer-toggle-sub{
+      display:block;
+      font:400 12px/1.2 var(--font-ui);
+      color:var(--popup-label-color);
+      margin-top:2px;letter-spacing:.01em;
+    }
+    /* Hide the native input — we render our own indicator. */
+    .layer-toggle input[type="checkbox"],
+    .layer-toggle input[type="radio"]{
+      position:absolute;opacity:0;pointer-events:none;width:0;height:0;
+    }
+
+    /* Checkbox indicator — hollow when off, accent fill + white tick when on. */
+    .layer-toggle-check{
+      width:22px;height:22px;border-radius:5px;flex:0 0 22px;
+      background:var(--layer-check-bg);
+      box-shadow:inset 0 0 0 1.5px var(--layer-check-border);
+      position:relative;
+      transition:background .1s ease, box-shadow .1s ease;
+    }
+    .layer-toggle input:checked ~ .layer-toggle-check{
+      background:var(--accent);
+      box-shadow:inset 0 0 0 1.5px var(--accent);
+    }
+    .layer-toggle-check::after{
+      content:"";position:absolute;left:6px;top:2px;width:6px;height:11px;
+      border-right:2px solid #fff;border-bottom:2px solid #fff;
+      transform:rotate(45deg) scale(0);transform-origin:center;
+      transition:transform .12s cubic-bezier(.4,0,.2,1);
+    }
+    .layer-toggle input:checked ~ .layer-toggle-check::after{
+      transform:rotate(45deg) scale(1);
+    }
+
+    /* Radio indicator — circle, dot when active. */
+    .layer-toggle-radio{
+      width:22px;height:22px;border-radius:50%;flex:0 0 22px;
+      background:var(--layer-check-bg);
+      box-shadow:inset 0 0 0 1.5px var(--layer-check-border);
+      position:relative;
+      transition:background .1s ease, box-shadow .1s ease;
+    }
+    .layer-toggle-radio::after{
+      content:"";position:absolute;inset:5px;border-radius:50%;
+      background:var(--accent);
+      transform:scale(0);
+      transition:transform .12s cubic-bezier(.4,0,.2,1);
+    }
+    .layer-toggle input:checked ~ .layer-toggle-radio{
+      box-shadow:inset 0 0 0 1.5px var(--accent);
+    }
+    .layer-toggle input:checked ~ .layer-toggle-radio::after{
+      transform:scale(1);
+    }
+
+    /* Sub-toggle — visually nested under a master (Diagrams under Airports etc). */
+    .layer-toggle.is-sub{
+      margin-left:14px;
+      border-left:2px solid var(--popup-rule-color);
+      padding-left:14px;border-radius:0 6px 6px 0;
+    }
+    /* Dim+disable when master is off (still tappable). */
+    .layer-toggle.is-disabled{opacity:.45}
+
+    /* ===== Runway-min slider — single value, snaps every 500 ft. ===== */
+    .runway-min-row{
+      display:flex;flex-direction:column;gap:8px;
+      padding:14px 10px 6px;
+      border-top:1px solid var(--popup-rule-color);
+      margin-top:6px;
+      --rmin-thumb:24px;
+      --rmin-edge:12px; /* half of --rmin-thumb */
+    }
+    .runway-min-row-head{
+      display:flex;align-items:baseline;justify-content:space-between;gap:12px;
+    }
+    .runway-min-row-title{
+      font:600 13px/1.05 var(--font-ui);
+      letter-spacing:.04em;color:var(--popup-value-color);
+    }
+    .runway-min-row-value{
+      font:600 16px/1 var(--font-mono-alt);
+      letter-spacing:.01em;color:var(--popup-title-color);
+      font-variant-numeric:tabular-nums;
+    }
+    .runway-min-row input[type="range"]{
+      -webkit-appearance:none;appearance:none;
+      width:100%;height:6px;border-radius:3px;
+      background:linear-gradient(to right,
+        var(--accent) 0%,
+        var(--accent) var(--rmin-fill, 0%),
+        var(--layer-check-border) var(--rmin-fill, 0%),
+        var(--layer-check-border) 100%);
+      outline:none;margin:8px 0 4px;
+    }
+    .runway-min-row input[type="range"]::-webkit-slider-thumb{
+      -webkit-appearance:none;appearance:none;width:24px;height:24px;
+      border-radius:50%;background:#fff;border:0;
+      box-shadow:0 1px 3px rgba(0,0,0,.45),inset 0 0 0 4px var(--accent);
+      cursor:pointer;
+    }
+    .runway-min-row input[type="range"]::-moz-range-thumb{
+      width:24px;height:24px;border-radius:50%;background:#fff;border:0;
+      box-shadow:0 1px 3px rgba(0,0,0,.45),inset 0 0 0 4px var(--accent);
+    }
+    .runway-min-row-detents{
+      position:relative;height:6px;margin:-2px 0 4px;pointer-events:none;
+    }
+    .runway-min-row-detents span{
+      position:absolute;top:0;width:1px;height:6px;
+      background:var(--popup-label-color);opacity:.45;
+      transform:translateX(-50%);
+    }
+    .runway-min-row-ticks{
+      position:relative;height:12px;
+      font:500 10px/1 var(--font-mono-alt);
+      color:var(--popup-label-color);letter-spacing:.04em;
+    }
+    .runway-min-row-ticks span{
+      position:absolute;top:0;
+      transform:translateX(-50%);
+      white-space:nowrap;
+    }
+
+    /* ===== Picker row — Icing field/alt and Turb alt under Graphical Wx Mode. =====
+       The trigger element here is the legacy <button class="picker-row-select">,
+       which opens the existing overlay picker (see map-layers-picker-overlay).
+       Visual matches sandbox's <select> styling so the rhythm is consistent. */
+    .picker-row-group{
+      display:flex;flex-direction:column;
+      border-top:1px solid var(--popup-rule-color);
+      margin-top:6px;
+    }
+    .picker-row{
+      display:flex;align-items:center;gap:12px;
+      padding:10px 10px;
+      border-bottom:1px solid var(--popup-rule-color);
+    }
+    .picker-row[hidden]{display:none}
+    .picker-row:last-child{border-bottom:0}
+    .picker-row:not([hidden]):has(~ .picker-row[hidden]:last-child){border-bottom:0}
+    .picker-row-label{
+      flex:0 0 88px;
+      font:600 13px/1.15 var(--font-ui);
+      letter-spacing:.04em;color:var(--popup-label-color);
+    }
+    .picker-row-select{
+      flex:1 1 auto;min-width:0;
+      font:600 14px/1.2 var(--font-mono-alt);
+      letter-spacing:.01em;color:var(--popup-value-color);
+      background:var(--layer-check-bg);
+      border:1px solid var(--layer-check-border);
+      border-radius:6px;
+      padding:9px 30px 9px 12px;
+      text-align:left;
+      cursor:pointer;
+      font-variant-numeric:tabular-nums;
+      position:relative;
+    }
+    .picker-row-select::after{
+      content:"";position:absolute;
+      right:12px;top:50%;
+      width:0;height:0;
+      border-left:4px solid transparent;
+      border-right:4px solid transparent;
+      border-top:5px solid var(--popup-label-color);
+      transform:translateY(-2px);
+      pointer-events:none;
+    }
+    .picker-row-select:hover{
+      border-color:var(--accent);
+    }
+    .picker-row-select:focus{
+      outline:2px solid var(--accent);outline-offset:1px;
+      border-color:var(--accent);
+    }
+    /* Hidden source <select> still in DOM for code that reads/writes its value. */
+    .picker-row-source{
+      position:absolute;width:1px;height:1px;
+      opacity:0;pointer-events:none;
+      inset:auto auto 0 0;
+    }
+
+    /* ============================================================
+     * NOTAMs TAB — visual refresh v2 (ported from design-sandbox).
+     * Lifted from scenes/notam.html <style id="notam-v2">.
+     * Reuses airport-v2 chrome (popup-shell, head, tabs, popup-tab-badge,
+     * popup-section-* accordion) and adds the tier/row/filter primitives
+     * unique to NOTAMs. Severity colors come from --sev-* tokens already
+     * defined in index-tokens.css.
+     * ============================================================ */
+
+    /* ===== Tier headers: severity-tinted left wedge + count chip ===== */
+    .notam-tier .popup-section-title-row{
+      box-shadow:inset 4px 0 0 var(--tier-accent, transparent);
+    }
+    .notam-tier[data-sev="critical"]    { --tier-accent: var(--sev-critical); }
+    .notam-tier[data-sev="significant"] { --tier-accent: var(--sev-significant); }
+    .notam-tier[data-sev="advisory"]    { --tier-accent: var(--sev-advisory); }
+    .notam-tier[data-sev="info"]        { --tier-accent: var(--sev-info); }
+
+    .notam-tier-count{
+      display:inline-flex;align-items:center;justify-content:center;
+      min-width:22px;height:20px;padding:0 7px;
+      border-radius:10px;
+      font:700 11px/1 var(--font-ui);
+      letter-spacing:.03em;
+      background:var(--tier-accent);
+      color:#fff;
+      box-shadow:0 0 0 1px rgba(0,0,0,.25);
+    }
+    .notam-tier[data-sev="info"] .notam-tier-count{
+      background:transparent;color:var(--popup-section-meta-color);
+      box-shadow:inset 0 0 0 1px var(--popup-rule-color);
+    }
+
+    /* Map Layers' popup-accordion-list uses overflow:hidden because each
+       open section scrolls its own body. NOTAMs' accordion lives inside a
+       tab panel and wants the whole list to scroll as one — restore that. */
+    .weather-popup-panel[data-popup-panel="notams"] .popup-accordion-list{
+      flex:1 1 auto;min-height:0;
+      overflow-y:auto;-webkit-overflow-scrolling:touch;
+    }
+    .weather-popup-panel[data-popup-panel="notams"] .popup-section-body{
+      padding:0;
+    }
+
+    /* ===== List rows ===== */
+    .notam-list{
+      list-style:none;margin:0;padding:0;
+      display:flex;flex-direction:column;gap:0;
+    }
+    .notam-row{
+      position:relative;
+      padding:11px 14px 12px 18px;
+      background:var(--notam-row-bg, transparent);
+      border-bottom:1px solid var(--popup-rule-color);
+      cursor:pointer;
+      transition:background .12s ease;
+    }
+    .notam-row:last-child{border-bottom:0}
+    .notam-row:hover{background:var(--notam-row-bg-hover, rgba(255,255,255,.03))}
+    .notam-row::before{
+      content:"";position:absolute;left:0;top:0;bottom:0;width:4px;
+      background:var(--row-accent, transparent);
+    }
+    .notam-row[data-sev="critical"]   { --row-accent:var(--sev-critical);    --notam-row-bg:var(--sev-critical-bg);    --notam-row-bg-hover:rgba(255,87,87,.22) }
+    .notam-row[data-sev="significant"]{ --row-accent:var(--sev-significant); --notam-row-bg:var(--sev-significant-bg); --notam-row-bg-hover:rgba(245,166,35,.22) }
+    .notam-row[data-sev="advisory"]   { --row-accent:var(--sev-advisory);    --notam-row-bg:var(--sev-advisory-bg);    --notam-row-bg-hover:rgba(74,168,232,.22) }
+    .notam-row[data-sev="info"]       { --row-accent:var(--sev-info);        --notam-row-bg:transparent;                --notam-row-bg-hover:rgba(255,255,255,.04) }
+
+    .notam-row-head{
+      display:flex;align-items:center;gap:8px;min-height:22px;
+    }
+    .notam-row-keyword{
+      display:inline-flex;align-items:center;justify-content:center;
+      height:20px;padding:0 8px;border-radius:4px;
+      font:700 10.5px/1 var(--font-ui);
+      letter-spacing:.08em;
+      color:var(--row-accent);
+      box-shadow:inset 0 0 0 1px var(--row-accent);
+      background:transparent;flex:0 0 auto;
+    }
+    .notam-row-time{
+      font:500 11.5px/1 var(--font-mono-alt);
+      letter-spacing:.04em;color:var(--popup-empty-color);
+      flex:1 1 auto;min-width:0;
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    }
+    .notam-row-override{
+      display:inline-flex;align-items:center;gap:4px;
+      height:18px;padding:0 6px;border-radius:9px;
+      font:600 9.5px/1 var(--font-ui);
+      letter-spacing:.08em;text-transform:uppercase;
+      color:var(--popup-section-meta-color);
+      background:rgba(255,255,255,.04);
+      box-shadow:inset 0 0 0 1px var(--popup-rule-color);
+      flex:0 0 auto;
+    }
+    .notam-row-override::before{
+      content:"\270E";font-size:11px;line-height:1;opacity:.85;
+    }
+    .notam-row-icon{
+      width:14px;height:14px;flex:0 0 14px;
+      display:inline-flex;align-items:center;justify-content:center;
+      color:var(--popup-section-meta-color);opacity:.6;
+    }
+    .notam-row-icon::before{
+      content:"\203A";font:600 16px/1 var(--font-ui);
+      transform:rotate(0deg);
+      transition:transform .18s cubic-bezier(.4,0,.2,1);
+    }
+    .notam-row.is-expanded .notam-row-icon{opacity:1}
+    .notam-row.is-expanded .notam-row-icon::before{transform:rotate(90deg)}
+
+    .notam-row-summary{
+      margin-top:6px;
+      font:500 14px/1.4 var(--font-ui);
+      color:var(--popup-value-color);
+      letter-spacing:.005em;
+    }
+    .notam-row-detail{
+      display:none;margin-top:10px;padding-top:10px;
+      border-top:1px solid var(--popup-rule-color);
+    }
+    .notam-row.is-expanded .notam-row-detail{display:block}
+    .notam-row-affected{
+      display:flex;flex-wrap:wrap;gap:6px 8px;margin-bottom:8px;
+    }
+    .notam-affected-chip{
+      display:inline-flex;align-items:center;gap:5px;
+      height:22px;padding:0 8px;border-radius:4px;
+      background:rgba(255,255,255,.04);
+      box-shadow:inset 0 0 0 1px var(--popup-rule-color);
+      font:600 11.5px/1 var(--font-mono-alt);
+      color:var(--popup-value-color);
+      letter-spacing:.02em;
+    }
+    .notam-affected-chip-label{
+      font:600 9.5px/1 var(--font-ui);
+      letter-spacing:.08em;text-transform:uppercase;
+      color:var(--popup-section-meta-color);
+    }
+    .notam-row-prose{
+      margin:0 0 8px;
+      font:400 13px/1.5 var(--font-ui);
+      color:var(--popup-raw-color);
+    }
+
+    /* ===== Filter row above the accordion list ===== */
+    .notam-filter-row{
+      display:flex;align-items:center;gap:6px;
+      padding:10px 14px;
+      background:var(--popup-tabbar-bg);
+      border-bottom:1px solid var(--popup-rule-color);
+      overflow-x:auto;-webkit-overflow-scrolling:touch;
+      scrollbar-width:none;
+    }
+    .notam-filter-row::-webkit-scrollbar{display:none}
+    .notam-filter-chip{
+      display:inline-flex;align-items:center;gap:6px;
+      height:30px;padding:0 11px;border-radius:15px;
+      background:transparent;
+      box-shadow:inset 0 0 0 1px var(--popup-rule-color);
+      color:var(--popup-section-meta-color);
+      font:600 11.5px/1 var(--font-ui);
+      letter-spacing:.05em;text-transform:uppercase;
+      cursor:pointer;flex:0 0 auto;border:0;
+      transition:background .12s ease, color .12s ease, box-shadow .12s ease;
+    }
+    .notam-filter-chip:hover{background:rgba(255,255,255,.04);color:var(--popup-value-color)}
+    .notam-filter-chip.is-active{
+      background:var(--popup-tab-active-bg);
+      color:var(--popup-title-color);
+      box-shadow:inset 0 0 0 1px var(--popup-action-divider);
+    }
+    .notam-filter-chip-count{
+      display:inline-flex;align-items:center;justify-content:center;
+      min-width:20px;height:18px;padding:0 6px;border-radius:9px;
+      font:700 10px/1 var(--font-mono-alt);
+      letter-spacing:.02em;
+      background:rgba(255,255,255,.06);color:var(--popup-empty-color);
+    }
+    .notam-filter-chip[data-filter="critical"]    .notam-filter-chip-count{background:var(--sev-critical);    color:#fff}
+    .notam-filter-chip[data-filter="significant"] .notam-filter-chip-count{background:var(--sev-significant); color:#1a1408}
+    .notam-filter-chip[data-filter="advisory"]    .notam-filter-chip-count{background:var(--sev-advisory);    color:#fff}
+
+    /* ===== Empty state ===== */
+    .notam-empty{
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      gap:10px;padding:40px 20px;
+      color:var(--popup-empty-color);
+    }
+    .notam-empty-glyph{
+      width:32px;height:32px;border-radius:50%;
+      display:inline-flex;align-items:center;justify-content:center;
+      font:700 18px/1 var(--font-ui);
+      color:var(--ok, #6abf6a);
+      box-shadow:inset 0 0 0 1.5px var(--ok, #6abf6a);
+    }
+    .notam-empty-glyph::before{content:"\2713"}
+    .notam-empty-text{
+      font:500 14px/1.3 var(--font-ui);
+      color:var(--popup-value-color);
+    }
+    .notam-empty-sub{
+      font:500 11px/1 var(--font-mono-alt);
+      letter-spacing:.06em;text-transform:uppercase;
+      color:var(--popup-empty-color);
+    }
+    .notam-loading,.notam-error{
+      padding:24px 20px;text-align:center;
+      color:var(--popup-empty-color);
+      font:500 13px/1.4 var(--font-ui);
+    }
+    .notam-error{color:var(--sev-critical)}
+
+    /* ============================================================
+     * FREQUENCIES PIVOT (Phase 3) — All / Arrival / Departure toggle
+     * inside the v2 Frequencies accordion section. Layered on top of
+     * the existing renderRichFreqList markup so the regular grouped
+     * view co-exists with the gate-to-gate sequenced view.
+     * ============================================================ */
+    .popup-freq-pivot-row{
+      display:flex;align-items:center;gap:6px;
+      padding:6px 10px 8px;
+      margin-bottom:6px;
+      border-bottom:1px solid var(--popup-rule-color);
+    }
+    /* Drop the body's top padding for the frequencies section so the
+       pivot chips (or the rich freq list, in All mode) sit flush under
+       the section header. Scoped via the data-weather-section
+       attribute to avoid affecting other sections. We keep this off the
+       :has() route — that rule broke Chrome sticky scroll on the
+       sequenced list (Steve, 2026-05-07). */
+    .popup-section[data-weather-section="frequencies"] > .popup-section-body{
+      padding-top:0;
+    }
+    .popup-freq-pivot{
+      display:inline-flex;align-items:center;justify-content:center;
+      height:28px;padding:0 12px;border-radius:14px;
+      background:transparent;border:0;
+      box-shadow:inset 0 0 0 1px var(--popup-rule-color);
+      color:var(--popup-section-meta-color);
+      font:600 11.5px/1 var(--font-ui);
+      letter-spacing:.05em;text-transform:uppercase;
+      cursor:pointer;flex:0 0 auto;
+      transition:background .12s ease, color .12s ease, box-shadow .12s ease;
+    }
+    .popup-freq-pivot:hover{
+      background:var(--layer-toggle-bg-hover);
+      color:var(--popup-value-color);
+    }
+    .popup-freq-pivot.is-active{
+      background:var(--accent);
+      color:#fff;
+      box-shadow:inset 0 0 0 1px var(--accent);
+    }
+    .popup-freq-loading,.popup-freq-error{
+      padding:14px 12px;text-align:center;
+      color:var(--popup-empty-color);
+      font:500 12px/1.4 var(--font-ui);
+    }
+    .popup-freq-error{color:var(--sev-critical)}
+    /* Sequenced view: hand scroll over to the outer accordion body so we
+       have a single scroll container, not a nested pair. The default
+       .popup-freq-list cap (max-height clamp + overflow-y) was double-
+       scrolling against the .popup-accordion-body cap, leaving the last
+       row of a long arrival/departure list clipped past the inner cap
+       with no visible exit (Steve, 2026-05-07). */
+    .popup-freq-list.popup-freq-sequence{
+      max-height:none;
+      overflow:visible;
+    }
+    /* Same opt-out for the INFO scroll view (v3web#258): the base
+       .popup-freq-list cap made a NESTED scroller inside
+       .popup-info-scroll, and its overscroll-behavior:contain refused to
+       hand the gesture to the outer scroller at the list's end — you
+       could not scroll from Frequencies into Runways (Steve, 2026-08-08
+       bench). One scroll surface only. The base clamp still serves no
+       other popup (airport_popup is the sole emitter) but stays for the
+       accordion-era selectors until the family-wide cleanup. */
+    .popup-info-section .popup-freq-list{
+      max-height:none;
+      overflow:visible;
+      overscroll-behavior:auto;
+    }
+    /* Keep the pivot pinned to the top of the body while the list scrolls
+       so the user never loses the All/Arrival/Departure context on a
+       long list. Bg is the body bg so it cleanly overlays the rows
+       beneath. */
+    .popup-freq-pivot-row{
+      position:sticky;top:0;z-index:var(--z-popup-sticky-pivot);
+      /* opaque so list rows scrolling underneath don't bleed through */
+      background:var(--popup-panel-bg);
+    }
+    /* Stepped sequenced rows — a small step number sits to the left of
+       the row, indicating the gate-to-gate tuning order. */
+    .popup-freq-row-stepped{
+      position:relative;padding-left:34px;
+    }
+    .popup-freq-row-stepped::before{
+      content:attr(data-freq-step);
+      position:absolute;left:8px;top:10px;
+      width:20px;height:20px;border-radius:50%;
+      display:flex;align-items:center;justify-content:center;
+      font:700 10.5px/1 var(--font-mono-alt);
+      letter-spacing:.02em;
+      background:var(--accent);color:#fff;
+      box-shadow:0 0 0 1px rgba(0,0,0,.25);
+    }
+
+    /* ===== Glow policy: critical NOTAMs at night get a subtle alert glow ===== */
+    html[data-appearance="night"] .notam-tier[data-sev="critical"] .notam-tier-count{
+      box-shadow:0 0 0 1px rgba(0,0,0,.25), 0 0 10px var(--sev-critical-glow);
+    }
+    html[data-appearance="night"] .notam-row[data-sev="critical"]::before{
+      box-shadow:0 0 8px var(--sev-critical-glow);
+    }
+
+    /* ============================================================
+       Map-Point disclosure v2 — design-sandbox/scenes/mappoint.html.
+       Selectable rows (Tapped Point + Nearby Airports + Nearby
+       Navaids/Fixes); informational rows (Airspace, Nearest Center).
+       Class chips on airspace; ident chips on selectable rows.
+       Section bodies scroll independently so a long airspace stack
+       cannot push the next section's header off-screen.
+       ============================================================ */
+    /* Drop the section-body horizontal padding so selectable-row
+       highlights bleed edge-to-edge of the popup shell. The row
+       itself owns the inner gutter via its own padding. Scroll model
+       inherits from the global accordion rule (open body scrolls,
+       list does not). */
+    .weather-popup-panel-mappoint .popup-section-body{
+      padding:0;
+    }
+    /* Map-Point uses the priority-budget accordion (v3web#79). The
+       generic .weather-popup-body-overlay rule above sets display:block
+       so non-budget overlay popups (TFR, advisory) can scroll as a
+       single column. Budget mode instead needs a flex parent so the
+       list (.popup-accordion-list-budget, flex:1 1 auto) fills the
+       body and listEl.clientHeight reports the real container budget.
+       Without this override the list is content-sized and pass 2 has
+       nothing to redistribute, leaving slack as a visible gap below
+       the closed sections. Drop padding so the rows still bleed
+       edge-to-edge — the row paint owns the inset. */
+    .weather-popup-body-overlay.weather-popup-panel-mappoint{
+      display:flex;
+      flex-direction:column;
+      overflow:hidden;
+      padding:0;
+    }
+
+    .mappoint-list{display:flex;flex-direction:column}
+
+    /* Full-bleed selectable row. Padding is internal so the
+       selected/hover background paints corner-to-corner without an
+       outline (Apple list style). */
+    .mappoint-row{
+      display:flex;align-items:center;gap:12px;
+      width:100%;min-height:48px;padding:10px 14px;
+      background:transparent;border:0;border-radius:0;
+      border-top:1px solid var(--popup-rule-color);
+      color:inherit;font:inherit;text-align:left;cursor:pointer;
+      transition:background .12s ease;
+    }
+    .mappoint-row:first-child{border-top:0}
+    .mappoint-row:hover,
+    .mappoint-row:focus-visible{
+      background:var(--popup-section-body-bg, rgba(255,255,255,.05));
+      outline:none;
+    }
+    .mappoint-row.is-selected{
+      background:var(--popup-section-header-bg-hover, rgba(120,160,210,.16));
+    }
+    /* Non-selectable info rows (Nearest Center) — same layout, no
+       cursor/hover/click affordance. Implemented with a div, not a
+       button, so we don't need a separate disabled state. */
+    .mappoint-row.is-info{cursor:default}
+    .mappoint-row.is-info:hover,
+    .mappoint-row.is-info:focus-visible{background:transparent}
+
+    .mappoint-ident{
+      flex:0 0 auto;
+      display:inline-flex;align-items:center;justify-content:center;
+      min-width:60px;height:26px;padding:0 8px;border-radius:6px;
+      background:var(--icao-badge-bg);color:var(--icao-badge-fg);
+      font:600 12.5px/1 var(--font-mono-alt);
+      letter-spacing:.04em;
+      box-shadow:inset 0 0 0 1px var(--icao-badge-border);
+      text-align:center;
+    }
+    .mappoint-ident.is-coord{
+      gap:6px;min-width:64px;
+    }
+    .mappoint-ident.is-coord::before{
+      content:"\2316"; /* ⌖ position-target glyph */
+      font:500 13px/1 var(--font-ui);
+      opacity:.7;
+    }
+    /* Navaid chips get a green tint so they read distinct from the
+       default-tinted fix chips at a glance. Fixes keep the neutral
+       icao-badge tint. */
+    .mappoint-ident.is-navaid{
+      background:rgba(80,160,120,.22);
+      color:#a6d8bd;
+      box-shadow:inset 0 0 0 1px rgba(80,160,120,.55);
+    }
+
+    .mappoint-mid{
+      flex:1 1 auto;min-width:0;
+      display:flex;flex-direction:column;gap:2px;
+    }
+    .mappoint-name{
+      font:500 13.5px/1.2 var(--font-ui);
+      color:var(--popup-value-color);
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    }
+    .mappoint-sub{
+      font:500 11px/1 var(--font-ui);
+      color:var(--popup-section-meta-color);
+      letter-spacing:.05em;text-transform:uppercase;
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    }
+
+    .mappoint-end{
+      flex:0 0 auto;text-align:right;
+      display:flex;flex-direction:column;gap:3px;align-items:flex-end;
+    }
+    .mappoint-dist{
+      font:600 14px/1 var(--font-mono-alt);
+      color:var(--popup-value-color);
+      font-variant-numeric:tabular-nums;letter-spacing:.01em;
+    }
+    .mappoint-brg{
+      font:500 11px/1 var(--font-mono-alt);
+      color:var(--popup-section-meta-color);
+      font-variant-numeric:tabular-nums;letter-spacing:.04em;
+    }
+
+    /* Airspace rows: same row layout as mappoint-row but with a class
+       chip on the left and altitude band on the right. Not selectable
+       (an airspace polygon isn't a destination). Padding matches the
+       selectable rows so rules align across sections.
+       Expandable variant (SUA with controlling authority / freq) wraps
+       the row in a button + body div; the row itself becomes a column
+       container, the .mappoint-airspace-head carries the flex layout. */
+    .mappoint-airspace-row{
+      display:flex;align-items:center;gap:12px;
+      min-height:44px;padding:10px 14px;
+      border-top:1px solid var(--popup-rule-color);
+    }
+    .mappoint-airspace-row.is-expandable{
+      display:block;padding:0;align-items:initial;gap:0;
+    }
+    .mappoint-airspace-head{
+      display:flex;align-items:center;gap:12px;
+      min-height:44px;padding:10px 14px;width:100%;
+      background:transparent;border:0;color:inherit;font:inherit;text-align:left;
+      cursor:pointer;-webkit-tap-highlight-color:transparent;
+    }
+    .mappoint-airspace-head:focus-visible{
+      outline:2px solid var(--accent, #6ea7ff);outline-offset:-2px;
+    }
+    /* Match the section-header chevron's symbology and rotation: a right
+       angle-quote glyph at 0° (closed, points right) that rotates 90°
+       clockwise when open (points down). Drop the prior border-trick
+       caret which animated the opposite direction (down → up). */
+    .mappoint-airspace-chevron{
+      flex:0 0 14px;width:14px;height:14px;
+      display:inline-flex;align-items:center;justify-content:center;
+      color:inherit;opacity:.7;
+      transition:opacity .12s ease;
+    }
+    .mappoint-airspace-chevron::before{
+      content:"\203A";
+      font:600 16px/1 var(--font-ui);
+      color:currentColor;
+      display:block;
+      transform:rotate(0deg);
+      transform-origin:50% 50%;
+      transition:transform .18s cubic-bezier(.4,0,.2,1);
+    }
+    .mappoint-airspace-row.is-open .mappoint-airspace-chevron{opacity:1}
+    .mappoint-airspace-row.is-open .mappoint-airspace-chevron::before{
+      transform:rotate(90deg);
+    }
+    .mappoint-airspace-body{
+      padding:2px 14px 12px 14px;
+      display:flex;flex-direction:column;gap:6px;
+    }
+    /* author display:flex overrides UA [hidden]{display:none} — restore. */
+    .mappoint-airspace-body[hidden]{display:none}
+    .mappoint-airspace-detail{
+      display:flex;align-items:baseline;gap:10px;
+      font:500 13px/1.35 var(--font-ui);
+      color:var(--popup-value-color);
+    }
+    .mappoint-airspace-detail-label{
+      flex:0 0 auto;
+      font:500 11px/1 var(--font-ui);
+      color:var(--popup-section-meta-color);
+      letter-spacing:.05em;text-transform:uppercase;
+    }
+    .mappoint-airspace-detail-value{
+      flex:1 1 auto;min-width:0;
+      overflow-wrap:anywhere;
+    }
+    .mappoint-airspace-row:first-child{border-top:0}
+    /* Selection visual: cool-blue tint on the entire row to distinguish
+       "this is the active selection" from the operational active-red /
+       upcoming-amber activation tints. For expanded SUAs the body is a
+       descendant with no own background, so the tint flows through the
+       expanded panel naturally — matches Steve's "tint the entire
+       expanded row" spec. Bright-white map outline does the real work
+       of pointing at the polygon; this just answers "which row drew it?". */
+    .mappoint-airspace-row[data-selected="true"]{
+      background:rgba(94,160,255,.18);
+    }
+    .mappoint-airspace-class{
+      flex:0 0 auto;
+      display:inline-flex;align-items:center;justify-content:center;
+      min-width:42px;height:26px;padding:0 9px;border-radius:6px;
+      font:700 12px/1 var(--font-mono-alt);
+      letter-spacing:.06em;
+      background:var(--airspace-chip-bg, rgba(120,160,210,.16));
+      color:var(--airspace-chip-fg, #b8d3ff);
+      box-shadow:inset 0 0 0 1px var(--airspace-chip-border, rgba(120,160,210,.32));
+    }
+    /* Class chips hint at the on-map stroke colors so the popup
+       reads as "the same airspace you see drawn." Not exact —
+       chips need higher chroma to be legible at small size — but
+       in the same color family. Map strokes (constants.js):
+         B → #2878B6 (medium blue)
+         C → #8D3F60 (maroon)
+         D → #16487B (darker blue, dashed) */
+    .mappoint-airspace-class[data-class="B"]{
+      --airspace-chip-bg:rgba(40,120,182,.22);
+      --airspace-chip-fg:#9ec8ee;
+      --airspace-chip-border:rgba(40,120,182,.55);
+    }
+    .mappoint-airspace-class[data-class="C"]{
+      --airspace-chip-bg:rgba(141,63,96,.26);
+      --airspace-chip-fg:#e9b6c8;
+      --airspace-chip-border:rgba(141,63,96,.6);
+    }
+    .mappoint-airspace-class[data-class="D"]{
+      --airspace-chip-bg:rgba(22,72,123,.26);
+      --airspace-chip-fg:#8fb6db;
+      --airspace-chip-border:rgba(22,72,123,.6);
+    }
+    /* SUA chip color tinted by category. Falls through to the warm
+       default for OTHER/unknown SUA. Colors mirror constants.js
+       SUA_* strokes so the chip reads as "the same airspace you're
+       seeing on the map". */
+    .mappoint-airspace-class[data-class="SUA"]{
+      --airspace-chip-bg:rgba(154, 61, 115, .18);
+      --airspace-chip-fg:#e0a9c8;
+      --airspace-chip-border:rgba(154, 61, 115, .42);
+    }
+    /* PJA chip mirrors the magenta on-map glyph color so the popup
+       reads as "the same airspace you're seeing on the map". Sits in
+       its own magenta family, distinct from the maroon SUA chips. */
+    .mappoint-airspace-class[data-class="PJA"]{
+      --airspace-chip-bg:rgba(217, 70, 239, .18);
+      --airspace-chip-fg:#f3c4ff;
+      --airspace-chip-border:rgba(217, 70, 239, .48);
+    }
+    .mappoint-airspace-class[data-class="SUA"][data-sua="MOA"],
+    .mappoint-airspace-class[data-class="SUA"][data-sua="A"]{
+      --airspace-chip-bg:rgba(154, 61, 115, .18);
+      --airspace-chip-fg:#e0a9c8;
+      --airspace-chip-border:rgba(154, 61, 115, .42);
+    }
+    .mappoint-airspace-class[data-class="SUA"][data-sua="R"],
+    .mappoint-airspace-class[data-class="SUA"][data-sua="P"],
+    .mappoint-airspace-class[data-class="SUA"][data-sua="W"],
+    .mappoint-airspace-class[data-class="SUA"][data-sua="D"]{
+      --airspace-chip-bg:rgba(46, 120, 182, .18);
+      --airspace-chip-fg:#bcdcff;
+      --airspace-chip-border:rgba(46, 120, 182, .42);
+    }
+    .mappoint-airspace-mid{flex:1 1 auto;min-width:0}
+    .mappoint-airspace-name{
+      font:500 13.5px/1.2 var(--font-ui);
+      color:var(--popup-value-color);
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    }
+    .mappoint-airspace-sub{
+      font:500 11px/1 var(--font-ui);
+      color:var(--popup-section-meta-color);
+      letter-spacing:.05em;text-transform:uppercase;
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    }
+    .mappoint-airspace-end{
+      flex:0 0 auto;text-align:right;
+      font:600 13px/1 var(--font-mono-alt);
+      color:var(--popup-value-color);
+      font-variant-numeric:tabular-nums;letter-spacing:.01em;
+      white-space:nowrap;
+    }
+
+    /* Stadium TFR upcoming-events list. MLB stadiums can have 80+
+       scheduled games at once, so the list lives in a fixed-height
+       scroll container rather than expanding the popup body. Three-
+       column row: league chip · event name · start time. */
+    .popup-event-list{
+      display:flex;flex-direction:column;
+      max-height:clamp(160px, 28vh, 280px);
+      overflow-y:auto;-webkit-overflow-scrolling:touch;
+      margin:-4px -2px;
+    }
+    .popup-event-row{
+      display:grid;
+      grid-template-columns: 56px 1fr auto;
+      align-items:center;gap:10px;
+      padding:8px 10px;min-height:36px;
+      border-top:1px solid var(--popup-rule-color);
+    }
+    .popup-event-row:first-child{border-top:0}
+    .popup-event-league{
+      flex:0 0 auto;justify-self:start;
+      display:inline-flex;align-items:center;justify-content:center;
+      min-width:48px;height:22px;padding:0 8px;border-radius:5px;
+      background:var(--icao-badge-bg, rgba(120,160,210,.18));
+      color:var(--icao-badge-fg, #c8dcf2);
+      font:700 10.5px/1 var(--font-mono-alt);
+      letter-spacing:.06em;text-transform:uppercase;
+    }
+    .popup-event-league-empty{visibility:hidden}
+    .popup-event-name{
+      min-width:0;
+      font:500 13px/1.25 var(--font-ui);
+      color:var(--popup-value-color);
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    }
+    .popup-event-time{
+      flex:0 0 auto;text-align:right;
+      font:600 12px/1 var(--font-mono-alt);
+      color:var(--popup-section-meta-color, var(--popup-value-color));
+      font-variant-numeric:tabular-nums;letter-spacing:.01em;
+      white-space:nowrap;
+    }
+
+    /* ── Flights (S2 workspace) — filing / briefing / pilot link ─────────
+       Full-bleed recipe copied from .procedures-overlay. Plan:
+       ~/shared/plans/flights_feature_plan_2026-08-12.md §6. */
+    .flights-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: var(--z-dialog); /* quick fix: above content-area chrome (max 20) — see z-layering plan */
+      display: flex;
+      align-items: stretch;
+      justify-content: stretch;
+      padding: 0;
+      background: var(--bg-panel);
+    }
+    .flights-overlay[hidden] { display: none; }
+    .flights-modal {
+      width: 100%;
+      height: 100%;
+      border-radius: 0;
+      border: 0;
+      background: transparent;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      overflow: hidden;
+    }
+    .flights-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 14px;
+      border-bottom: 1px solid var(--line);
+    }
+    .flights-title {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      white-space: nowrap;
+    }
+    /* Contract rule: any stub:true response must be visibly labeled so a
+       canned briefing can never be mistaken for the real service. */
+    .flights-stub-banner {
+      flex: 1;
+      text-align: center;
+      font: 600 11px/1.4 var(--font-mono-alt);
+      letter-spacing: 0.06em;
+      color: #ffd65b;
+      border: 1px solid rgba(255, 214, 91, 0.45);
+      border-radius: 6px;
+      padding: 3px 8px;
+      background: rgba(255, 214, 91, 0.08);
+    }
+    .flights-body {
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 18px 14px 28px;
+    }
+    .flights-view { display: flex; justify-content: center; }
+    .flights-view[hidden] { display: none; }
+    .flights-card {
+      width: min(560px, 100%);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      background: var(--bg-well-2);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 16px 18px 20px;
+    }
+    .flights-section-title {
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      margin-top: 6px;
+    }
+    .flights-copy {
+      margin: 0;
+      font-size: 0.85rem;
+      line-height: 1.45;
+      color: var(--text-primary);
+    }
+    .flights-dim { color: var(--text-dim); }
+    .flights-field {
+      display: grid;
+      grid-template-columns: 96px 1fr;
+      align-items: center;
+      gap: 10px;
+    }
+    .flights-field > span {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+    .flights-field > input {
+      font-size: 0.95rem;
+      color: var(--text-primary);
+      background: var(--bg-well);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px 10px;
+      min-width: 0;
+    }
+    .flights-field > input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    .flights-primary-btn {
+      margin-top: 6px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #04121d;
+      background: var(--accent);
+      border: 0;
+      border-radius: 8px;
+      padding: 10px 14px;
+      cursor: pointer;
+    }
+    /* Disabled = unmistakably gray (Steve 2026-08-12: opacity alone did
+       not read as disabled on the bench). */
+    .flights-primary-btn:disabled {
+      background: var(--bg-well);
+      color: var(--text-dim);
+      border: 1px solid var(--line);
+      cursor: default;
+    }
+    .flights-status {
+      font-size: 0.84rem;
+      line-height: 1.4;
+      border-radius: 8px;
+      padding: 8px 10px;
+      border: 1px solid var(--line);
+      color: var(--text-primary);
+      background: var(--bg-well);
+      white-space: pre-wrap;
+    }
+    .flights-status.is-error {
+      border-color: rgba(255, 0, 28, 0.5);
+      background: rgba(255, 0, 28, 0.08);
+    }
+    .flights-status.is-ok {
+      border-color: rgba(74, 222, 128, 0.45);
+      background: rgba(74, 222, 128, 0.07);
+    }
+    .flights-spa-card {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .flights-steps {
+      margin: 0;
+      padding-left: 20px;
+      font-size: 0.85rem;
+      line-height: 1.6;
+      color: var(--text-primary);
+    }
+
+    /* Flights list (C1) */
+    .flights-list-col {
+      width: min(680px, 100%);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .flights-cards { display: flex; flex-direction: column; gap: 8px; }
+    .flights-flight-card {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px;
+      background: var(--bg-well-2);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+    }
+    .flights-flight-route {
+      font-size: 1.02rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: 0.02em;
+    }
+    .flights-flight-sub {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin-top: 2px;
+    }
+    .flights-flight-side {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      justify-content: flex-end;
+      max-width: 45%;
+    }
+    .flights-chip {
+      font: 700 10.5px/1 var(--font-mono-alt);
+      letter-spacing: 0.06em;
+      border-radius: 6px;
+      padding: 4px 7px;
+      border: 1px solid var(--line);
+      color: var(--text-secondary);
+      background: var(--bg-well);
+      white-space: nowrap;
+    }
+    .flights-chip--draft   { color: var(--text-secondary); }
+    .flights-chip--filed   { color: #7fc7f2; border-color: rgba(47,158,229,.5); }
+    .flights-chip--active  { color: #4ade80; border-color: rgba(74,222,128,.5); background: rgba(74,222,128,.08); }
+    .flights-chip--closed  { color: var(--text-dim); }
+    .flights-chip--cancelled { color: var(--text-dim); text-decoration: line-through; }
+    .flights-chip--rejected,
+    .flights-chip--error   { color: #ff6b7d; border-color: rgba(255,0,28,.5); }
+    .flights-chip--wx_outage { color: #ffd65b; border-color: rgba(255,214,91,.5); }
+    .flights-chip--indeterminate { color: #ffd65b; }
+    .flights-chip--sim     { color: #c792ea; border-color: rgba(199,146,234,.5); }
+    .flights-chip--atc     { color: #ffd65b; border-color: rgba(255,214,91,.6); background: rgba(255,214,91,.1); }
+
+    /* Account section sub-containers: give the linked summary breathing
+       room above Unlink (they are plain divs, outside the card's gap). */
+    #flights-account-unlinked,
+    #flights-account-linked {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    /* Flight editor (C1 slice 3) */
+    .flights-editor-head {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .flights-editor-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: 0.02em;
+    }
+    .flights-select {
+      min-width: 0;
+      font-size: 0.9rem;
+      color: var(--text-primary);
+      background: var(--bg-well);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px 10px;
+    }
+    .flights-field--stack { grid-template-columns: 1fr; }
+    .flights-field--stack > span { margin-bottom: 2px; }
+    .flights-field > input[type="datetime-local"] { font-size: 0.9rem; }
+    .flights-field > input:disabled,
+    .flights-select:disabled { color: var(--text-dim); }
+    .flights-codes {
+      font: 600 12.5px/1.6 var(--font-mono-alt);
+      color: var(--text-primary);
+      background: var(--bg-well);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px 10px;
+      letter-spacing: 0.02em;
+      white-space: pre-wrap;
+    }
+    .flights-editor-actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-top: 6px;
+    }
+    .flights-editor-actions .flights-primary-btn { margin-top: 0; flex: 1; }
+
+    /* Live "still needed" checklist — informative amber, not failure red. */
+    .flights-status.is-warn {
+      border-color: rgba(255, 214, 91, 0.45);
+      background: rgba(255, 214, 91, 0.06);
+      color: var(--text-primary);
+    }
+
+    /* Departure-time validity (cutoff rules) */
+    .flights-field > input.flights-input-invalid {
+      border-color: rgba(255, 0, 28, 0.65);
+      background: rgba(255, 0, 28, 0.07);
+    }
+    .flights-field > input.flights-input-warn {
+      border-color: rgba(255, 214, 91, 0.6);
+    }
+    .flights-flight-sub--stale { color: #ffd65b; }
+
+    /* Briefing view (Phase D) */
+    .flights-summary {
+      white-space: pre-wrap;
+      background: var(--bg-well);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px 12px;
+      max-height: 40vh;
+      overflow-y: auto;
+    }
+    /* WX_OUTAGE is sacred: full-stop treatment, never a toast. */
+    .flights-outage {
+      font-size: 1rem;
+      font-weight: 700;
+      padding: 16px;
+    }

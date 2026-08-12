@@ -1,0 +1,89 @@
+<div id="nav-flightplan-overlay" class="nav-flightplan-overlay" hidden>
+        <div class="nav-flightplan-modal" role="dialog" aria-modal="true" aria-labelledby="nav-flightplan-title">
+          <div class="nav-flightplan-head">
+            <div class="nav-flightplan-title" id="nav-flightplan-title">Flight Plan</div>
+            <button id="nav-flightplan-close" class="nav-flightplan-close" type="button" aria-label="Close flight plan">X</button>
+          </div>
+          <div class="nav-flightplan-meta">
+            <div id="nav-flightplan-status" class="nav-flightplan-status"></div>
+          </div>
+          <div class="nav-flightplan-body">
+            <div id="nav-flightplan-edit-view" class="nav-flightplan-edit-view">
+              <div id="nav-flightplan-token-surface" class="nav-flightplan-token-surface" tabindex="0">
+                <div id="nav-flightplan-chip-list" class="nav-flightplan-chip-list"></div>
+                <span class="nav-flightplan-cursor" aria-hidden="true"></span>
+                <input id="nav-flightplan-token-input" class="nav-flightplan-token-input" type="text" inputmode="text" autocomplete="off" autocapitalize="characters" maxlength="5" placeholder="Enter waypoint">
+              </div>
+              <div id="nav-flightplan-invalid-hint" class="nav-flightplan-invalid-hint"></div>
+            </div>
+            <div id="nav-flightplan-legs-view" class="nav-flightplan-legs-view" hidden>
+              <div class="nav-flightplan-legs-wrap">
+                <table class="nav-flightplan-legs-table">
+                  <thead>
+                    <tr>
+                      <th>From</th>
+                      <th>To</th>
+                      <th>Dist.</th>
+                      <th>ETE</th>
+                      <th>Gal.</th>
+                    </tr>
+                  </thead>
+                  <tbody id="nav-flightplan-legs-body"></tbody>
+                </table>
+              </div>
+              <div class="nav-flightplan-legs-totals">
+                <div class="nav-flightplan-total">
+                  <div id="nav-flightplan-total-distance" class="nav-flightplan-total-value">--</div>
+                  <div class="nav-flightplan-total-label">Total Dist.</div>
+                </div>
+                <div class="nav-flightplan-total">
+                  <div id="nav-flightplan-total-ete" class="nav-flightplan-total-value">--:--</div>
+                  <div class="nav-flightplan-total-label">Total Time</div>
+                </div>
+                <div class="nav-flightplan-total">
+                  <div id="nav-flightplan-total-fuel" class="nav-flightplan-total-value">--</div>
+                  <div class="nav-flightplan-total-label">Total Fuel</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="nav-flightplan-fields">
+            <button id="nav-flightplan-field-aircraft" class="nav-flightplan-field" type="button">
+              <span id="nav-flightplan-aircraft-value" class="nav-flightplan-field-value">----</span>
+              <span class="nav-flightplan-field-label">Aircraft</span>
+            </button>
+            <button id="nav-flightplan-field-cruise" class="nav-flightplan-field" type="button">
+              <span id="nav-flightplan-cruise-value" class="nav-flightplan-field-value">-----</span>
+              <span class="nav-flightplan-field-label">Cruise</span>
+            </button>
+            <button id="nav-flightplan-field-depart-time" class="nav-flightplan-field" type="button">
+              <span id="nav-flightplan-depart-time-value" class="nav-flightplan-field-value">--:--</span>
+              <span class="nav-flightplan-field-label">Depart Time</span>
+            </button>
+            <button id="nav-flightplan-field-depart-day" class="nav-flightplan-field" type="button">
+              <span id="nav-flightplan-depart-day-value" class="nav-flightplan-field-value">--</span>
+              <span class="nav-flightplan-field-label">Depart Day</span>
+            </button>
+            <button id="nav-flightplan-field-souls" class="nav-flightplan-field" type="button">
+              <span id="nav-flightplan-souls-value" class="nav-flightplan-field-value">2</span>
+              <span class="nav-flightplan-field-label">Souls</span>
+            </button>
+          </div>
+          <div class="nav-flightplan-actions">
+            <button id="nav-flightplan-leg-toggle" class="secondary" type="button">Legs</button>
+            <button id="nav-flightplan-pack" class="secondary nav-flightplan-pack" type="button" aria-label="Pack this route for offline use" title="Pack for offline" hidden>
+              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" d="M4 8.5h16v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-11Z"/><path fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" d="M9 8.5V6a1.5 1.5 0 0 1 1.5-1.5h3A1.5 1.5 0 0 1 15 6v2.5M12 11.5v6"/></svg>
+              <span>Pack</span>
+            </button>
+            <button id="nav-flightplan-reverse" class="secondary" type="button">Rev</button>
+            <button id="nav-flightplan-proc" class="secondary" type="button" disabled>Proc</button>
+            <button id="nav-flightplan-brief" class="secondary" type="button">Brief</button>
+            <button id="nav-flightplan-file" class="secondary" type="button">Flights</button>
+            <button id="nav-flightplan-share" class="secondary nav-flightplan-share" type="button" aria-label="Share this plan with a nearby device" title="Share plan" hidden>
+              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" d="M8 9.5H6.5A1.5 1.5 0 0 0 5 11v8.5A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5V11a1.5 1.5 0 0 0-1.5-1.5H16M12 14.5V3.5M8.5 7 12 3.5 15.5 7"/></svg>
+              <span>Share</span>
+            </button>
+            <button id="nav-flightplan-clear" class="secondary nav-flightplan-danger" type="button">Clear</button>
+          </div>
+        </div>
+      </div>

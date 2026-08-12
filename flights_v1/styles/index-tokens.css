@@ -1,0 +1,763 @@
+/*
+ * FlightBoxV3 — design tokens
+ *
+ * REFRESH (Airport disclosure v2):
+ *   - Chrome typography moved off Menlo onto SF/system, Menlo retained for tabular data.
+ *   - Popup palette retuned: neutral panels (cooler, less greenish), 10px radius,
+ *     hairline rules at 30% alpha (was 28% solid).
+ *   - Day mode forked properly: high-contrast warm-white background, deeper text,
+ *     no thin hairlines (≥1.5px equivalents via box-shadow).
+ *   - New severity token family (--sev-*) — generalizes to NOTAMs, SIGMETs, CWAs.
+ *   - Weather category tokens (--wx-vfr/mvfr/ifr/lifr-*) — higher chip contrast
+ *     than canvas tile fills, tunable independently.
+ *   - ICAO badge tokens. Tab-bar tokens. Action-button tokens.
+ *
+ * Naming rule: edit values in place; only add new tokens for genuinely new
+ * design vocabulary (severity, wx categories, badges).
+ */
+
+:root{
+  /* ------- Frame (unchanged geometry) ------- */
+  --bg: #0c1a24;
+  --panel: #102737;
+  --panel-2: #173247;
+  --text: #e8f2f8;
+  --muted: #9bb8c8;
+  --accent: #2f9ee5;
+  --danger: #ff6b6b;
+  --ok: #2ecc71;
+  --border: #2a4a5f;
+
+  /* Phase 4: the status bar went from a 28px text strip under the iOS system
+     bar to a 52px band that replaces it. Geometry, so it lives in :root and
+     applies to both chromes — only the palette forks. */
+  --health-bar-height: 52px;
+  /* One height for every control that sits IN that band — the timer well,
+     the FlightBox pill, the sensor segment group. They are different shapes
+     (two stacked lines vs one), so left to their intrinsic heights the
+     timers came out taller than the sensors and the row read as ragged.
+     Steve caught it on the first bench look. */
+  --status-control-height: 40px;
+  --soft-button-bar-height: 43px;
+  --map-nav-mode-size: 60px;
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --button-bar-height: calc(var(--soft-button-bar-height) + var(--safe-area-bottom));
+  --nav-dest-bottom-offset: 0px;
+  --replay-overlay-offset: 10px;
+
+  --soft-button-background: rgba(38, 46, 69, .85);
+  --soft-button-color: #ffffff;
+  /* Opaque form of the above. Used as the TEXT color of a toggled button,
+     which inverts fg/bg — a translucent value there would let the button
+     fill bleed through the glyphs. */
+  --soft-button-background-solid: #262e45;
+
+  /* ------- Popup shell ------- */
+  --popup-shell-width: min(380px, 100%);                 /* was 334px — small bump for v2 density. */
+  --popup-shell-radius: 10px;                            /* was 0 — sheet, not wallpaper. */
+  --popup-shell-bg: rgba(10, 22, 32, 0.94);              /* cooler, less greenish than rgba(0,0,0,.92) */
+  --popup-shell-border: 1px solid rgba(180, 205, 222, 0.14);
+  --popup-shell-shadow: 0 22px 44px rgba(0, 0, 0, 0.55), 0 2px 6px rgba(0,0,0,0.35);
+  --popup-edge-highlight: rgba(220, 235, 248, 0.22);     /* hairline along top edge */
+
+  /* Type sizes — kept stable so JS that reads them doesn't drift */
+  --popup-title-size: 17px;
+  --popup-data-size: 14px;
+  --popup-subtitle-size: 12px;
+  --popup-tab-size: 13px;
+  --popup-tab-height: 46px;
+  --popup-section-size: 13px;
+  --popup-section-header-height: 46px;
+
+  /* Header */
+  --popup-title-color: #f4f9fc;
+  --popup-subtitle-color: #94b3c8;
+
+  /* ICAO badge (new) */
+  --icao-badge-bg: rgba(255, 255, 255, 0.06);
+  --icao-badge-fg: #d6e7f3;
+  --icao-badge-border: rgba(180, 205, 222, 0.32);
+
+  /* Close button */
+  --popup-close-bg: rgba(255, 255, 255, 0.04);
+  --popup-close-bg-hover: rgba(255, 255, 255, 0.12);
+  --popup-close-border: rgba(180, 205, 222, 0.28);
+  --popup-close-fg: #d8e6f0;
+
+  /* Tabs — flat, system-typed */
+  --popup-tabbar-bg: rgba(8, 18, 26, 0.92);
+  --popup-tab-active-bg: rgba(15, 30, 42, 0.96);
+  --popup-tab-active-color: #f4f9fc;
+  --popup-tab-active-rule: var(--accent);
+  --popup-tab-idle-bg: transparent;
+  --popup-tab-idle-color: #93b0c4;
+  --popup-tab-divider: rgba(180, 205, 222, 0.10);
+
+  /* Body / panels */
+  --popup-panel-bg: rgba(13, 26, 36, 0.97);
+
+  /* Section headers — was a bright gray slab; now a quiet rule + dim header */
+  --popup-section-header-bg: rgba(20, 38, 52, 0.85);
+  --popup-section-header-bg-hover: rgba(28, 50, 68, 0.92);
+  --popup-section-header-color: #c0d6e5;
+  --popup-section-body-bg: transparent;
+  --popup-section-meta-color: #8aa9bf;
+
+  --popup-rule-color: rgba(180, 205, 222, 0.10);
+
+  /* KV grid */
+  --popup-label-color: #7fa6c0;          /* was #6db6ff — quieter, less neon */
+  --popup-value-color: #f0f6fa;
+  --popup-empty-color: #adc1d0;
+  --popup-raw-color: #c8dceb;
+
+  /* Action row */
+  --popup-action-bg: rgba(18, 34, 48, 0.96);
+  --popup-action-bg-hover: rgba(28, 50, 68, 0.96);
+  --popup-action-bg-press: rgba(38, 64, 84, 0.96);
+  --popup-action-color: #d8eaf5;
+  --popup-action-divider: rgba(180, 205, 222, 0.14);
+
+  /* ===== Layer toggle (Map Layers v2) — checkbox/radio rows + slider thumb. ===== */
+  --layer-toggle-bg-hover: rgba(255, 255, 255, 0.04);
+  --layer-toggle-bg-press: rgba(255, 255, 255, 0.08);
+  --layer-check-bg: rgba(0, 0, 0, 0.25);
+  --layer-check-border: rgba(180, 205, 222, 0.35);
+
+  /* ===== Severity (new) — generalizes to NOTAM, SIGMET, CWA ===== */
+  --sev-critical: #ff5757;
+  --sev-critical-bg: rgba(255, 87, 87, 0.16);
+  --sev-critical-glow: rgba(255, 87, 87, 0.45);
+  --sev-significant: #f5a623;
+  --sev-significant-bg: rgba(245, 166, 35, 0.16);
+  --sev-advisory: #4aa8e8;
+  --sev-advisory-bg: rgba(74, 168, 232, 0.14);
+  --sev-info: #7a8ea0;
+  --sev-info-bg: rgba(122, 142, 160, 0.14);
+
+  /* ===== Weather category (new) — chips, tuned for chip contrast at 22px. ===== */
+  --wx-vfr-bg: #2c8a4a;          --wx-vfr-fg: #f0fff5;   --wx-vfr-border: #3ea864;
+  --wx-mvfr-bg: #2867b5;         --wx-mvfr-fg: #eef6ff;  --wx-mvfr-border: #3a82d2;
+  --wx-ifr-bg: #c8362f;          --wx-ifr-fg: #fff2f1;   --wx-ifr-border: #e04a43;
+  --wx-lifr-bg: #8b3aa8;         --wx-lifr-fg: #fbeefb;  --wx-lifr-border: #a94fc8;
+
+  /* ============================================================
+   * GLOW-UP vocabulary (Phase 1). Declared HERE with legacy-equivalent
+   * values so that with the Precision flag OFF the app renders exactly as
+   * it always has. The Precision block below overrides only the COLOR and
+   * TYPE half of these — never the geometry.
+   * ============================================================ */
+
+  /* Type stacks. --font-mono was already referenced (with an inline Menlo
+     fallback) at 5 sites before it was ever defined; defining it here
+     activates those. */
+  --font-ui: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', system-ui, sans-serif;
+  --font-mono: Menlo, Consolas, Monaco, monospace;
+  /* <body> default, which everything without its own stack inherits. Legacy
+     really was monospace app-wide; Precision moves it to the UI face. Kept
+     separate from --font-ui so flag-off still inherits mono exactly. */
+  --font-body: var(--font-mono);
+  /* The winds-aloft table asked for ui-monospace (SF Mono on iOS), not Menlo.
+     Kept as its own token so flag-off preserves that face exactly; Precision
+     collapses it onto Plex Mono with everything else. Retire at Phase 4. */
+  --font-mono-alt: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* Surfaces — CD's names, mapped onto today's palette when the flag is off.
+     --bg-app is the FRAME base (#app-frame / map / SVS), which was #08131b —
+     distinct from the old --bg (#0c1a24) used by the body backdrop. */
+  --bg-app: #08131b;
+  --bg-panel: #102737;
+  --bg-deep: #08131b;
+  --bg-well: #173247;
+  --bg-well-2: #0d2130;
+  /* The <body> backdrop behind the frame. Legacy is the old blue radial;
+     Precision flattens it — CD's frame is a single deep surface with the
+     depth coming from the card shadows instead. */
+  --app-backdrop: radial-gradient(circle at 20% 10%, #163650, #0c1a24);
+
+  /* Text ramp. --text / --muted already exist; these extend the ramp down. */
+  --text-primary: #e8f2f8;
+  --text-secondary: #c9dce8;
+  --text-dim: #9bb8c8;
+  --text-dimmest: #7fa0b3;
+  --text-disabled: #4a6478;   /* empty data fields: "———", "--:--" */
+
+  /* Accent. --accent-rgb exists so rules can compose their own alphas
+     without hardcoding the hue a second time. */
+  --accent-on-dark: #7fc7f2;
+  --accent-rgb: 47, 158, 229;
+  /* Label colour ON a filled-accent control. There was no token for "text on
+     accent" before Round 2, so filled buttons picked white and lost contrast
+     against the lighter accents. Near-black reads on all four registered
+     accents; a genuinely dark accent would have to override this alongside
+     --accent itself. */
+  --accent-ink: #04121F;
+
+  /* Semantic status. --ok and --danger already exist above. */
+  --caution: #ffd65b;
+  --destructive: #ff6b6b;
+
+  /* Hairlines — three weights, ordered lightest to heaviest. */
+  --hairline: rgba(255, 255, 255, 0.06);
+  --line: rgba(255, 255, 255, 0.08);
+  --line-strong: rgba(255, 255, 255, 0.10);
+
+  /* Radii. GEOMETRY — the Precision block must NOT touch these; the card
+     system lands in Phase 2 where the geometry change is the point. */
+  --radius-card: 0px;
+  --radius-tile: 8px;
+  --radius-tool: 10px;
+  --radius-pill: 999px;
+
+  /* Elevation */
+  --shadow-frame: none;
+  --shadow-dialog: 0 22px 44px rgba(0, 0, 0, 0.55);
+
+  /* Zone geometry. Phase 2/3 animate these; declared now so both chrome
+     variants read from one place. */
+  /* Nav data strip — CD's "data disclosure", docked at the map card bottom. */
+  --data-strip-bg: rgba(8, 19, 27, 0.75);
+  --data-strip-rule: rgba(100, 120, 140, 0.25);
+  --data-strip-fg: rgba(214, 232, 245, 0.8);
+  --data-strip-label: rgba(193, 213, 226, 0.7);
+  --data-strip-value: #f7fbff;
+
+  /* Tool rail (inside the map card, top-right). Two surfaces, not one:
+     --tool-btn-bg is the generic .map-nav-btn, --tool-tile-bg is the darker
+     override the rail applies to its mode tiles. They were different literals
+     before and must stay different, or flag-off shifts the rail. */
+  --tool-btn-bg: rgba(8, 24, 36, 0.78);
+  --tool-tile-bg: rgba(0, 0, 0, 0.25);
+  --tool-tile-border: rgba(96, 139, 166, 0.5);
+  --tool-tile-fg: #d8f1ff;
+
+  /* Button bar (zone 4) surfaces. */
+  --button-bar-bg: transparent;
+  --button-bar-rule: rgba(118, 148, 183, 0.28);
+  --button-bar-rule-strong: rgba(118, 148, 183, 0.38);
+
+  /* Status bar (zone 1) surfaces. Broken out because Phase 4 rebuilds this
+     band wholesale and it needs its own handles before then. */
+  --status-bar-bg: rgba(38, 46, 69, 0.85);
+  --status-bar-rule: rgba(255, 255, 255, 0.18);
+  --status-cell-rule: rgba(255, 255, 255, 0.2);
+  --status-cell-fg: #ffffff;
+  --status-cell-amber: #ffd65b;
+  --status-cell-red: #ff4a52;
+  /* Grey — "intentionally not evaluating", a third state alongside green and
+     the fault colours. Must read as clearly DIMMED rather than as a colour of
+     its own, so it cannot be mistaken for a fault at a glance in the cockpit. */
+  --status-cell-grey: rgba(255, 255, 255, 0.38);
+  /* Segmented-control surfaces (Phase 4: timer well + sensor group). These
+     must be SOLID, not alpha: the 1px dividers are the group background
+     showing through a flex gap, which is what lets a capability-hidden
+     segment collapse without leaving a stray rule behind. */
+  --status-seg-bg: #262e45;
+  --status-seg-rule: #3a4460;
+  --status-seg-border: rgba(255, 255, 255, 0.18);
+
+  /* Card system (Phase 2). Legacy values are the identity element — 0 gutter,
+     0 radius, 0-width border — so the same rules compile to today's
+     edge-to-edge layout with the flag off. Width and color are separate
+     tokens deliberately: a `border:` shorthand would hide the color from a
+     grep the same way `font:` hid the family in Phase 1. */
+  /* Card spacing, split in two because the two distances are different
+     numbers and always were: how far a card sits from the SCREEN edge, and
+     how far two cards sit from EACH OTHER. Both 0 in legacy. */
+  --gutter-edge: 0px;
+  --gutter-gap: 0px;
+  --card-border-width: 0px;
+  --card-border-color: transparent;
+  --profile-band-top-width: 1px;
+  --profile-band-top-color: var(--border);
+  --status-bar-height: var(--health-bar-height);
+  --button-bar-pad: 0px;      /* FlightBar alignment squeeze — see Phase 3 */
+
+  /* ------- Surface system (Round 2) -------
+     The vertical scale every docked card, dialog, popover and banner is
+     built from. See ~/shared/glowup_round2_plan.md §3.2 — that document is
+     the contract, and it resolves the two places CD's own bundle contradicts
+     itself on these numbers.
+
+     Unlike the card-system tokens above, these have NO legacy counterpart to
+     compile back to: none of these surfaces exist in the pre-glow-up app, so
+     there is no identity element to preserve. Real values live here in the
+     base block and the Precision block does not re-declare them.
+
+     Heights are BORDER-BOX totals — rules and padding included. A 44 target
+     measures 44. Do not add padding on top of these. */
+  --band-height: 34px;              /* section band */
+  --band-height-disclosure: 44px;   /* section band that is also a tap target */
+  --row-data: 38px;                 /* read-only data row — the ONE height
+                                       below the 44 floor. Nothing in these
+                                       rows is tappable, and the density is
+                                       what makes the block scannable. */
+  --row-module: 48px;               /* module / link row */
+  --row-list: 55px;                 /* tappable list row = the in-flight floor.
+                                       NOT 44 — CD's oldest frame says 44 and
+                                       every frame after it says 55. */
+  --tap-min: 44px;                  /* square-control floor */
+  --sheet-header: 56px;             /* card / dialog / sheet header */
+  --radius-key: 7px;                /* in-app keyboard keys */
+  --keyboard-band: 322px;           /* in-app pad, landscape. Portrait (340)
+                                       and phone (276) land with the pad. */
+
+  /* ------- Card interior (r174) -------
+     Borrowed from iOS's inset-grouped list, because CD's three-plane scheme
+     did not survive contact with the hardware: --bg-deep / --bg-panel /
+     --bg-well sit 6-9 RGB units apart at the very bottom of the gamma curve,
+     where the eye cannot separate them — and through polarised lenses in
+     daylight they collapse entirely. iOS uses ~16 units per step and sits the
+     whole range higher. These are that spacing, in our blue-black hue.
+
+     Deliberately a SEPARATE set from --bg-*: raising --bg-panel app-wide
+     would move the map card, status bar and button bar too. This lifts the
+     inside of a card without touching the chrome around it.
+
+           app #0B0F14 (11,15,20)
+     -> card page #171C22 (23,28,34)   +12
+     -> group     #252B33 (37,43,51)   +14
+
+     What we do NOT borrow is iOS's 44pt row. Our tappable floor is 55 (plan
+     [R5]) and that is an in-flight decision, not a style one. */
+  --card-page: #171C22;
+  --card-group: #252B33;
+  --card-group-press: #2E353E;
+  /* Separators live INSIDE a group, on the lighter fill, so they need more
+     weight than --line does on the near-black panel. */
+  --card-separator: rgba(255, 255, 255, 0.10);
+  --radius-group: 10px;
+  /* Inset of a group from the card edge, and the space that separates one
+     group from the next. Sections are separated by SPACE and SHAPE, not by
+     rules — which is the actual fix for "everything reads as another row". */
+  --group-inset: 14px;
+  --group-gap: 26px;
+
+  /* Plate surface. Held as a PAIR so night inversion swaps both together —
+     inverting one alone produces black-on-black. Normal (day) pairing here;
+     the night-invert class swaps them. Independent of app appearance mode
+     and of iPad brightness: a white plate in a dark cockpit destroys night
+     vision, and dimming the iPad dims the map too. */
+  --plate-paper: #FFFFFF;
+  --plate-ink: #0A0D11;
+}
+
+html:not(.is-ios){--soft-button-bar-height: 56px}
+
+/* ════════════════════════════════════════════════════════════════════════
+ * PRECISION — the glow-up palette (CD direction 1a). The night chrome.
+ *
+ * This WAS the kill switch: through Phases 1–3 the block was scoped to
+ * <html data-chrome="precision"> and `__flightbox_setChrome('legacy')`
+ * flipped the whole app back to the old palette live on the iPad, with no
+ * rebuild. Phase 4 rebuilds zone 1 as new DOM, which a token switch cannot
+ * cover either way, and by then the look was decided — so the toggle came
+ * out (r158) and Precision is now unconditional.
+ *
+ * The two-block shape is deliberate and stays: the :root above is the base
+ * layer (every token the app defines), this is the Precision layer on top
+ * of it. Later block, same origin, so these win for anything they name and
+ * the base still supplies everything they don't. Anything you add here
+ * MUST already exist above, or it is a token with no fallback.
+ *
+ * Placed BEFORE the day-mode fork on purpose: the fork is
+ * html[data-appearance="day"] (0,0,1,1) against this block's (0,0,1,0), so
+ * day keeps winning and stays exactly as it is today. The Precision day
+ * pairing is Phase 7.
+ *
+ * The disclosure (--popup-*) is REPALETTED but NOT restructured — its
+ * sizes, heights and density tokens are deliberately absent below. Per
+ * Steve: card treatment yes, internal restyle no.
+ * ════════════════════════════════════════════════════════════════════════ */
+:root{
+  /* ------- Type ------- */
+  --font-ui: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-body: var(--font-ui);
+  --font-mono-alt: var(--font-mono);
+
+  /* ------- Surfaces ------- */
+  --bg-app: #0B0F14;
+  --bg-panel: #0E141B;
+  --bg-deep: #080B0F;
+  --bg-well: #131B24;
+  --bg-well-2: #0B1017;
+  --app-backdrop: #0B0F14;
+
+  /* Legacy aliases remapped so untokenized rules follow along. */
+  --bg: #0B0F14;
+  --panel: #0E141B;
+  --panel-2: #131B24;
+
+  /* ------- Text ------- */
+  --text-primary: #E6EDF3;
+  --text-secondary: #C3CCD6;
+  --text-dim: #8B98A6;
+  --text-dimmest: #6F7D8C;
+  --text-disabled: #3D4653;
+  --text: #E6EDF3;
+  --muted: #8B98A6;
+
+  /* ------- Accent (single). Overridden by the [data-accent] blocks. -------
+     ICE, not teal, as of Round 2 (Steve, 2026-07-26). Round 1's teal sat
+     20–30° from --ok green (#3FB984) in hue, so an accent-tinted "active"
+     chip and a green "sensor healthy" dot read as the same colour at a
+     glance — the exact glanceability failure the brief warns about. Ice is
+     unambiguously not a status colour, survives polarised lenses, and keeps
+     separation from the magenta course line.
+
+     Teal is NOT deleted — it stops being the default and stays available as
+     html[data-accent="teal"]. Nothing in any design distinguishes state by
+     accent-vs-green, so the accent remains freely swappable. */
+  --accent: #57B6F5;
+  --accent-on-dark: #9FD4FA;
+  --accent-rgb: 87, 182, 245;
+  --accent-ink: #04121F;
+
+  /* ------- Semantic status ------- */
+  --ok: #3FB984;
+  --caution: #E8B34A;
+  --destructive: #E5533D;
+  --danger: #E5533D;
+
+  /* ------- Borders ------- */
+  --hairline: rgba(255, 255, 255, 0.06);
+  --line: rgba(255, 255, 255, 0.08);
+  --line-strong: rgba(255, 255, 255, 0.10);
+  --border: rgba(255, 255, 255, 0.10);
+
+  /* ------- Elevation ------- */
+  --shadow-frame: 0 30px 80px rgba(0, 0, 0, 0.55);
+  --shadow-dialog: 0 30px 70px rgba(0, 0, 0, 0.55);
+
+  /* ------- Zone geometry (Phase 3) -------
+     Tool tiles at CD's 44px. Steve flagged this as Apple's bare MINIMUM
+     tappable size and possibly too small in turbulence — it is one token,
+     so raising it is a one-line change if the bench says so.
+     Bar height is 56 not CD's 76: CD measured the whole band, and on iPad
+     the safe-area inset (~20px home indicator) is added on top of this. */
+  --map-nav-mode-size: 55px;   /* 44 (CD) was too small on the bench — Steve */
+  --soft-button-bar-height: 56px;
+
+  /* ------- Card system (Phase 2) ------- */
+  /* 3pt to the screen edge, 6pt between cards (Steve, 2026-07-25) — on a
+     retina iPad that's 6 and 12 native px. Deliberately tight: the chart is
+     the instrument and every point of margin is chart the pilot doesn't
+     get. The gap is double the edge inset so two adjacent cards read as
+     separated by about the same visual weight as one card is from the
+     bezel. */
+  --gutter-edge: 3px;
+  --gutter-gap: 6px;
+  --radius-card: 14px;
+  --card-border-width: 1px;
+  --card-border-color: rgba(255, 255, 255, 0.06);
+  --profile-band-top-width: var(--card-border-width);
+  --profile-band-top-color: var(--card-border-color);
+
+  /* ------- Nav data strip ------- */
+  /* Translucent again (Steve, 2026-08-06): the strip floats over the map
+     card, and opaque paint was throwing away chart that was already being
+     drawn beneath it. Alpha only, no backdrop blur — the map canvas
+     repaints at frame rate under this and a blur would recomposite
+     continuously. */
+  --data-strip-bg: rgba(14, 20, 27, 0.65);
+  --data-strip-rule: rgba(255, 255, 255, 0.08);
+  --data-strip-fg: #C3CCD6;
+  /* Same color as --data-strip-value — Steve wants the function labels as
+     bright as the values (2026-08-06), not a receded gray. */
+  --data-strip-label: #E6EDF3;
+  --data-strip-value: #E6EDF3;
+
+  /* ------- Tool rail -------
+     0.88, not 0.72: the tiles float over the chart, and on a LIGHT basemap
+     (IFR Low is white) a translucent tile let the white through and washed
+     the accent tint out — the active state stopped reading. A more opaque
+     tile keeps the accent legible over any basemap without needing a
+     per-basemap accent. */
+  --tool-btn-bg: rgba(14, 20, 27, 0.88);
+  --tool-tile-bg: rgba(14, 20, 27, 0.88);
+  --tool-tile-border: rgba(255, 255, 255, 0.08);
+  --tool-tile-fg: #C3CCD6;
+
+  /* ------- Button bar (zone 4) ------- */
+  --button-bar-bg: #080B0F;
+  --button-bar-rule: rgba(255, 255, 255, 0.06);
+  --button-bar-rule-strong: rgba(255, 255, 255, 0.08);
+
+  /* ------- Status bar (zone 1) ------- */
+  --status-bar-bg: #0E141B;
+  --status-bar-rule: rgba(255, 255, 255, 0.08);
+  --status-cell-rule: rgba(255, 255, 255, 0.06);
+  --status-cell-fg: #C3CCD6;
+  --status-cell-amber: #E8B34A;
+  --status-cell-red: #E5533D;
+  /* See the note in the legacy block: dimmed, not a colour of its own. */
+  --status-cell-grey: #5A6672;
+  /* Solid, per the gap-as-divider note in the legacy block. #161C23 is
+     CD's rgba(255,255,255,.03) resolved over the #0E141B band. */
+  --status-seg-bg: #161C23;
+  --status-seg-rule: #1E262F;
+  --status-seg-border: rgba(255, 255, 255, 0.07);
+
+  /* ------- Soft buttons (bottom bar) ------- */
+  --soft-button-background: rgba(19, 27, 36, 0.85);
+  --soft-button-color: #E6EDF3;
+  --soft-button-background-solid: #131B24;
+
+  /* ------- Disclosure ------- */
+  /* Radius is the ONE geometry token Precision retunes, so the disclosure
+     matches the map card (Phase 2 card treatment: margins/padding/border/
+     radius, per Steve). Sizes, heights and density stay legacy. */
+  --popup-shell-radius: 14px;
+  --popup-shell-bg: rgba(14, 20, 27, 0.96);
+  --popup-shell-border: 1px solid rgba(255, 255, 255, 0.08);
+  --popup-shell-shadow: 0 30px 70px rgba(0, 0, 0, 0.55);
+  --popup-edge-highlight: rgba(230, 237, 243, 0.16);
+
+  --popup-title-color: #E6EDF3;
+  --popup-subtitle-color: #8B98A6;
+
+  /* Composed from the accent rather than restating it: these were literal
+     teal, so the accent swap would have left the ident badge the only teal
+     thing on screen — and __flightbox_setAccent() never moved it at all. */
+  --icao-badge-bg: rgba(var(--accent-rgb), 0.14);
+  --icao-badge-fg: var(--accent-on-dark);
+  --icao-badge-border: rgba(var(--accent-rgb), 0.32);
+
+  --popup-close-bg: rgba(255, 255, 255, 0.04);
+  --popup-close-bg-hover: rgba(255, 255, 255, 0.10);
+  --popup-close-border: rgba(255, 255, 255, 0.10);
+  --popup-close-fg: #C3CCD6;
+
+  --popup-tabbar-bg: rgba(11, 16, 23, 0.94);
+  --popup-tab-active-bg: rgba(19, 27, 36, 0.96);
+  --popup-tab-active-color: #E6EDF3;
+  --popup-tab-idle-color: #8B98A6;
+  --popup-tab-divider: rgba(255, 255, 255, 0.08);
+
+  --popup-panel-bg: #0E141B;
+  --popup-section-header-bg: rgba(19, 27, 36, 0.85);
+  --popup-section-header-bg-hover: rgba(26, 36, 47, 0.92);
+  --popup-section-header-color: #C3CCD6;
+  --popup-section-meta-color: #8B98A6;
+
+  --popup-rule-color: rgba(255, 255, 255, 0.08);
+
+  --popup-label-color: #8B98A6;
+  --popup-value-color: #E6EDF3;
+  --popup-empty-color: #3D4653;
+  --popup-raw-color: #C3CCD6;
+
+  --popup-action-bg: rgba(19, 27, 36, 0.96);
+  --popup-action-bg-hover: rgba(26, 36, 47, 0.96);
+  --popup-action-bg-press: rgba(34, 46, 60, 0.96);
+  --popup-action-color: #E6EDF3;
+  --popup-action-divider: rgba(255, 255, 255, 0.08);
+
+  --layer-toggle-bg-hover: rgba(255, 255, 255, 0.04);
+  --layer-toggle-bg-press: rgba(255, 255, 255, 0.08);
+  --layer-check-bg: rgba(0, 0, 0, 0.25);
+  --layer-check-border: rgba(255, 255, 255, 0.28);
+
+  /* ------- Severity: retuned to sit in the Precision palette ------- */
+  --sev-critical: #E5533D;
+  --sev-critical-bg: rgba(229, 83, 61, 0.16);
+  --sev-critical-glow: rgba(229, 83, 61, 0.45);
+  --sev-significant: #E8B34A;
+  --sev-significant-bg: rgba(232, 179, 74, 0.16);
+  --sev-advisory: #35D0BA;
+  --sev-advisory-bg: rgba(53, 208, 186, 0.14);
+  --sev-info: #6F7D8C;
+  --sev-info-bg: rgba(111, 125, 140, 0.14);
+}
+
+/* ── Accent registry ────────────────────────────────────────────────────
+ * Swapping the accent is a single attribute: <html data-accent="…">, or
+ * __flightbox_setAccent('violet') live on the device. Higher specificity
+ * (0,0,1,1) than the Precision block above, so these always win.
+ *
+ * RESOLVED (Steve, 2026-07-26): the teal/green collision flagged here was
+ * real, and ice is now the shipped default (see the Precision block above).
+ * Teal stays registered so nothing is lost. "ice" below is kept in sync with
+ * the default deliberately — two different blues both called ice is how a
+ * palette starts drifting.
+ *
+ * --accent-ink is inherited from the Precision block by all four: every
+ * registered accent is light enough for near-black label text. A dark accent
+ * added later must override it here alongside --accent.
+ * ──────────────────────────────────────────────────────────────────── */
+html[data-accent="teal"]{
+  --accent: #35D0BA;  --accent-on-dark: #7FF0DF;  --accent-rgb: 53, 208, 186;
+}
+html[data-accent="ice"]{
+  --accent: #57B6F5;  --accent-on-dark: #9FD4FA;  --accent-rgb: 87, 182, 245;
+}
+html[data-accent="violet"]{
+  --accent: #9B8CFF;  --accent-on-dark: #C7BEFF;  --accent-rgb: 155, 140, 255;
+}
+html[data-accent="amber"]{
+  --accent: #F0A93C;  --accent-on-dark: #FFD08A;  --accent-rgb: 240, 169, 60;
+}
+
+/* ============================================================
+ * DAY MODE — sun-legible. Forked properly per CONSTRAINTS.md ask.
+ * Strategy: warm near-white panels, deep slate text, NO thin hairlines
+ * (use opaque 1px-shadow instead). Glows allowed (sun washes them).
+ * ============================================================ */
+html[data-appearance="day"]{
+  --bg: #e8eef2;
+  --panel: #ffffff;
+  --panel-2: #f3f6f9;
+  --text: #0e1a23;
+  --muted: #4a5e6e;
+  --border: #c4cfd8;
+
+  --popup-shell-bg: rgba(255, 255, 255, 0.98);
+  --popup-shell-border: 1px solid rgba(60, 84, 102, 0.32);
+  --popup-shell-shadow: 0 18px 40px rgba(8, 22, 34, 0.22), 0 2px 4px rgba(8,22,34,0.10);
+  --popup-edge-highlight: rgba(255, 255, 255, 0.70);
+
+  --popup-title-color: #0a141c;
+  --popup-subtitle-color: #4d6478;
+
+  --icao-badge-bg: rgba(20, 40, 56, 0.06);
+  --icao-badge-fg: #142838;
+  --icao-badge-border: rgba(20, 40, 56, 0.28);
+
+  --popup-close-bg: rgba(20, 40, 56, 0.04);
+  --popup-close-bg-hover: rgba(20, 40, 56, 0.10);
+  --popup-close-border: rgba(20, 40, 56, 0.30);
+  --popup-close-fg: #18283a;
+
+  --popup-tabbar-bg: #f0f4f7;
+  --popup-tab-active-bg: #ffffff;
+  --popup-tab-active-color: #0a141c;
+  --popup-tab-idle-color: #4d6478;
+  --popup-tab-divider: rgba(20, 40, 56, 0.12);
+
+  --popup-panel-bg: #ffffff;
+  --popup-section-header-bg: #f0f4f7;
+  --popup-section-header-bg-hover: #e6ecf1;
+  --popup-section-header-color: #1c2e3e;
+  --popup-section-body-bg: transparent;
+  --popup-section-meta-color: #56708a;
+
+  --popup-rule-color: rgba(20, 40, 56, 0.14);
+
+  --popup-label-color: #506b80;
+  --popup-value-color: #0a141c;
+  --popup-empty-color: #56708a;
+  --popup-raw-color: #1a2c3a;
+
+  --popup-action-bg: #ffffff;
+  --popup-action-bg-hover: #eef3f7;
+  --popup-action-bg-press: #dfe7ed;
+  --popup-action-color: #0a141c;
+  --popup-action-divider: rgba(20, 40, 56, 0.18);
+
+  /* Layer toggle — sun-legible variants */
+  --layer-toggle-bg-hover: rgba(20, 40, 56, 0.05);
+  --layer-toggle-bg-press: rgba(20, 40, 56, 0.10);
+  --layer-check-bg: rgba(20, 40, 56, 0.04);
+  --layer-check-border: rgba(20, 40, 56, 0.40);
+
+  /* Day chips: more saturation, white fg — survives sun on iPad */
+  --wx-vfr-bg: #1f7a3f;          --wx-vfr-fg: #ffffff;   --wx-vfr-border: #1f7a3f;
+  --wx-mvfr-bg: #1f5aa8;         --wx-mvfr-fg: #ffffff;  --wx-mvfr-border: #1f5aa8;
+  --wx-ifr-bg: #b62a25;          --wx-ifr-fg: #ffffff;   --wx-ifr-border: #b62a25;
+  --wx-lifr-bg: #762e96;         --wx-lifr-fg: #ffffff;  --wx-lifr-border: #762e96;
+}
+
+/* ============================================================================
+ * Z-INDEX SCALE  (v3web#270 · plan: ~/shared/plans/z_layering_plan_2026-08-12.md)
+ *
+ * Every z-index in the index-*.css sheets resolves through a token in this
+ * block. Raw numeric z-index outside this file FAILS the build — see
+ * assertNoRawZIndex() in tools/web-build.mjs. Tokens are named by ROLE, never
+ * by value, so a tier can be re-numbered here without hunting selectors.
+ *
+ * P1 (this pass) is value-for-value: the numbers below are exactly what the
+ * selectors carried before tokenization. The tiers below DESCRIBE what we
+ * inherited; P2 (isolate the map chrome) and P3 (move true floats to the
+ * browser top layer) are what collapse them.
+ *
+ * Tier model, bottom to top:
+ *
+ *   T1  Base / local        0-3   canvases, docked panels, sticky headers
+ *                                 inside a scroller. These compete only with
+ *                                 their own siblings.
+ *   T2  Map chrome          6-13  badges, buttons, nav data strips, map-
+ *                                 anchored panels and the S2 workspace
+ *                                 overlays that cover them. The crowded band;
+ *                                 P2 wraps it in one isolation:isolate context.
+ *   T2b Keyboard / modal    20    on-screen keyboard, body-level .modal.
+ *   T3  Workspace dialog    30    --z-dialog: the "above all content chrome"
+ *   T3b PDF viewer          32    line the P0 quick fix drew. KEEP AS-IS.
+ *   T4  Full-screen cover   40-50 splash, downloads — cover the whole app.
+ *   T4b Aircraft profile    95-110 fixed-position profile overlays + banner.
+ *   T5  Critical / float    1200+ safety alert banner, chip drag ghost.
+ *
+ * Same value + same role = one shared token (e.g. every map badge). Same
+ * value + different role = separate tokens, so P2/P3 can move one without
+ * dragging the others.
+ * ========================================================================== */
+:root{
+  /* T1 — map surface stack (inside #map-container) */
+  --z-map-base: 0;                 /* #world-base-canvas */
+  --z-map-terrain: 1;              /* #terrain-gl-canvas */
+  --z-map-weather: 2;              /* #weather-canvas */
+
+  /* T1 — SVS surface stack (inside .svs-container) */
+  --z-svs-base: 0;                 /* #svs-gl-canvas */
+  --z-svs-hud: 1;                  /* #svs-hud-canvas */
+  --z-svs-pfd: 2;                  /* PFD overlay above the HUD */
+
+  /* T1 — docked content panels (flex siblings of the map) */
+  --z-content-panel: 2;
+  --z-content-modal: 3;            /* #content-area > .modal (in-pane modal) */
+
+  /* T1 — sticky chrome INSIDE a popup scroller (local to the popup) */
+  --z-popup-sticky-pivot: 1;       /* .popup-freq-pivot-row */
+  --z-popup-sticky-section: 2;     /* sticky section title bands */
+  --z-popup-tabstrip: 3;           /* .popup-info-nav, above the scroller */
+
+  /* T4 — splash cover and its internals (own stacking context) */
+  --z-splash: 40;
+  --z-splash-grid: 1;
+  --z-splash-hero: 3;
+  --z-splash-chrome: 4;
+  --z-splash-vignette: 5;
+  --z-splash-tick: 6;
+
+  /* T2 — map chrome band */
+  --z-map-nav-strip: 6;            /* .nav-dest-bottom nav data strip */
+  --z-map-replay: 7;               /* .replay-overlay scrubber */
+  --z-map-badge: 8;                /* .badge-zone + the badges it hosts */
+  --z-map-buttons: 8;              /* .map-nav-controls */
+  --z-map-shroud: 8;               /* .connectivity-shroud */
+  --z-map-popup: 10;               /* #weather-popup airport info panel */
+  --z-map-panel: 10;               /* map-layers left rail */
+  --z-content-panel-raised: 11;    /* #rubber-band-panel over its siblings */
+  --z-workspace: 11;               /* S2 full-bleed overlays in #content-area */
+  --z-app-settings: 12;            /* settings overlay above a workspace */
+  --z-workspace-sheet: 13;         /* sheet/picker on top of a workspace */
+
+  /* T2b — keyboard + body-level modal */
+  --z-keyboard: 20;                /* .nav-keyboard-overlay */
+  --z-modal: 20;                   /* body-level .modal */
+
+  /* T3 — above ALL content-area chrome (P0 quick fix line; do not renumber) */
+  --z-dialog: 30;                  /* .flights-overlay */
+  --z-pdf-viewer: 32;              /* .pdf-viewer-overlay */
+
+  /* T4 — full-screen covers */
+  --z-downloads: 50;               /* .downloads-overlay */
+
+  /* T4b — aircraft profile (fixed, outside #content-area) */
+  --z-profile-overlay: 95;
+  --z-profile-banner: 110;
+
+  /* T5 — critical + true floats */
+  --z-alert-banner: 1200;          /* safety alert banner */
+  --z-drag-ghost: 9999;            /* flight-plan chip drag ghost */
+}

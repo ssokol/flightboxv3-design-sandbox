@@ -1,0 +1,1224 @@
+// Aircraft profile editor — replaces the static index.html mockup.
+
+import { createAircraftProfileWizard } from './aircraft_profile_wizard.js';
+import { registryOf, deriveIcaoFromReg } from './aircraft_nnumber.js';
+import {
+  NAV_CAPABILITIES,
+  TRANSPONDER_CLASSES,
+  PBN_CODES,
+  deriveIcaoCodes,
+  seedFilingFieldsFromLegacy
+} from '../../../engines/filing/icao_equipment.js';
+//
+// Mounted into the existing #aircraft-profile-overlay (DisplayManager-managed).
+// On init, loads the profile list, subscribes to /ws/profiles, and renders
+// the editor. Concurrent edit conflicts are last-write-wins per Q7 in the
+// parent epic.
+//
+// Save model (classical, per Steve 2026-06-03):
+//   - Text + number fields: save on BLUR (moving focus to another field)
+//   - Tab switch: save before changing tabs
+//   - Close (Close button or backdrop tap): save then close
+//   - Profile picker change: save current before loading another
+//   - Bool toggles: save immediately (atomic discrete action — no draft state)
+// Keystroke-by-keystroke debounced saves were removed: they raced with the
+// user's typing ("KBUM" → "KBU" 2026-06-03) and wasted bandwidth on slow
+// typists. Each save call POSTs the current openProfile in full.
+//
+// Validation per Q6: hard blocks for confidently-wrong relationships
+// (Vne >= Vno, Vne >= Vfe, Vs >= Vso); soft warnings for everything else.
+
+const TAB_IDENTITY = 'identity';
+const TAB_VSPEEDS = 'vspeeds';
+const TAB_FUEL = 'fuel';
+const TAB_EQUIPMENT = 'equipment';
+const TAB_FILING = 'filing';
+// Trim/Flaps and EMS tabs were dropped in the 2026-06-03 full-sync refactor.
+// Their schema slots stay (trim/flaps/ems substructs persist) so future tabs
+// can render without a schema bump. See:
+// ~/shared/plans/aircraft_profile_full_sync_2026-06-03.md (decision #8).
+
+// Tabs are a table, not a hand-written strip, so the tab bar and the render
+// switch cannot drift apart. Steve, 2026-07-26: this tab set is expected to
+// grow — V-Speeds may widen into "Speeds" and take non-V values like best
+// glide, and a Performance tab (optimal cruise altitude, service ceiling) is
+// likely. Adding one is an entry here plus a renderer, nothing structural.
+const TABS = [
+  { id: TAB_IDENTITY,  label: 'Identity' },
+  { id: TAB_VSPEEDS,   label: 'V-Speeds' },
+  { id: TAB_FUEL,      label: 'Fuel' },
+  { id: TAB_EQUIPMENT, label: 'Equipment' },
+  { id: TAB_FILING,    label: 'Filing' }
+];
+
+// Wake turbulence category (ICAO field 9). Nearly all of our fleet is L.
+const WAKE_OPTIONS = [
+  { value: 'L', label: 'Light (< 15,500 lb)' },
+  { value: 'M', label: 'Medium' },
+  { value: 'H', label: 'Heavy' }
+];
+
+const ADSB_OUT_OPTIONS = [
+  { value: '',       label: 'None' },
+  { value: '1090ES', label: '1090ES' },
+  { value: 'UAT',    label: 'UAT (978)' },
+  { value: 'BOTH',   label: 'Both' }
+];
+
+// Every field carries a `help` string and P6 puts it ON SCREEN as the row's
+// second line (Steve, 2026-07-26: "some V speeds are universal but others are
+// not, so having a description is useful"). It was a `title=` tooltip before,
+// which is dead information on an iPad — there is no hover to reveal it.
+//
+// Fields are grouped rather than listed flat: eleven speeds in one group is an
+// undivided slab, and POH sections them this way. The group tables ARE the
+// layout — moving a field between groups, or adding a group, is an edit here.
+
+const V_SPEED_GROUPS = [
+  {
+    caption: 'Limits',
+    fields: [
+      { key: 'vne', label: 'Vne', help: 'Never exceed' },
+      { key: 'vno', label: 'Vno', help: 'Max structural cruise' },
+      { key: 'va',  label: 'Va',  help: 'Maneuvering' },
+      { key: 'vfe', label: 'Vfe', help: 'Max flap extension' },
+      { key: 'vGear', label: 'V (gear)', help: 'Max gear ext/retract' }
+    ]
+  },
+  {
+    caption: 'Performance',
+    fields: [
+      { key: 'vr',  label: 'Vr',  help: 'Rotation' },
+      { key: 'vx',  label: 'Vx',  help: 'Best angle of climb' },
+      { key: 'vy',  label: 'Vy',  help: 'Best rate of climb' },
+      { key: 'vbg', label: 'Vbg', help: 'Best glide' },
+      { key: 'vs',  label: 'Vs',  help: 'Stall, clean' },
+      { key: 'vso', label: 'Vso', help: 'Stall, landing config' }
+    ]
+  }
+];
+
+const FUEL_GROUPS = [
+  {
+    caption: 'Capacity',
+    fields: [
+      { key: 'totalCapacityGal',      label: 'Total',       help: 'Usable fuel, all tanks', unit: 'gal', step: 0.1, required: true },
+      { key: 'leftTankCapacityGal',   label: 'Left tank',   help: '', unit: 'gal', step: 0.1 },
+      { key: 'rightTankCapacityGal',  label: 'Right tank',  help: '', unit: 'gal', step: 0.1 },
+      { key: 'headerTankCapacityGal', label: 'Header tank', help: 'Leave blank if not fitted', unit: 'gal', step: 0.1 }
+    ]
+  },
+  {
+    caption: 'Burn rate',
+    help: 'Phase-specific burn lets the flight-plan composer budget fuel per leg.',
+    fields: [
+      { key: 'idleGph',    label: 'Idle',    help: 'Taxi and ground ops', unit: 'gph', step: 0.1 },
+      { key: 'takeoffGph', label: 'Takeoff', help: 'Full power',          unit: 'gph', step: 0.1 },
+      { key: 'enrouteGph', label: 'Enroute', help: 'Cruise power',        unit: 'gph', step: 0.1 },
+      { key: 'landingGph', label: 'Landing', help: 'Approach and descent', unit: 'gph', step: 0.1 }
+    ]
+  }
+];
+
+const EQUIPMENT_FIELDS = [
+  { key: 'gps',         label: 'GPS',        help: '' },
+  { key: 'adsbIn',      label: 'ADS-B In',   help: 'Receives traffic and weather' },
+  { key: 'adsbOut',     label: 'ADS-B Out',  help: 'Transmits your position' },
+  { key: 'modeS',       label: 'Mode S transponder', help: '' },
+  { key: 'glassPanel',  label: 'Glass panel', help: '' },
+  { key: 'autopilot',   label: 'Autopilot',  help: '' }
+];
+
+export function createAircraftProfileEditor({ rootEl, api, onClose }) {
+  // Editor state
+  let summaries = [];
+  let activeProfileId = null;     // server-side active pointer
+  let openProfileId = null;       // which profile is loaded in the editor
+  let openProfile = null;         // the loaded profile object
+  let templates = [];
+  // True when openProfile has uncommitted edits that the next save trigger
+  // (blur, tab switch, close, picker change) should push.
+  let isDirty = false;
+  let activeTab = TAB_IDENTITY;
+  let subscription = null;
+  let validationErrors = {};
+
+  // DOM refs filled by mount()
+  // deleteBtn is gone from the toolbar as of P6 — Delete lives at the foot of
+  // the scroll and names what it deletes (plan §5.3: it sat beside New, the
+  // same size, and one mis-tap in turbulence deleted the aircraft).
+  let pickerEl, newBtn, tabsEl, bodyEl, emptyEl, statusEl, activeStripEl;
+  let templateOverlay, templateGrid, templateCancel;
+  let deleteOverlay, deleteBody, deleteCancel, deleteConfirm;
+  // Conflict-merged banner — fixed at top of screen, centered horizontally,
+  // surfaces when iOS resolved a server-side version conflict during save.
+  let bannerEl = null;
+  let bannerTimer = null;
+
+  function mount() {
+    // P6 — S1 docked card. rootEl IS the .content-panel SurfaceManager adopts
+    // into #content-row; .ap-dialog is the .surface-card inside it. No
+    // backdrop, no scrim, no blur: the chart stays sharp and keeps rendering
+    // beside this (plan D8 / [R3]). role="dialog" + aria-modal are gone with
+    // the modality — this is a peer of the map now, not something over it.
+    const tabButtons = TABS.map((t) => `
+          <button class="surface-tab" data-tab="${t.id}" role="tab"
+                  aria-selected="${t.id === activeTab ? 'true' : 'false'}">${escapeHtml(t.label)}</button>`).join('');
+
+    rootEl.innerHTML = `
+      <div class="ap-dialog surface-card" role="region" aria-labelledby="ap-title">
+        <div class="surface-head">
+          <div id="ap-title" class="surface-title">Aircraft Profile</div>
+          <button id="ap-close" class="surface-close" type="button" aria-label="Close">&times;</button>
+        </div>
+        <div class="ap-selector-band">
+          <select id="ap-picker" class="ap-picker" aria-label="Aircraft"></select>
+          <button id="ap-new" class="surface-btn surface-btn--secondary ap-new-btn" type="button">New</button>
+        </div>
+        <div id="ap-active-strip" class="ap-active-strip"></div>
+        <div class="surface-tabs" role="tablist">${tabButtons}
+        </div>
+        <div id="ap-body" class="surface-scroll" role="tabpanel"></div>
+        <div id="ap-empty" class="ap-empty" hidden>
+          <p>No aircraft profiles yet.</p>
+          <button id="ap-create-first" class="surface-btn surface-btn--primary" type="button">New Profile</button>
+        </div>
+        <div id="ap-status" class="ap-status" aria-live="polite"></div>
+      </div>
+      <div id="ap-template-overlay" class="ap-template-overlay" hidden>
+        <div class="ap-template-dialog" role="dialog" aria-modal="true">
+          <div class="ap-template-head">
+            <div class="ap-template-title">Choose a template</div>
+            <button id="ap-template-cancel" class="mini-btn" type="button">Cancel</button>
+          </div>
+          <div id="ap-template-grid" class="ap-template-grid"></div>
+        </div>
+      </div>
+      <div id="ap-delete-overlay" class="ap-confirm-overlay" hidden>
+        <div class="ap-confirm-dialog surface-card" role="alertdialog" aria-modal="true" aria-labelledby="ap-delete-title">
+          <div class="surface-head">
+            <div id="ap-delete-title" class="surface-title">Delete aircraft</div>
+          </div>
+          <div id="ap-delete-body" class="ap-confirm-body"></div>
+          <div class="ap-confirm-actions">
+            <button id="ap-delete-cancel" class="surface-btn surface-btn--secondary" type="button">Cancel</button>
+            <button id="ap-delete-confirm" class="surface-btn surface-btn--destructive" type="button">Delete</button>
+          </div>
+        </div>
+      </div>
+      <div id="ap-wizard-overlay" class="ap-template-overlay" hidden></div>
+    `;
+
+    pickerEl = rootEl.querySelector('#ap-picker');
+    newBtn = rootEl.querySelector('#ap-new');
+    tabsEl = rootEl.querySelector('.surface-tabs');
+    bodyEl = rootEl.querySelector('#ap-body');
+    emptyEl = rootEl.querySelector('#ap-empty');
+    statusEl = rootEl.querySelector('#ap-status');
+    activeStripEl = rootEl.querySelector('#ap-active-strip');
+    templateOverlay = rootEl.querySelector('#ap-template-overlay');
+    templateGrid = rootEl.querySelector('#ap-template-grid');
+    templateCancel = rootEl.querySelector('#ap-template-cancel');
+    deleteOverlay = rootEl.querySelector('#ap-delete-overlay');
+    deleteBody = rootEl.querySelector('#ap-delete-body');
+    deleteCancel = rootEl.querySelector('#ap-delete-cancel');
+    deleteConfirm = rootEl.querySelector('#ap-delete-confirm');
+
+    rootEl.querySelector('#ap-close')?.addEventListener('click', () => saveAndClose());
+    // No backdrop-tap dismissal any more: rootEl is the CARD, not a scrim over
+    // the chart, so a tap on the card's own padding used to close the editor.
+    // The × in the header is the one dismiss (plan §2.6).
+    pickerEl.addEventListener('change', () => onPickerChange(pickerEl.value));
+    newBtn.addEventListener('click', () => openTemplatePicker());
+    rootEl.querySelector('#ap-create-first')?.addEventListener('click', () => openTemplatePicker());
+    templateCancel.addEventListener('click', () => closeTemplatePicker());
+    templateOverlay.addEventListener('click', (e) => {
+      if (e.target === templateOverlay) closeTemplatePicker();
+    });
+    deleteCancel.addEventListener('click', () => closeDeleteConfirm());
+    deleteOverlay.addEventListener('click', (e) => {
+      if (e.target === deleteOverlay) closeDeleteConfirm();
+    });
+    deleteConfirm.addEventListener('click', () => onDeleteConfirmed());
+
+    tabsEl.addEventListener('click', (e) => {
+      const target = e.target.closest('.surface-tab');
+      if (!target || target.disabled) return;
+      switchTab(target.dataset.tab);
+    });
+
+    // The template sets aria-selected but not `.is-active`, which is what
+    // actually paints the underline. Without this the card mounts with every
+    // tab looking unselected until the pilot taps one.
+    syncTabStrip();
+  }
+
+  async function init() {
+    mount();
+    try {
+      await refreshAll();
+      const tpl = await api.loadTemplates();
+      templates = tpl?.templates ?? [];
+      renderTemplateGrid();
+    } catch (e) {
+      console.warn('[profile-editor] init failed', e);
+      setStatus(`Failed to load profiles: ${e.message}`);
+    }
+
+    subscription = api.subscribeToChanges((msg) => {
+      if (msg.type === 'list-changed') {
+        refreshList().catch((e) => console.warn('[profile-editor] WS list refresh', e));
+      } else if (msg.type === 'active-changed') {
+        activeProfileId = msg.activeId ?? null;
+        renderPicker();
+      }
+    });
+
+    // Fire a background sync once the cached list is on screen and the
+    // WS subscription is live. If the server has newer data, sync upserts
+    // it, the store emits list-changed, and refreshList re-fetches. UI
+    // stays responsive throughout — no await, no spinner.
+    api.requestSync?.();
+  }
+
+  function destroy() {
+    subscription?.close();
+    subscription = null;
+    if (bannerEl) {
+      bannerEl.remove();
+      bannerEl = null;
+    }
+    if (bannerTimer) {
+      clearTimeout(bannerTimer);
+      bannerTimer = null;
+    }
+  }
+
+  /// Non-blocking banner used for sync conflicts. Mounted directly under
+  /// document.body so it floats above the editor overlay; centered
+  /// horizontally just below the status bar. Auto-dismisses after 6s.
+  /// Will be replaced when the unified notification system lands —
+  /// flagged in the plan as a TODO.
+  function showConflictBanner(message) {
+    if (!bannerEl) {
+      bannerEl = document.createElement('div');
+      bannerEl.className = 'ap-conflict-banner';
+      bannerEl.setAttribute('role', 'status');
+      bannerEl.setAttribute('aria-live', 'polite');
+      document.body.appendChild(bannerEl);
+    }
+    bannerEl.textContent = message;
+    bannerEl.classList.add('ap-conflict-banner-visible');
+    if (bannerTimer) clearTimeout(bannerTimer);
+    bannerTimer = setTimeout(() => {
+      if (!bannerEl) return;
+      bannerEl.classList.remove('ap-conflict-banner-visible');
+    }, 6000);
+  }
+
+  // -- Data loading --
+
+  async function refreshAll() {
+    await refreshList();
+    if (activeProfileId && summaries.some((s) => s.id === activeProfileId)) {
+      await loadProfile(activeProfileId);
+    } else if (summaries.length > 0) {
+      await loadProfile(summaries[0].id);
+    } else {
+      openProfileId = null;
+      openProfile = null;
+      renderEmpty();
+    }
+  }
+
+  async function refreshList() {
+    summaries = await api.listProfiles();
+    activeProfileId = summaries.find((s) => s.isActive)?.id ?? null;
+    renderPicker();
+    if (summaries.length === 0) {
+      renderEmpty();
+      return;
+    }
+    if (openProfileId && !summaries.some((s) => s.id === openProfileId)) {
+      // Currently-open profile was deleted elsewhere — switch to whatever's
+      // active or the first profile in the list.
+      await loadProfile(activeProfileId ?? summaries[0].id);
+      return;
+    }
+    if (openProfileId && !isDirty) {
+      // Re-fetch the open profile's full body so server-side changes (from
+      // another iPad's sync, or a remote edit just pulled in) show up in
+      // the editor. Skipped when isDirty so we don't clobber the user's
+      // in-flight edits — the user's save will reconcile via the
+      // version-mismatch retry path.
+      const fresh = await api.getProfile(openProfileId);
+      if (fresh && (openProfile == null || fresh.version > openProfile.version)) {
+        openProfile = fresh;
+        validationErrors = {};
+        renderEditor();
+      }
+    }
+  }
+
+  async function loadProfile(id) {
+    if (!id) {
+      openProfileId = null;
+      openProfile = null;
+      renderEmpty();
+      return;
+    }
+    try {
+      const profile = await api.getProfile(id);
+      if (!profile) {
+        openProfileId = null;
+        openProfile = null;
+        renderEmpty();
+        return;
+      }
+      openProfileId = id;
+      openProfile = profile;
+      validationErrors = {};
+      renderPicker();
+      renderEditor();
+    } catch (e) {
+      console.warn('[profile-editor] load failed', e);
+      setStatus(`Load failed: ${e.message}`);
+    }
+  }
+
+  // -- Render: header / picker --
+
+  function syncTabStrip() {
+    for (const t of tabsEl.querySelectorAll('.surface-tab')) {
+      const on = t.dataset.tab === activeTab;
+      t.setAttribute('aria-selected', on ? 'true' : 'false');
+      t.classList.toggle('is-active', on);
+    }
+  }
+
+  function renderPicker() {
+    pickerEl.innerHTML = '';
+    renderActiveStrip();
+    if (summaries.length === 0) {
+      const opt = document.createElement('option');
+      opt.value = '';
+      opt.textContent = '— no profiles —';
+      pickerEl.appendChild(opt);
+      pickerEl.disabled = true;
+      return;
+    }
+    pickerEl.disabled = false;
+    for (const s of summaries) {
+      const opt = document.createElement('option');
+      opt.value = s.id;
+      const activeMark = s.id === activeProfileId ? ' ★' : '';
+      const reg = s.registration || '(no reg)';
+      const model = s.makeModel ? ` — ${s.makeModel}` : '';
+      opt.textContent = `${reg}${model}${activeMark}`;
+      if (s.id === openProfileId) opt.selected = true;
+      pickerEl.appendChild(opt);
+    }
+  }
+
+  // -- Render: empty state / editor body --
+
+  function renderEmpty() {
+    bodyEl.innerHTML = '';
+    bodyEl.hidden = true;
+    emptyEl.hidden = false;
+    setStatus('');
+  }
+
+  function renderEditor() {
+    if (!openProfile) {
+      renderEmpty();
+      return;
+    }
+    emptyEl.hidden = true;
+    bodyEl.hidden = false;
+    switch (activeTab) {
+      case TAB_VSPEEDS:   renderVSpeedsTab(); break;
+      case TAB_FUEL:      renderFuelTab(); break;
+      case TAB_EQUIPMENT: renderEquipmentTab(); break;
+      case TAB_FILING:    renderFilingTab(); break;
+      case TAB_IDENTITY:
+      default:            renderIdentityTab(); break;
+    }
+  }
+
+  function switchTab(tab) {
+    if (tab === activeTab) return;
+    // Save before tearing down the current tab's DOM. If the user was
+    // typing without blurring first, this commits their edits.
+    // Fire-and-forget — let the network finish in the background.
+    flushSave().catch((e) => console.warn('[profile-editor] save on tab switch failed', e));
+    activeTab = tab;
+    syncTabStrip();
+    renderEditor();
+  }
+
+  /// Commit any uncommitted edits, then call onClose. Used by the Close
+  /// button and backdrop-tap paths. Save is fire-and-forget so the dialog
+  /// dismisses immediately; the status banner shows progress + errors if
+  /// the network call fails after dismiss (status line in the DOM persists
+  /// because rootEl stays in the document — it's just hidden by the
+  /// DisplayManager when onClose fires).
+  function saveAndClose() {
+    flushSave().catch((e) => console.warn('[profile-editor] save on close failed', e));
+    onClose?.();
+  }
+
+  function renderIdentityTab() {
+    const id = openProfile.identity ?? {};
+    // Registration is immutable post-creation. ICAO Hex is auto-derived for
+    // US + Canadian registries (read-only display); international regs keep
+    // their stored value editable. If the stored ICAO is wrong for a US/CA
+    // reg, silently correct it on render so the canonical value gets
+    // persisted on the next save trigger.
+    const reg = id.registration || '';
+    const registry = registryOf(reg);
+    const derivedIcao = deriveIcaoFromReg(reg);
+    const icaoIsDerived = (registry === 'us' || registry === 'ca') && derivedIcao != null;
+    if (icaoIsDerived && id.icaoHex !== derivedIcao) {
+      openProfile.identity.icaoHex = derivedIcao;
+      isDirty = true;
+    }
+
+    bodyEl.innerHTML = '';
+    bodyEl.appendChild(makeGroup('Aircraft', [
+      makeTextField('Registration', 'identity.registration', id.registration, {
+        maxLength: 8, uppercase: true, readOnly: true,
+        help: 'Set when the aircraft was added and not editable'
+      }),
+      makeTextField('Make / model', 'identity.makeModel', id.makeModel, { maxLength: 64 })
+    ]));
+    bodyEl.appendChild(makeGroup('Identification', [
+      makeTextField('ICAO hex', 'identity.icaoHex', id.icaoHex, {
+        maxLength: 6, uppercase: true, hexOnly: true, placeholder: 'A12345',
+        readOnly: icaoIsDerived,
+        help: icaoIsDerived
+          ? 'Derived from the registration'
+          : '24-bit address broadcast by ADS-B Out'
+      }),
+      makeTextField('Serial number', 'identity.serialNumber', id.serialNumber, { maxLength: 32 })
+    ]));
+    bodyEl.appendChild(makeGroup('Operations', [
+      makeTextField('Home airport', 'identity.homeAirport', id.homeAirport, {
+        maxLength: 4, uppercase: true, placeholder: 'KGTU'
+      })
+    ]));
+    appendDangerZone();
+  }
+
+  function renderVSpeedsTab() {
+    const v = openProfile.vSpeeds ?? {};
+    bodyEl.innerHTML = '';
+    for (const g of V_SPEED_GROUPS) {
+      bodyEl.appendChild(makeGroup(g.caption, g.fields.map((f) =>
+        makeNumberField(f.label, `vSpeeds.${f.key}`, v[f.key], {
+          min: 30, max: 350, step: 1, unit: 'kt', help: f.help, inputmode: 'numeric'
+        })
+      ), g.help));
+    }
+    appendDangerZone();
+  }
+
+  function renderFuelTab() {
+    const f = openProfile.fuel ?? {};
+    bodyEl.innerHTML = '';
+    for (const g of FUEL_GROUPS) {
+      bodyEl.appendChild(makeGroup(g.caption, g.fields.map((fld) =>
+        makeNumberField(fld.label, `fuel.${fld.key}`, f[fld.key], {
+          min: 0, max: 1000, step: fld.step, unit: fld.unit,
+          help: fld.help, required: fld.required, inputmode: 'decimal'
+        })
+      ), g.help));
+    }
+    bodyEl.appendChild(makeGroup('Cruise', [
+      makeNumberField('Default cruise', 'fuel.defaultCruiseKt', f.defaultCruiseKt, {
+        min: 30, max: 500, step: 1, unit: 'ktas', help: 'True airspeed used when a leg has no other estimate',
+        inputmode: 'numeric'
+      })
+    ]));
+    appendDangerZone();
+  }
+
+  function renderEquipmentTab() {
+    const eq = openProfile.equipment ?? {};
+    bodyEl.innerHTML = '';
+    bodyEl.appendChild(makeGroup(
+      'Installed equipment',
+      EQUIPMENT_FIELDS.map((f) => makeBoolField(f.label, `equipment.${f.key}`, !!eq[f.key], f.help)),
+      'Used for traffic display and ADS-B Out matching. Flight-plan filing details live on the Filing tab.'
+    ));
+    appendDangerZone();
+  }
+
+  // -- Filing tab (Flights phase B, v3web#264) --
+  //
+  // Stores ANSWERS on the profile (equipment.navCapabilities / .transponder /
+  // .adsbOutBand / .adsbInBands / .pbnCodes …); the ICAO 10a/10b/PBN strings
+  // are derived live by icao_equipment.js and shown in the readout, so a
+  // rules fix never needs a data migration. Overrides (advanced) file
+  // verbatim when set.
+
+  function renderFilingTab() {
+    // One-time seed from the legacy six booleans (gps → GNSS, modeS → S,
+    // wake L default) — conservative, never clobbers existing answers.
+    const seeded = seedFilingFieldsFromLegacy(openProfile.equipment ?? {});
+    if (JSON.stringify(seeded) !== JSON.stringify(openProfile.equipment ?? {})) {
+      openProfile.equipment = seeded;
+      isDirty = true;
+    }
+    const eq = openProfile.equipment ?? {};
+    const id = openProfile.identity ?? {};
+    bodyEl.innerHTML = '';
+
+    // Derived-codes readout — lives at the top so every answer below is
+    // seen changing the actual filed strings.
+    const readout = document.createElement('div');
+    readout.id = 'ap-filing-codes';
+    readout.className = 'ap-filing-codes';
+    bodyEl.appendChild(readout);
+
+    bodyEl.appendChild(makeGroup('Type & appearance', [
+      makeTextField('ICAO type', 'identity.icaoType', id.icaoType, {
+        maxLength: 4, uppercase: true, placeholder: 'P28A',
+        help: 'ICAO type designator. Leave blank for experimentals with no designator — files as ZZZZ with the description below.'
+      }),
+      makeTextField('Type description', 'identity.typeOther', id.typeOther, {
+        maxLength: 32,
+        help: 'Only used with ZZZZ (blank ICAO type), e.g. "VANS RV6A"'
+      }),
+      makeTextField('Color', 'identity.color', id.color, {
+        maxLength: 8, uppercase: true, placeholder: 'W/B',
+        help: 'ICAO color code(s), main first — W white, B blue, R red, G green, Y yellow…'
+      })
+    ]));
+
+    bodyEl.appendChild(makeGroup('Transponder & ADS-B', [
+      makeSelectField('Wake category', 'equipment.wake', eq.wake ?? 'L', WAKE_OPTIONS, {
+        help: 'ICAO wake turbulence category'
+      }),
+      makeSelectField('Transponder', 'equipment.transponder', eq.transponder ?? 'N',
+        TRANSPONDER_CLASSES.map((t) => ({ value: t.code, label: `${t.code} — ${t.label}` })), {
+          help: 'Field 10b transponder class'
+        }),
+      makeSelectField('ADS-B Out', 'equipment.adsbOutBand', eq.adsbOutBand ?? '', ADSB_OUT_OPTIONS, {
+        help: '1090ES is the extended-squitter (Mode S) flavor; UAT is 978 MHz'
+      }),
+      makeArrayToggleField('ADS-B In: 1090ES', 'equipment.adsbInBands', '1090ES',
+        'Traffic/weather receiver on 1090 MHz'),
+      makeArrayToggleField('ADS-B In: UAT (978)', 'equipment.adsbInBands', 'UAT',
+        'Traffic/weather receiver on 978 MHz (FlightBox, Stratux…)')
+    ]));
+
+    bodyEl.appendChild(makeGroup(
+      'Navigation & approach equipment',
+      NAV_CAPABILITIES.map((c) =>
+        makeArrayToggleField(c.label, 'equipment.navCapabilities', c.key, `Field 10a code ${c.letter}`)),
+      'Check what is installed and working. VHF + VOR + ILS together file as the "standard" S package.'
+    ));
+
+    bodyEl.appendChild(makeGroup(
+      'PBN / RNAV capability',
+      PBN_CODES.map((p) =>
+        makeArrayToggleField(`${p.code} — ${p.label}`, 'equipment.pbnCodes', p.code, '')),
+      'Only for IFR-approved RNAV/GPS installs. Selecting any code automatically adds R to field 10a. Typical GA WAAS GPS: D2, O2, S2 (S1 without vertical guidance).'
+    ));
+
+    bodyEl.appendChild(makeGroup('Filing defaults', [
+      makeNumberField('Default altitude', 'equipment.defaultAltitudeFt', eq.defaultAltitudeFt, {
+        min: 500, max: 60000, step: 500, unit: 'ft', inputmode: 'numeric',
+        help: 'Pre-fills new flight plans; cruise speed comes from the Fuel tab'
+      }),
+      makeBoolField('SIM-only aircraft', 'equipment.simOnly', eq.simOnly === true,
+        'Flight plans for this tail are always simulated — never really filed')
+    ]));
+
+    bodyEl.appendChild(makeGroup('Advanced overrides', [
+      makeTextField('Field 10a override', 'equipment.equipmentOverride', eq.equipmentOverride, {
+        maxLength: 32, uppercase: true, help: 'Files verbatim instead of the derived equipment string'
+      }),
+      makeTextField('Field 10b override', 'equipment.surveillanceOverride', eq.surveillanceOverride, {
+        maxLength: 16, uppercase: true, help: 'Files verbatim instead of the derived surveillance string'
+      }),
+      makeTextField('PBN/ override', 'equipment.pbnOverride', eq.pbnOverride, {
+        maxLength: 32, uppercase: true, help: 'Files verbatim instead of the derived PBN/ string'
+      })
+    ], 'Leave blank unless you know your codes disagree with the derivation above.'));
+
+    appendDangerZone();
+    updateFilingCodes();
+  }
+
+  function updateFilingCodes() {
+    const readout = bodyEl.querySelector('#ap-filing-codes');
+    if (!readout || !openProfile) return;
+    const derived = deriveIcaoCodes(openProfile.equipment ?? {});
+    const mark = (overridden) => (overridden ? ' (override)' : '');
+    const lines = [
+      `Equipment 10a: ${derived.field10a}${mark(derived.overridden.field10a)}`,
+      `Surveillance 10b: ${derived.field10b}${mark(derived.overridden.field10b)}`,
+      `PBN/: ${derived.pbn || '—'}${mark(derived.overridden.pbn)}`
+    ];
+    readout.innerHTML = '';
+    const title = document.createElement('div');
+    title.className = 'surface-caption';
+    title.textContent = 'Filed as';
+    readout.appendChild(title);
+    for (const line of lines) {
+      const el = document.createElement('div');
+      el.className = 'ap-filing-code-line';
+      el.textContent = line;
+      readout.appendChild(el);
+    }
+    for (const warning of derived.warnings) {
+      const el = document.createElement('div');
+      el.className = 'ap-filing-code-warning';
+      el.textContent = warning.message;
+      readout.appendChild(el);
+    }
+  }
+
+  /// The active-profile strip (plan §5.3). Replaces the "★ Active profile"
+  /// amber line that appended to the bottom of EVERY tab: it read as a label
+  /// but behaved like a state, and it was four call sites saying one thing.
+  /// It lives in the card chrome now, rendered once, directly under the
+  /// selector — which is where you are already looking when you switch
+  /// aircraft. When the open profile is NOT the active one, the strip carries
+  /// the action, because the action has to live somewhere and this is the
+  /// only place on the card that is about active-ness.
+  function renderActiveStrip() {
+    if (!activeStripEl) return;
+    activeStripEl.innerHTML = '';
+    if (!openProfileId) {
+      activeStripEl.hidden = true;
+      return;
+    }
+    activeStripEl.hidden = false;
+    const isActive = openProfileId === activeProfileId;
+    activeStripEl.classList.toggle('is-active', isActive);
+
+    const text = document.createElement('span');
+    text.className = 'ap-active-text';
+    if (isActive) {
+      // Say what being active MEANS, not that it is a state. A pilot who has
+      // two aircraft needs to know which one the fuel maths is using.
+      text.textContent = 'Active — fuel, W&B and V-speeds come from this aircraft.';
+      activeStripEl.appendChild(text);
+      return;
+    }
+    text.textContent = 'Not the active aircraft.';
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'surface-btn surface-btn--secondary ap-activate-btn';
+    btn.textContent = 'Make active';
+    btn.addEventListener('click', () => onActivate(openProfileId));
+    activeStripEl.append(text, btn);
+  }
+
+  /// Destructive action, alone, at the foot of the scroll — outlined rather
+  /// than filled, and NAMING what it deletes (plan §5.3). It used to sit
+  /// beside New in the toolbar: same size, adjacent, one red, and one mis-tap
+  /// in turbulence deleted the aircraft.
+  function appendDangerZone() {
+    if (!openProfileId) return;
+    const wrap = document.createElement('div');
+    wrap.className = 'ap-danger-zone';
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'surface-btn surface-btn--destructive ap-delete-btn';
+    btn.textContent = `Delete ${profileLabel()}`;
+    btn.addEventListener('click', () => onDeleteCurrent());
+    wrap.appendChild(btn);
+    bodyEl.appendChild(wrap);
+  }
+
+  /// What this aircraft is called in destructive copy. Registration first —
+  /// that is what a pilot calls the aeroplane.
+  function profileLabel() {
+    return openProfile?.identity?.registration
+      || openProfile?.identity?.makeModel
+      || 'this aircraft';
+  }
+
+  /// caption + inset group (D13). The section shape for every control
+  /// surface in Round 2; built here rather than by groupifySections because
+  /// this screen's markup is constructed, not converted.
+  function makeGroup(caption, rows, footnote) {
+    const section = document.createElement('div');
+    section.className = 'surface-section-group';
+    if (caption) {
+      const cap = document.createElement('div');
+      cap.className = 'surface-caption';
+      cap.textContent = caption;
+      section.appendChild(cap);
+    }
+    const group = document.createElement('div');
+    group.className = 'surface-group';
+    for (const row of rows) group.appendChild(row);
+    section.appendChild(group);
+    if (footnote) {
+      const note = document.createElement('p');
+      note.className = 'ap-note';
+      note.textContent = footnote;
+      section.appendChild(note);
+    }
+    return section;
+  }
+
+  // -- Field constructors --
+
+  /// Label left, value right — the Round 2 row (plan §5.3). The old shape
+  /// stacked the label OVER the input, which doubled the height and gave the
+  /// values no shared axis to scan down.
+  ///
+  /// The second line does double duty: it carries the field's help text
+  /// normally and the validation message when the field is wrong. That is why
+  /// `data-help` is stashed on it — clearing an error has to RESTORE the help,
+  /// not blank the line.
+  function makeRowShell(label, path, help) {
+    const wrap = document.createElement('label');
+    wrap.className = 'surface-row ap-row';
+    const stack = document.createElement('span');
+    stack.className = 'surface-row-stack';
+    const labelEl = document.createElement('span');
+    labelEl.className = 'surface-row-label ap-row-title';
+    labelEl.textContent = label;
+    const sub = document.createElement('span');
+    sub.className = 'surface-row-sub ap-row-sub';
+    sub.dataset.errorFor = path;
+    sub.dataset.help = help ?? '';
+    sub.textContent = help ?? '';
+    stack.append(labelEl, sub);
+    wrap.appendChild(stack);
+    return wrap;
+  }
+
+  function makeTextField(label, path, value, opts = {}) {
+    const wrap = makeRowShell(label, path, opts.help);
+    const input = document.createElement('input');
+    input.type = 'text';
+    // --code for idents (registration, ICAO hex, airport) — mono on the same
+    // fixed right edge as the numbers. --text for free prose like make/model,
+    // where a 96px mono box right-aligned is unreadable.
+    const variant = opts.uppercase ? 'surface-field--code' : 'surface-field--text';
+    input.className = `surface-field ${variant}`;
+    input.dataset.path = path;
+    input.value = value ?? '';
+    if (opts.maxLength) input.maxLength = opts.maxLength;
+    if (opts.placeholder) input.placeholder = opts.placeholder;
+    if (opts.uppercase) {
+      // iOS keyboard hint + visual + filter on input.
+      input.setAttribute('autocapitalize', 'characters');
+      input.setAttribute('autocorrect', 'off');
+      input.setAttribute('spellcheck', 'false');
+      input.style.textTransform = 'uppercase';
+    }
+    if (opts.readOnly) {
+      // Field is locked (e.g., registration post-creation). Skip listeners
+      // so blur saves and input filtering don't fire. Default styling
+      // stays — per Steve, don't gray it out, just don't accept edits.
+      input.readOnly = true;
+      wrap.appendChild(input);
+      return wrap;
+    }
+    input.addEventListener('input', () => {
+      let next = input.value;
+      if (opts.uppercase) next = next.toUpperCase();
+      if (opts.hexOnly) next = next.replace(/[^0-9A-F]/g, '');
+      if (next !== input.value) {
+        const cursor = input.selectionStart;
+        input.value = next;
+        // Restore cursor (best-effort; off-by-one on rejected chars is fine).
+        try { input.setSelectionRange(cursor, cursor); } catch { /* ignored */ }
+      }
+      onFieldChange(path, input.value, input);
+    });
+    input.addEventListener('blur', () => flushSave());
+    wrap.appendChild(input);
+    return wrap;
+  }
+
+  function makeNumberField(label, path, value, opts = {}) {
+    const wrap = makeRowShell(label, path, opts.help);
+    // The unit belongs to the label's vocabulary, not inside the value: "kt"
+    // in the field competes with the number for the same right edge. It used
+    // to be baked into the label text as "Vne (kt)".
+    if (opts.unit) {
+      const unitEl = document.createElement('span');
+      unitEl.className = 'surface-unit';
+      unitEl.textContent = opts.unit;
+      wrap.appendChild(unitEl);
+    }
+    const input = document.createElement('input');
+    input.type = 'number';
+    input.className = 'surface-field surface-field--num';
+    input.dataset.path = path;  // used by onFieldChange to target the error class
+    input.value = value ?? '';
+    if (opts.min != null) input.min = opts.min;
+    if (opts.max != null) input.max = opts.max;
+    if (opts.step != null) input.step = opts.step;
+    if (opts.required) input.required = true;
+    // inputmode controls the on-screen keyboard on iOS WKWebView. Without it,
+    // type=number falls back to a full QWERTY keyboard with the digit row.
+    if (opts.inputmode) input.setAttribute('inputmode', opts.inputmode);
+    input.addEventListener('input', () => {
+      const num = input.value === '' ? null : Number(input.value);
+      onFieldChange(path, num, input);
+    });
+    input.addEventListener('blur', () => flushSave());
+    wrap.appendChild(input);
+    return wrap;
+  }
+
+  /// Dropdown row (Filing tab). Same row shell as text/number fields;
+  /// options are {value, label}.
+  function makeSelectField(label, path, value, options, opts = {}) {
+    const wrap = makeRowShell(label, path, opts.help);
+    const select = document.createElement('select');
+    select.className = 'surface-field surface-field--select';
+    select.dataset.path = path;
+    for (const option of options) {
+      const el = document.createElement('option');
+      el.value = option.value;
+      el.textContent = option.label;
+      if ((value ?? '') === option.value) el.selected = true;
+      select.appendChild(el);
+    }
+    select.addEventListener('change', () => {
+      onFieldChange(path, select.value === '' ? null : select.value, select);
+      flushSave();
+    });
+    wrap.appendChild(select);
+    return wrap;
+  }
+
+  /// Checkbox row that toggles membership of `itemKey` in the string array
+  /// at `path` (Filing tab: navCapabilities / pbnCodes / adsbInBands).
+  /// Reads the CURRENT array from openProfile at change time so multiple
+  /// rows over the same array never fight over a captured copy.
+  function makeArrayToggleField(label, path, itemKey, help) {
+    const wrap = makeRowShell(label, `${path}.${itemKey}`, help);
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.className = 'surface-check';
+    const current = getNested(openProfile, path);
+    cb.checked = Array.isArray(current) && current.includes(itemKey);
+    cb.addEventListener('change', () => {
+      const now = getNested(openProfile, path);
+      const set = new Set(Array.isArray(now) ? now : []);
+      if (cb.checked) set.add(itemKey); else set.delete(itemKey);
+      onFieldChange(path, [...set], cb);
+      flushSave();
+    });
+    wrap.appendChild(cb);
+    return wrap;
+  }
+
+  /// Tappable boolean row for the Equipment tab. Whole row is the touch
+  /// target (not just the checkbox), matching the wizard's chip pattern
+  /// where every aircraft starts with everything off and the user picks
+  /// what's installed.
+  function makeBoolField(label, path, value, help) {
+    const wrap = makeRowShell(label, path, help);
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.className = 'surface-check';
+    cb.checked = !!value;
+    cb.addEventListener('change', () => {
+      onFieldChange(path, cb.checked, cb);
+      flushSave();
+    });
+    wrap.appendChild(cb);
+    return wrap;
+  }
+
+  // -- Row-level error surfacing --
+  //
+  // The row's second line carries the help text at rest and the validation
+  // message when the field is wrong, so clearing an error RESTORES the help
+  // rather than blanking the line. Both helpers are no-ops when the field is
+  // not on the current tab, which is the normal case for a cross-field rule.
+
+  function setRowError(path, message) {
+    const sub = bodyEl.querySelector(`.ap-row-sub[data-error-for="${cssEscape(path)}"]`);
+    if (sub) {
+      sub.textContent = message;
+      sub.classList.add('is-error');
+    }
+    // Red background on the offending input itself, so the feedback is where
+    // the finger is (Steve: "no error showed up when I typed 177 with Vne=158").
+    const input = bodyEl.querySelector(`.surface-field[data-path="${cssEscape(path)}"]`);
+    if (input) input.classList.add('ap-input-error');
+  }
+
+  function clearRowError(path) {
+    const sub = bodyEl.querySelector(`.ap-row-sub[data-error-for="${cssEscape(path)}"]`);
+    if (sub) {
+      sub.textContent = sub.dataset.help || '';
+      sub.classList.remove('is-error');
+    }
+    const input = bodyEl.querySelector(`.surface-field[data-path="${cssEscape(path)}"]`);
+    if (input) input.classList.remove('ap-input-error');
+  }
+
+  // -- Field change / save --
+
+  function onFieldChange(path, value, inputEl) {
+    setNested(openProfile, path, value);
+    // Clear ALL prior error state across the form, then re-apply only what
+    // current validation returns. Prevents stale errors on cross-field
+    // checks (e.g. typing "1" → "15" → "157" into Vne briefly flags Vno
+    // and Vfe as exceeding Vne; without this clear, those stale red
+    // borders stay even after Vne reaches a valid value).
+    for (const oldPath of Object.keys(validationErrors)) clearRowError(oldPath);
+    validationErrors = {};
+
+    const errors = validateProfile(openProfile);
+    if (errors.length > 0) {
+      // Surface hard-block errors inline; do not mark dirty so we can't save.
+      for (const err of errors) {
+        validationErrors[err.path] = err.message;
+        setRowError(err.path, err.message);
+      }
+      // Red, prominent status line so the user can't miss the block.
+      setStatus(errors[0].message, { variant: 'error' });
+      return;
+    }
+    // Validation passed — clear any lingering error status from a prior
+    // partial-keystroke validation failure.
+    if (statusEl.classList.contains('ap-status-error')) setStatus('');
+    // Mark the model dirty. Save fires on the next blur / tab switch /
+    // close / picker change — NOT on this keystroke.
+    isDirty = true;
+    // Filing tab: every answer visibly updates the derived 10a/10b/PBN
+    // strings in the readout.
+    if (activeTab === TAB_FILING) updateFilingCodes();
+  }
+
+  async function flushSave() {
+    if (!isDirty || !openProfile || !openProfileId) return;
+    if (Object.keys(validationErrors).length > 0) return;
+    isDirty = false;
+    setStatus('Saving…');
+    try {
+      const { profile: updated, conflictMerged } = await api.updateProfile(openProfileId, openProfile);
+      // If the user edited again during the in-flight PUT, isDirty is now
+      // true. Preserve their in-progress local edits — only sync meta from
+      // the server response. The save trigger that flipped isDirty back to
+      // true will fire flushSave again.
+      // (Edge case kept from earlier classical-save bug: blur on one field
+      // dispatches save, user immediately taps a different field and starts
+      // typing while the PUT is in flight.)
+      if (isDirty) {
+        openProfile.version = updated.version;
+        openProfile.updatedAt = updated.updatedAt;
+        openProfile.schemaVersion = updated.schemaVersion;
+      } else {
+        openProfile = updated;
+      }
+      setStatus('Saved');
+      if (conflictMerged) {
+        showConflictBanner('Saved. Your edits replaced recent changes from another iPad.');
+      }
+    } catch (e) {
+      console.warn('[profile-editor] save failed', e);
+      // 409 with duplicate registration: surface inline against the
+      // registration field rather than just a status-line message.
+      if (e.status === 409 && e.body?.error?.includes('duplicate_registration')) {
+        const reg = e.body.registration ?? openProfile?.identity?.registration ?? '';
+        // Before P6 this looked up `.ap-field-error[data-error-for=…]`, which
+        // only NUMBER fields ever created — so the inline message on the
+        // registration field silently never rendered and the user got the
+        // status line alone. Every field carries a sub-line now.
+        setRowError('identity.registration',
+          `Already used by another aircraft on your account: ${reg}`);
+        setStatus('Duplicate registration — pick a different one.', { variant: 'error' });
+        return;
+      }
+      setStatus(`Save failed: ${e.message}`);
+    }
+  }
+
+  // -- Action handlers --
+
+  function onPickerChange(id) {
+    if (!id || id === openProfileId) return;
+    flushSave().finally(() => loadProfile(id));
+  }
+
+  async function onActivate(id) {
+    if (!id) return;
+    // Commit any in-progress edits to the profile before changing the
+    // active pointer — user expectation is that "Make active" doesn't
+    // discard the field they were just editing.
+    await flushSave().catch((e) => console.warn('[profile-editor] save before activate failed', e));
+    try {
+      await api.activateProfile(id);
+      // WS will push activeChanged; render eagerly for immediate feedback.
+      activeProfileId = id;
+      renderPicker();
+      renderEditor();
+      setStatus('Activated');
+    } catch (e) {
+      setStatus(`Activate failed: ${e.message}`);
+    }
+  }
+
+  function onDeleteCurrent() {
+    if (!openProfileId) return;
+    const reg = profileLabel();
+    deleteBody.textContent = `${reg} will be removed from this device and from all your other iPads. This cannot be undone.`;
+    // The confirm button names the aircraft too — the dialog and the button
+    // must not disagree about what is being destroyed.
+    deleteConfirm.textContent = `Delete ${reg}`;
+    deleteOverlay.hidden = false;
+    deleteConfirm.focus();
+  }
+
+  function closeDeleteConfirm() {
+    deleteOverlay.hidden = true;
+  }
+
+  async function onDeleteConfirmed() {
+    const targetId = openProfileId;
+    closeDeleteConfirm();
+    if (!targetId) return;
+    try {
+      await api.deleteProfile(targetId);
+      openProfileId = null;
+      openProfile = null;
+      await refreshAll();
+      setStatus('Deleted');
+    } catch (e) {
+      setStatus(`Delete failed: ${e.message}`);
+    }
+  }
+
+  // -- Template picker --
+
+  function renderTemplateGrid() {
+    templateGrid.innerHTML = '';
+    const blank = document.createElement('button');
+    blank.type = 'button';
+    blank.className = 'ap-template-card ap-template-blank';
+    blank.innerHTML = `<div class="ap-template-name">Blank profile</div><div class="ap-template-sub">Start from scratch</div>`;
+    blank.addEventListener('click', () => onTemplateChosen(null));
+    templateGrid.appendChild(blank);
+
+    for (const tpl of templates) {
+      const card = document.createElement('button');
+      card.type = 'button';
+      card.className = 'ap-template-card';
+      card.innerHTML = `<div class="ap-template-name">${escapeHtml(tpl.makeModel)}</div>`;
+      card.addEventListener('click', () => onTemplateChosen(tpl));
+      templateGrid.appendChild(card);
+    }
+  }
+
+  function openTemplatePicker() {
+    // If the user was editing without blurring first, commit those edits
+    // before navigating away to template selection.
+    flushSave().catch((e) => console.warn('[profile-editor] save before template picker failed', e));
+    templateOverlay.hidden = false;
+  }
+
+  function closeTemplatePicker() {
+    templateOverlay.hidden = true;
+  }
+
+  function onTemplateChosen(tpl) {
+    closeTemplatePicker();
+    const overlay = rootEl.querySelector('#ap-wizard-overlay');
+    const wizard = createAircraftProfileWizard({
+      overlayEl: overlay,
+      summaries,
+      template: tpl,
+      onCommit: async (profile) => {
+        const created = await api.createProfile(profile);
+        summaries = await api.listProfiles();
+        activeProfileId = summaries.find((s) => s.isActive)?.id ?? null;
+        // First-profile auto-activation, preserved from the old direct-POST flow.
+        if (summaries.length === 1) {
+          try {
+            await api.activateProfile(created.id);
+            activeProfileId = created.id;
+          } catch { /* non-fatal */ }
+        }
+        await loadProfile(created.id);
+        switchTab(TAB_IDENTITY);
+        setStatus('Created');
+        return created;
+      },
+      onCancel: () => { /* no-op — nothing was persisted */ }
+    });
+    wizard.open();
+  }
+
+  // -- Validation (hard blocks per Q6) --
+
+  function validateProfile(p) {
+    const errors = [];
+    const v = p.vSpeeds ?? {};
+    if (v.vne != null && v.vno != null && v.vno > v.vne) {
+      errors.push({ path: 'vSpeeds.vno', message: 'Vno must be ≤ Vne' });
+    }
+    if (v.vne != null && v.vfe != null && v.vfe > v.vne) {
+      errors.push({ path: 'vSpeeds.vfe', message: 'Vfe must be ≤ Vne' });
+    }
+    if (v.vs != null && v.vso != null && v.vso > v.vs) {
+      errors.push({ path: 'vSpeeds.vso', message: 'Vso must be ≤ Vs (clean stall)' });
+    }
+    return errors;
+  }
+
+  // -- Status line --
+
+  let statusClearTimer = null;
+  function setStatus(msg, opts = {}) {
+    if (statusClearTimer) { clearTimeout(statusClearTimer); statusClearTimer = null; }
+    statusEl.textContent = msg;
+    statusEl.classList.toggle('ap-status-error', opts.variant === 'error');
+    if (msg === 'Saved' || msg === 'Created' || msg === 'Activated' || msg === 'Deleted') {
+      statusClearTimer = setTimeout(() => {
+        statusEl.textContent = '';
+        statusEl.classList.remove('ap-status-error');
+      }, 2000);
+    }
+  }
+
+  // -- Helpers --
+
+  function setNested(obj, path, value) {
+    const parts = path.split('.');
+    let cur = obj;
+    for (let i = 0; i < parts.length - 1; i++) {
+      if (cur[parts[i]] == null || typeof cur[parts[i]] !== 'object') cur[parts[i]] = {};
+      cur = cur[parts[i]];
+    }
+    cur[parts[parts.length - 1]] = value;
+  }
+
+  function getNested(obj, path) {
+    let cur = obj;
+    for (const part of path.split('.')) {
+      if (cur == null) return undefined;
+      cur = cur[part];
+    }
+    return cur;
+  }
+
+  function escapeHtml(s) {
+    return String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+  }
+
+  function cssEscape(s) {
+    return String(s).replace(/"/g, '\\"');
+  }
+
+  // saveAndClose exposed for the button bar's Back (Phase C) — same
+  // commit-then-dismiss path as the in-card × button.
+  return { init, destroy, saveAndClose };
+}

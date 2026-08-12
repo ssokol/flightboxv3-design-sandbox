@@ -1,0 +1,171 @@
+<div id="flights-overlay" class="flights-overlay" hidden>
+        <div class="flights-modal" role="dialog" aria-modal="true" aria-labelledby="flights-title">
+          <div class="flights-head">
+            <div class="flights-title" id="flights-title">Flights</div>
+            <div id="flights-stub-banner" class="flights-stub-banner" hidden>TEST SERVICE &mdash; Leidos stub, nothing is really filed</div>
+            <button id="flights-pilot-btn" class="mini-btn" type="button">Pilot</button>
+            <button id="flights-close" class="mini-btn" type="button">X</button>
+          </div>
+          <div class="flights-body">
+            <div id="flights-list-view" class="flights-view" hidden>
+              <div class="flights-list-col">
+                <div class="flights-section-title">Upcoming</div>
+                <div id="flights-upcoming-list" class="flights-cards"></div>
+                <div id="flights-upcoming-empty" class="flights-copy flights-dim" hidden>
+                  Nothing planned yet. Build a route in the Flight Plan dialog and tap
+                  &ldquo;Flights&rdquo; to add it here.</div>
+                <div class="flights-section-title">Past</div>
+                <div id="flights-past-list" class="flights-cards"></div>
+                <div id="flights-past-empty" class="flights-copy flights-dim" hidden>No past flights.</div>
+                <p class="flights-copy flights-dim">Flight detail, filing, and briefing actions arrive in
+                  the next build.</p>
+              </div>
+            </div>
+            <div id="flights-editor-view" class="flights-view" hidden>
+              <div class="flights-card">
+                <div class="flights-editor-head">
+                  <button id="fe-back" class="mini-btn" type="button">&lsaquo; Flights</button>
+                  <div id="fe-title" class="flights-editor-title"></div>
+                </div>
+                <div id="fe-filing-panel" class="flights-status" hidden></div>
+                <div class="flights-section-title">Flight</div>
+                <label class="flights-field"><span>Rules</span>
+                  <select id="fe-rules" class="flights-select">
+                    <option value="VFR">VFR</option>
+                    <option value="IFR">IFR</option>
+                  </select></label>
+                <label class="flights-field"><span>Aircraft</span>
+                  <input id="fe-aircraft" type="text" readonly></label>
+                <p class="flights-copy flights-dim">Departure and destination are filed as their own
+                  fields &mdash; the route is the path between them (DCT = direct).</p>
+                <label class="flights-field"><span>Route of flight</span>
+                  <input id="fe-route" type="text" autocapitalize="characters" spellcheck="false"
+                         placeholder="DCT"></label>
+                <label class="flights-field"><span>Departure</span>
+                  <input id="fe-etd" type="datetime-local"></label>
+                <div class="flights-field"><span>Zulu</span>
+                  <span id="fe-etd-zulu" class="flights-copy"></span></div>
+                <label class="flights-field"><span>Time en route</span>
+                  <input id="fe-duration" type="text" inputmode="numeric" placeholder="1:10"></label>
+                <label class="flights-field"><span>Speed (kt)</span>
+                  <input id="fe-speed" type="number" inputmode="numeric" min="1"></label>
+                <label class="flights-field"><span>Altitude (ft)</span>
+                  <input id="fe-altitude" type="number" inputmode="numeric" step="500"></label>
+                <label class="flights-field"><span>No fixed altitude (files &ldquo;VFR&rdquo;)</span>
+                  <input id="fe-alt-vfr" type="checkbox" class="surface-check"></label>
+                <div class="flights-section-title">Fuel, souls &amp; alternates</div>
+                <label class="flights-field"><span>Fuel quantity (gal)</span>
+                  <input id="fe-fuel-gal" type="number" inputmode="decimal" min="0" step="0.5"></label>
+                <label class="flights-field"><span>Fuel endurance</span>
+                  <input id="fe-fuel" type="text" inputmode="numeric" placeholder="4:30"></label>
+                <p class="flights-copy flights-dim">The plan files endurance (time). Entering gallons
+                  computes it from your aircraft&rsquo;s cruise burn; you can still adjust the time
+                  directly.</p>
+                <label class="flights-field"><span>People aboard</span>
+                  <input id="fe-souls" type="number" inputmode="numeric" min="1"></label>
+                <label class="flights-field"><span>Alternate 1</span>
+                  <input id="fe-alt1" type="text" autocapitalize="characters" maxlength="5"></label>
+                <label class="flights-field"><span>Alternate 2</span>
+                  <input id="fe-alt2" type="text" autocapitalize="characters" maxlength="5"></label>
+                <label class="flights-field"><span>Color</span>
+                  <input id="fe-color" type="text" autocapitalize="characters" maxlength="8" placeholder="W/B"></label>
+                <div class="flights-section-title">Remarks</div>
+                <label class="flights-field flights-field--stack"><span>ATC remarks (RMK/) &mdash; goes to controllers</span>
+                  <input id="fe-atc-remarks" type="text"></label>
+                <label class="flights-field flights-field--stack"><span>Search &amp; Rescue info &mdash; NOT sent to ATC (pets, survival gear&hellip;)</span>
+                  <input id="fe-sar-remarks" type="text"></label>
+                <div class="flights-section-title">File as</div>
+                <label class="flights-field"><span>Equipment (10a)</span>
+                  <input id="fe-eq" type="text" autocapitalize="characters" spellcheck="false" maxlength="32"></label>
+                <label class="flights-field"><span>Surveillance (10b)</span>
+                  <input id="fe-surv" type="text" autocapitalize="characters" spellcheck="false" maxlength="16"></label>
+                <label class="flights-field"><span>PBN/</span>
+                  <input id="fe-pbn" type="text" autocapitalize="characters" spellcheck="false" maxlength="40"></label>
+                <div id="fe-codes-notes" class="flights-copy flights-dim"></div>
+                <div id="fe-pilotline" class="flights-copy flights-dim"></div>
+                <div id="fe-errors" class="flights-status is-error" hidden></div>
+                <div class="flights-editor-actions">
+                  <button id="fe-save" class="flights-primary-btn" type="button" disabled>Save Draft</button>
+                  <button id="fe-file" class="flights-primary-btn" type="button">File Plan</button>
+                  <button id="fe-edit-route" class="mini-btn" type="button">Edit Route</button>
+                  <button id="fe-delete" class="mini-btn" type="button">Delete</button>
+                </div>
+                <div class="flights-editor-actions">
+                  <button id="fe-brief" class="flights-primary-btn" type="button">Get Briefing</button>
+                  <button id="fe-view-brief" class="flights-primary-btn" type="button" hidden>View Briefing</button>
+                </div>
+                <div id="fe-lifecycle-actions" class="flights-editor-actions" hidden>
+                  <button id="fe-amend" class="flights-primary-btn" type="button" hidden>Amend</button>
+                  <button id="fe-activate" class="flights-primary-btn" type="button" hidden>Activate</button>
+                  <button id="fe-close-plan" class="flights-primary-btn" type="button" hidden>Close Flight Plan</button>
+                  <button id="fe-cancel-plan" class="flights-primary-btn" type="button" hidden>Cancel Plan</button>
+                  <button id="fe-refile" class="flights-primary-btn" type="button" hidden>Revise &amp; Refile</button>
+                </div>
+                <div id="fe-lifecycle-hint" class="flights-copy flights-dim" hidden></div>
+              </div>
+            </div>
+            <div id="flights-briefing-view" class="flights-view" hidden>
+              <div class="flights-card">
+                <div class="flights-editor-head">
+                  <button id="fb-back" class="mini-btn" type="button">&lsaquo; Flight</button>
+                  <div id="fb-title" class="flights-editor-title"></div>
+                </div>
+                <div id="fb-meta" class="flights-copy flights-dim"></div>
+                <div id="fb-outage" class="flights-status is-error flights-outage" hidden></div>
+                <div id="fb-summary-wrap">
+                  <div class="flights-section-title">Summary</div>
+                  <p class="flights-copy flights-dim">Machine summary for orientation only &mdash; the
+                    PDF below is the briefing of record.</p>
+                  <div id="fb-summary" class="flights-copy flights-summary"></div>
+                  <button id="fb-open-pdf" class="flights-primary-btn" type="button">View Briefing PDF (record)</button>
+                </div>
+              </div>
+            </div>
+            <div id="flights-setup-view" class="flights-view" hidden>
+              <div class="flights-card">
+                <div class="flights-section-title">Pilot</div>
+                <p class="flights-copy">Flight plans are filed with Leidos Flight Service under your own
+                  1&#8209;800&#8209;WX&#8209;BRIEF account, so you can also manage them by phone, on
+                  1800wxbrief.com, or in other apps. Your name, phone, and home base go into every
+                  flight plan you file.</p>
+                <label class="flights-field"><span>Name</span>
+                  <input id="flights-pilot-name" type="text" autocomplete="name" autocapitalize="characters" placeholder="PAT BARNSTORMER"></label>
+                <label class="flights-field"><span>Phone</span>
+                  <input id="flights-pilot-phone" type="tel" autocomplete="tel" placeholder="800-555-1212"></label>
+                <label class="flights-field"><span>Home base</span>
+                  <input id="flights-pilot-homebase" type="text" autocapitalize="characters" maxlength="5" placeholder="KHOU"></label>
+                <button id="flights-pilot-save" class="flights-primary-btn" type="button" disabled>Save Pilot Info</button>
+                <div id="flights-pilot-status" class="flights-status" hidden></div>
+                <div class="flights-section-title">1800wxbrief account</div>
+                <div id="flights-account-unlinked" hidden>
+                  <p class="flights-copy">Enter your 1800wxbrief.com username (usually your email address).
+                    No password needed &mdash; you authorize Falken from your Leidos account instead.
+                    Don&rsquo;t have an account? Create one free at 1800wxbrief.com first.</p>
+                  <label class="flights-field"><span>Username</span>
+                    <input id="flights-leidos-username" type="email" autocomplete="email" autocapitalize="none" placeholder="pilot@example.com"></label>
+                  <button id="flights-link-save" class="flights-primary-btn" type="button" disabled>Link Account</button>
+                </div>
+                <div id="flights-account-linked" hidden>
+                  <label class="flights-field"><span>Username</span>
+                    <input id="flights-linked-username" type="email" readonly></label>
+                  <div id="flights-linked-summary" class="flights-copy"></div>
+                  <button id="flights-unlink" class="flights-primary-btn" type="button">Unlink Account</button>
+                </div>
+                <div id="flights-setup-status" class="flights-status" hidden></div>
+                <div id="flights-spa-card" class="flights-spa-card" hidden>
+                  <div class="flights-section-title">One more step: authorize Falken</div>
+                  <p class="flights-copy">Your account isn&rsquo;t authorized for filing through Falken yet.
+                    On another device (or after leaving the app):</p>
+                  <ol class="flights-steps">
+                    <li>Log in at <strong>1800wxbrief.com</strong></li>
+                    <li>Open the <strong>Account</strong> tab</li>
+                    <li>Choose <strong>Service Provider Authorization</strong></li>
+                    <li>Authorize <strong>Falken Avionics</strong>, then come back here</li>
+                  </ol>
+                  <button id="flights-spa-recheck" class="flights-primary-btn" type="button">Check Again</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
